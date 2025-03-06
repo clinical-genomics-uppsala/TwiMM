@@ -1,5 +1,5 @@
 ---
  files: 
    - name: "_copy_samples_tsv"
-     output: "result/samples.tsv"
-     input: "samples.tsv"
+     output: "result/{sample}.vcf"
+     input: "variant_calling/deepsomatic_run_deepsomatic/{sample}.vcf"
