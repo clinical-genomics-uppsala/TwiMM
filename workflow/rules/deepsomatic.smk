@@ -14,7 +14,7 @@ rule deepsomatic_run_deepsomatic:
     params:
         model=config.get("deepsomatic_run_deepsomatic", {}).get("model", "")
     log:
-        dir=directory("variant_calling/deepsomatic_run_deepsomatic/{sample}_run"),
+        dir=directory("variant_calling/deepsomatic_run_deepsomatic/{sample}_log"),
         run="variant_calling/deepsomatic_run_deepsomatic/{sample}.stdout.log"
     benchmark:
         repeat(
