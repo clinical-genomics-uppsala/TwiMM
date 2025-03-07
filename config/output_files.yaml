@@ -1,5 +1,9 @@
 ---
  files: 
-   - name: "_copy_samples_tsv"
-     output: "result/{sample}.vcf"
+   - name: "vcf"
+     output: "results/{sample}.vcf"
      input: "variant_calling/deepsomatic_run_deepsomatic/{sample}.vcf"
+   - name: "sv_vcf"
+     output: "results/{sample}.sv.vcf"
+     input: "variant_calling/pbsv_call_structural_variants/{sample}.sv.vcf"
+  
