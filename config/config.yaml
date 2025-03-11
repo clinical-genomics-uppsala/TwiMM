@@ -26,7 +26,7 @@ multiqc:
         - "prealignment/fastp_pe/{sample}_{type}_{flowcell}_{lane}_{barcode}_fastp.json"
 
 reference:
-  fasta: "resources/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+  fasta: "resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "resources/"
 
 bam_path: "/projects/wp2/nobackup/Twist_Myelom/Test_Analyses/pr_038/analysis/pr_038_001/renamed/"
@@ -41,5 +41,9 @@ deepsomatic_run_deepsomatic:
 pbsv_call_structural_variants:
   container: "docker://hydragenetics/pbsv:2.9.0"
   trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
-  reference: "resources/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+  reference: "resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   extra: ""
+
+bcftools_filter_include_region:
+  container: docker://biocontainers/bcftools:v1.9-1-deb_cv1
+  panel: "resources/panel64.add20.bed"
