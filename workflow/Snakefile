@@ -8,12 +8,10 @@ __license__ = "GPL-3"
 include: "rules/common.smk"
 include: "rules/deepsomatic.smk"
 include: "rules/pbsv.smk"
+include: "rules/bcftools.smk"
 
 # 'All' rule, must be specified before any other modules are
 # included, since they also contain 'All' rule
 rule all:
     input:
         compile_output_file_list,
-
-
-# Include modules
