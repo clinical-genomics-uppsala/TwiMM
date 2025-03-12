@@ -9,7 +9,7 @@ rule pbsv_call_structural_variants:
         bam=os.path.join(config["bam_path"], "{sample}_T.haplotagged.bam"),
     output:
         svsig="variant_calling/pbsv_call_structural_variants/{sample}.svsig.gz",
-        vcf="variant_calling/pbsv_call_structural_variants/{sample}.sv.vcf"
+        vcf="variant_calling/pbsv_call_structural_variants/{sample}.vcf"
     params:
         trf=config.get("pbsv_call_structural_variants", {}).get("trf", ""),
         reference=config.get("pbsv_call_structural_variants", {}).get("reference", ""),
