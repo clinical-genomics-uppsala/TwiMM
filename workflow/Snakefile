@@ -8,10 +8,36 @@ __license__ = "GPL-3"
 include: "rules/common.smk"
 include: "rules/deepsomatic.smk"
 include: "rules/pbsv.smk"
-include: "rules/bcftools.smk"
 
 # 'All' rule, must be specified before any other modules are
 # included, since they also contain 'All' rule
 rule all:
     input:
         compile_output_file_list,
+
+# Include pipeline specific rules
+# annotation module contains rules to gzip VCF files
+# gzipped files are required by filtering module
+module annotation:
+    snakefile:
+        github(
+            "hydra-genetics/annotation",
+            path="workflow/Snakefile",
+            tag="v1.1.0",
+        )
+    config:
+        config
+
+use rule bgzip_vcf, tabix_vcf from annotation
+
+module filtering:
+    snakefile:
+        github(
+            "hydra-genetics/filtering",
+            path="workflow/Snakefile",
+            tag="v1.1.0",
+        )
+    config:
+        config
+
+use rule bcftools_filter_include_region from filtering as filtering_bcftools
