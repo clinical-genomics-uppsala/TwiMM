@@ -6,8 +6,8 @@ __license__ = "GPL-3"
 
 # Include pipeline specific rules
 include: "rules/common.smk"
-include: "rules/deepsomatic.smk"
-include: "rules/pbsv.smk"
+# include: "rules/deepsomatic.smk"
+# include: "rules/pbsv.smk"
 
 # 'All' rule, must be specified before any other modules are
 # included, since they also contain 'All' rule
@@ -30,6 +30,19 @@ module annotation:
 
 use rule bgzip_vcf, tabix_vcf from annotation
 
+module snv_indels:
+    snakefile:
+        github(
+            "hydra-genetics/snv_indels",
+            path="workflow/Snakefile",
+            tag="v1.1.0", # should be 1.2.0 when 
+            # deepsomtaic is included in the new release
+        )
+    config:
+        config
+
+use rule deepsomatic_tn from snv_indels
+
 module filtering:
     snakefile:
         github(
@@ -41,3 +54,16 @@ module filtering:
         config
 
 use rule bcftools_filter_include_region from filtering as filtering_bcftools
+
+# this module is not ready yet
+module cnv_sv:
+    snakefile:
+        github(
+            "hydra-genetics/cnv_sv",
+            path="workflow/Snakefile",
+            tag="v0.7.1", # will be different when HiFiCNV is ready
+        )
+    config:
+        config
+
+use rule pbsv from cnv_sv
