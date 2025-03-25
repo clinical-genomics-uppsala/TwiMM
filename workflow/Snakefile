@@ -85,4 +85,4 @@ module cnv_sv:
         config
 
 
-use rule pbsv from cnv_sv
+use rule pbsv_call, pbsv_discover from cnv_sv
