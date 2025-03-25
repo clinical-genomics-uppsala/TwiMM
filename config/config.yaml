@@ -6,6 +6,9 @@ units: "config/units.tsv"
 
 default_container: "docker://hydragenetics/common:0.1.9"
 
+local_snakefile:
+  cnv_sv: "/Users/andgu885/Documents/GitHub/hydra-genetics/cnv_sv/workflow/Snakefile"
+
 reference:
   fasta: "resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "resources/resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
@@ -17,8 +20,9 @@ bam_path: "/projects/wp2/nobackup/Twist_Myelom/Test_Analyses/pr_038/analysis/pr_
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
 
-deepsomatic_run_deepsomatic:
+deepsomatic_tn:
   container: "docker://google/deepsomatic:1.8.0"
+  extra: ""
   model: "PACBIO"
 
 pbsv_call_structural_variants:
@@ -28,7 +32,7 @@ pbsv_call_structural_variants:
   extra: ""
 
 bcftools_filter_include_region:
-  container: docker://biocontainers/bcftools:v1.9-1-deb_cv1
+  default_container: "docker://hydragenetics/common:3.1.1"
   panel: "resources/panel64.add20.bed"
 
 multiqc:
