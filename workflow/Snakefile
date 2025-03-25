@@ -6,8 +6,7 @@ __license__ = "GPL-3"
 
 # Include pipeline specific rules
 include: "rules/common.smk"
-# include: "rules/deepsomatic.smk"
-# include: "rules/pbsv.smk"
+
 
 # 'All' rule, must be specified before any other modules are
 # included, since they also contain 'All' rule
@@ -15,9 +14,24 @@ rule all:
     input:
         compile_output_file_list,
 
+
 # Include pipeline specific rules
-# annotation module contains rules to gzip VCF files
-# gzipped files are required by filtering module
+
+
+module alignment:
+    snakefile:
+        github(
+            "hydra-genetics/alignment",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
+
+
+use rule * from alignment as alignment_*
+
+
 module annotation:
     snakefile:
         github(
@@ -28,20 +42,23 @@ module annotation:
     config:
         config
 
-use rule bgzip_vcf, tabix_vcf from annotation
+
+use rule tabix_vcf from annotation
+
 
 module snv_indels:
     snakefile:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            tag="v1.1.0", # should be 1.2.0 when 
-            # deepsomtaic is included in the new release
+            branch="develop",
         )
     config:
         config
 
-use rule deepsomatic_tn from snv_indels
+
+use rule deepsomatic_tn from snv_indels as deepsomatic_tn
+
 
 module filtering:
     snakefile:
@@ -53,17 +70,19 @@ module filtering:
     config:
         config
 
-use rule bcftools_filter_include_region from filtering as filtering_bcftools
+
+use rule bcftools_filter_include_region from filtering as deepsomatic_filtering with:
+    wildcard_constraints:
+        file="^snv_indels/.+",
+
 
 # this module is not ready yet
+# the local version contains pbsv and HiFiCNV
 module cnv_sv:
     snakefile:
-        github(
-            "hydra-genetics/cnv_sv",
-            path="workflow/Snakefile",
-            tag="v0.7.1", # will be different when HiFiCNV is ready
-        )
+        config["local_snakefile"]["cnv_sv"]
     config:
         config
+
 
 use rule pbsv from cnv_sv
