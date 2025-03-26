@@ -44,18 +44,16 @@ module annotation:
 use rule tabix_vcf from annotation
 
 
-module snv_indels:
+# this module is not ready yet
+# the local version contains pbsv and HiFiCNV
+module cnv_sv:
     snakefile:
-        github(
-            "hydra-genetics/snv_indels",
-            path="workflow/Snakefile",
-            branch="develop",
-        )
+        config["local_snakefile"]["cnv_sv"]
     config:
         config
 
 
-use rule deepsomatic_tn from snv_indels as deepsomatic_tn
+use rule pbsv_call, pbsv_discover, hificnv from cnv_sv
 
 
 module filtering:
@@ -73,13 +71,16 @@ use rule bcftools_filter_include_region from filtering as deepsomatic_filtering 
     wildcard_constraints:
         file="^snv_indels/.+",
 
-# this module is not ready yet
-# the local version contains pbsv and HiFiCNV
-module cnv_sv:
+
+module snv_indels:
     snakefile:
-        config["local_snakefile"]["cnv_sv"]
+        github(
+            "hydra-genetics/snv_indels",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
     config:
         config
 
 
-use rule pbsv_call, pbsv_discover, hificnv from cnv_sv
+use rule deepsomatic_tn from snv_indels as deepsomatic_tn
