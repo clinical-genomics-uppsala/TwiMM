@@ -41,7 +41,7 @@ module annotation:
         config
 
 
-use rule tabix_vcf from annotation
+use rule bgzip_vcf, tabix_vcf from annotation
 
 
 # this module is not ready yet
@@ -70,6 +70,10 @@ module filtering:
 use rule bcftools_filter_include_region from filtering as deepsomatic_filtering with:
     wildcard_constraints:
         file="^snv_indels/.+",
+
+use rule bcftools_filter_include_region from filtering as pbsv_filtering with:
+    wildcard_constraints:
+        file="^cnv_sv/.+",
 
 
 module snv_indels:
