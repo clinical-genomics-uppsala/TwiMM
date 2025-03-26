@@ -35,6 +35,11 @@ pbsv_discover:
   trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
+hificnv:
+  container: "docker://hydragenetics/hificnv:1.0.1"
+  exclude: "resources/cnv.excluded_regions.common_50.hg38.bed.gz"
+  extra: ""
+
 bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1"
   panel: "resources/panel64.add20.bed"
