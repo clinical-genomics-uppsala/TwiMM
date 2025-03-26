@@ -16,8 +16,6 @@ rule all:
 
 
 # Include pipeline specific rules
-
-
 module alignment:
     snakefile:
         github(
@@ -75,7 +73,6 @@ use rule bcftools_filter_include_region from filtering as deepsomatic_filtering 
     wildcard_constraints:
         file="^snv_indels/.+",
 
-
 # this module is not ready yet
 # the local version contains pbsv and HiFiCNV
 module cnv_sv:
@@ -85,4 +82,4 @@ module cnv_sv:
         config
 
 
-use rule pbsv_call, pbsv_discover from cnv_sv
+use rule pbsv_call, pbsv_discover, hificnv from cnv_sv
