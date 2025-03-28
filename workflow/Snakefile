@@ -15,47 +15,41 @@ rule all:
         compile_output_file_list,
 
 
-# Include pipeline specific rules
-module alignment:
-    snakefile:
-        github(
-            "hydra-genetics/alignment",
-            path="workflow/Snakefile",
-            branch="develop",
-        )
-    config:
-        config
-
-
-use rule * from alignment as alignment_*
-
-
-module annotation:
-    snakefile:
-        github(
-            "hydra-genetics/annotation",
-            path="workflow/Snakefile",
-            tag="v1.1.0",
-        )
-    config:
-        config
-
-
-use rule bgzip_vcf, tabix_vcf from annotation
-
-
-# this module is not ready yet
-# the local version contains pbsv and HiFiCNV
+# this module uses my branch
+# with pbsv and HiFiCNV
 module cnv_sv:
     snakefile:
-        config["local_snakefile"]["cnv_sv"]
+        github(
+            "hydra-genetics/cnv_sv",
+            path="workflow/Snakefile",
+            branch="hificnv-pbsv",
+        )
     config:
         config
 
+# bgzip PBSV VCF
+# required for filtering
+use rule bgzip from cnv_sv with:
+    input: vcf="{file}.vcf"
+    output: "{file}.vcf.gz"
 
-use rule pbsv_call, pbsv_discover, hificnv from cnv_sv
+# index PBSV VCF
+# required for filtering
+use rule tabix from cnv_sv as index_pbsv with:
+    wildcard_constraints:
+        file="^cnv_sv/.+",
+
+# index gzipped DeepSomatic VCF
+# required for filtering
+use rule tabix from cnv_sv as index_deepsomatic with:
+    wildcard_constraints:
+        file="^snv_indels/.+",
+
+# run PBSV analysis
+use rule pbsv_call, pbsv_discover from cnv_sv
 
 
+# filter VCF files
 module filtering:
     snakefile:
         github(
@@ -66,25 +60,30 @@ module filtering:
     config:
         config
 
-
-use rule bcftools_filter_include_region from filtering as deepsomatic_filtering with:
+# filter DeepSomatic VCF
+use rule bcftools_filter_include_region from filtering as filter_deepsomatic with:
     wildcard_constraints:
         file="^snv_indels/.+",
 
-use rule bcftools_filter_include_region from filtering as pbsv_filtering with:
+# filter PBSV VCF
+use rule bcftools_filter_include_region from filtering as filter_pbsv with:
     wildcard_constraints:
         file="^cnv_sv/.+",
 
-
+# use branch with my function
+# for flexible BAM input 
 module snv_indels:
     snakefile:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            branch="develop",
+            branch="deepsomatic_flexible_input",
         )
     config:
         config
 
-
+# run DeepSomatic for variant calling
 use rule deepsomatic_tn from snv_indels as deepsomatic_tn
+
+# run HiFiCNV for copy number analysis
+use rule hificnv from cnv_sv as hificnv
