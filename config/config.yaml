@@ -8,6 +8,7 @@ default_container: "docker://hydragenetics/common:0.1.9"
 
 local_snakefile:
   cnv_sv: "/Users/andgu885/Documents/GitHub/hydra-genetics/cnv_sv/workflow/Snakefile"
+  snv_indels: "/Users/andgu885/Documents/GitHub/hydra-genetics/snv_indels/workflow/Snakefile"
 
 reference:
   fasta: "resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
@@ -15,7 +16,9 @@ reference:
   trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
   design_bed: "resources/panel64.add20.bed"
 
-bam_path: "/projects/wp2/nobackup/Twist_Myelom/Test_Analyses/pr_038/analysis/pr_038_001/renamed/"
+starting_bam: 
+  path: "data/bam_haplotagged"
+  type: "haplotagged"
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
