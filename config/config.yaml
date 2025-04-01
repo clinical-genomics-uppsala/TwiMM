@@ -16,7 +16,7 @@ reference:
   trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
   design_bed: "resources/panel64.add20.bed"
 
-starting_bam: 
+input_bam: 
   path: "data/bam_haplotagged"
   type: "haplotagged"
 
@@ -41,6 +41,10 @@ pbsv_discover:
 hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
   exclude: "resources/cnv.excluded_regions.common_50.hg38.bed.gz"
+  extra: ""
+
+snifffles2_call:
+  container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
 
 bcftools_filter_include_region:
