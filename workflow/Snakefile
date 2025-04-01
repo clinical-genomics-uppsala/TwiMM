@@ -45,9 +45,11 @@ use rule tabix from cnv_sv as index_deepsomatic with:
     wildcard_constraints:
         file="^snv_indels/.+",
 
-# run PBSV analysis
-use rule pbsv_call, pbsv_discover from cnv_sv
+# run PBSV & HiFiCNV analysis
+use rule pbsv_call, pbsv_discover, hificnv from cnv_sv
 
+# run Sniffles2
+use rule sniffles2_call from cnv_sv as sniffles2 with:
 
 # filter VCF files
 module filtering:
@@ -65,11 +67,6 @@ use rule bcftools_filter_include_region from filtering as filter_deepsomatic wit
     wildcard_constraints:
         file="^snv_indels/.+",
 
-# filter PBSV VCF
-use rule bcftools_filter_include_region from filtering as filter_pbsv with:
-    wildcard_constraints:
-        file="^cnv_sv/.+",
-
 # use branch with my function
 # for flexible BAM input 
 module snv_indels:
@@ -84,6 +81,3 @@ module snv_indels:
 
 # run DeepSomatic for variant calling
 use rule deepsomatic_tn from snv_indels as deepsomatic_tn
-
-# run HiFiCNV for copy number analysis
-use rule hificnv from cnv_sv as hificnv
