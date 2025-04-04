@@ -30,8 +30,8 @@ module cnv_sv:
 # bgzip PBSV VCF
 # required for filtering
 use rule bgzip from cnv_sv with:
-    input: vcf="{file}.vcf"
-    output: "{file}.vcf.gz"
+    input: vcf="{file}_T.vcf"
+    output: "{file}_T.vcf.gz"
 
 # index PBSV VCF
 # required for filtering
