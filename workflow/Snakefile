@@ -27,11 +27,15 @@ module cnv_sv:
     config:
         config
 
+
 # bgzip PBSV VCF
 # required for filtering
-use rule bgzip from cnv_sv with:
-    input: vcf="{file}_T.vcf"
-    output: "{file}_T.vcf.gz"
+use rule bgzip from cnv_sv as bgzip with:
+    input:
+        vcf="{file}_T.vcf",
+    output:
+        "{file}_T.vcf.gz",
+
 
 # index PBSV VCF
 # required for filtering
@@ -39,17 +43,27 @@ use rule tabix from cnv_sv as index_pbsv with:
     wildcard_constraints:
         file="^cnv_sv/.+",
 
+
 # index gzipped DeepSomatic VCF
 # required for filtering
 use rule tabix from cnv_sv as index_deepsomatic with:
     wildcard_constraints:
         file="^snv_indels/.+",
 
+
 # run PBSV & HiFiCNV analysis
-use rule pbsv_call, pbsv_discover, hificnv from cnv_sv
+use rule pbsv_discover from cnv_sv as pbsv_discover
+
+
+use rule pbsv_call from cnv_sv as pbsv_call
+
+
+use rule hificnv from cnv_sv as hificnv
+
 
 # run Sniffles2
-use rule sniffles2_call from cnv_sv as sniffles2 with:
+use rule sniffles2_call from cnv_sv as sniffles2
+
 
 # filter VCF files
 module filtering:
@@ -62,13 +76,15 @@ module filtering:
     config:
         config
 
+
 # filter DeepSomatic VCF
 use rule bcftools_filter_include_region from filtering as filter_deepsomatic with:
     wildcard_constraints:
         file="^snv_indels/.+",
 
+
 # use branch with my function
-# for flexible BAM input 
+# for flexible BAM input
 module snv_indels:
     snakefile:
         github(
@@ -78,6 +94,7 @@ module snv_indels:
         )
     config:
         config
+
 
 # run DeepSomatic for variant calling
 use rule deepsomatic_tn from snv_indels as deepsomatic_tn
