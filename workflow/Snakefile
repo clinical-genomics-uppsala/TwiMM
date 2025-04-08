@@ -22,7 +22,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="hificnv-pbsv",
+            branch="develop",
         )
     config:
         config
@@ -86,15 +86,17 @@ use rule bcftools_filter_include_region from filtering as filter_deepsomatic wit
 # use branch with my function
 # for flexible BAM input
 module snv_indels:
-    snakefile:
-        github(
-            "hydra-genetics/snv_indels",
-            path="workflow/Snakefile",
-            branch="deepsomatic_flexible_input",
-        )
+    snakefile: config["local_snakefile"]["snv_indels"]
     config:
         config
 
 
 # run DeepSomatic for variant calling
-use rule deepsomatic_tn from snv_indels as deepsomatic_tn
+use rule deepsomatic_tn from snv_indels as deepsomatic_tn with:
+    input:
+        normal="data/bam_haplotagged/{sample}_N.haplotagged.bam",
+        tumor="data/bam_haplotagged/{sample}_T.haplotagged.bam",
+        bai_n="data/bam_haplotagged/{sample}_N.haplotagged.bam.bai",
+        bai_t="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
+        ref=config.get("reference", {}).get("fasta", ""),
+        bed=config.get("reference", {}).get("design_bed", ""),
