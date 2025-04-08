@@ -16,9 +16,7 @@ reference:
   trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
   design_bed: "resources/panel64.add20.bed"
 
-input_bam: 
-  path: "data/bam_haplotagged"
-  type: "haplotagged"
+unit_bam: true
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
