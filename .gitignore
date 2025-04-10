@@ -9,3 +9,4 @@ results/
 resources/
 modules/
 data/
+config/local_config.yaml
