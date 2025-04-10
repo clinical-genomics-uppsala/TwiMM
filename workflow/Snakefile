@@ -18,13 +18,12 @@ rule all:
 # this module uses my branch
 # with pbsv and HiFiCNV
 module cnv_sv:
-    # snakefile:
-    #     github(
-    #         "hydra-genetics/cnv_sv",
-    #         path="workflow/Snakefile",
-    #         branch="develop",
-    #     )
-    snakefile: config["local_snakefile"]["cnv_sv"]
+    snakefile:
+        github(
+            "hydra-genetics/cnv_sv",
+            path="workflow/Snakefile",
+            branch="cnvkit_input_function",
+        )
     config:
         config
 
@@ -66,10 +65,7 @@ use rule hificnv from cnv_sv as hificnv
 use rule sniffles2_call from cnv_sv as sniffles2
 
 # run cnvkit
-use rule cnvkit_batch from cnv_sv as cnvkit_batch with:
-    input:
-        bam="data/bam_haplotagged/{sample}_T.haplotagged.bam",
-        bai="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
+use rule cnvkit_batch from cnv_sv as cnvkit_batch
 
 use rule cnvkit_diagram from cnv_sv as cnvkit_diagram
 
