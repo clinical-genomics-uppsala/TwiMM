@@ -6,21 +6,17 @@ units: "config/units.tsv"
 
 default_container: "docker://hydragenetics/common:0.1.9"
 
-local_snakefile:
-  cnv_sv: "/Users/andgu885/Documents/GitHub/hydra-genetics/cnv_sv/workflow/Snakefile"
-  snv_indels: "/Users/andgu885/Documents/GitHub/hydra-genetics/snv_indels/workflow/Snakefile"
-
 reference:
-  fasta: "resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
-  fai: "resources/resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: "resources/panel64.add20.bed"
+  fasta: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: "human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: "panel64.add20.bed"
 
 unit_bam: true
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
-  normal_reference: "resources/reference.cnn"
+  normal_reference: "reference.cnn"
   method: "hybrid"
 
 pbmarkdup:
@@ -33,17 +29,17 @@ deepsomatic_tn:
 
 pbsv_call:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  reference: "resources/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  reference: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   extra: ""
 
 pbsv_discover:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  trf: "resources/human_GRCh38_no_alt_analysis_set.trf.bed"
+  trf: "human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
 hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "resources/cnv.excluded_regions.common_50.hg38.bed.gz"
+  exclude: "cnv.excluded_regions.common_50.hg38.bed.gz"
   extra: ""
 
 snifffles2_call:
@@ -52,7 +48,7 @@ snifffles2_call:
 
 bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1"
-  panel: "resources/panel64.add20.bed"
+  panel: "panel64.add20.bed"
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
