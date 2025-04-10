@@ -18,6 +18,11 @@ reference:
 
 unit_bam: true
 
+cnvkit_batch:
+  container: "docker://hydragenetics/cnvkit:0.9.9"
+  normal_reference: "resources/reference.cnn"
+  method: "hybrid"
+
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
 
