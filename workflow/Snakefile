@@ -22,7 +22,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="cnvkit_input_function",
+            branch="develop",
         )
     config:
         config
