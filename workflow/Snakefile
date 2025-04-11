@@ -64,10 +64,13 @@ use rule hificnv from cnv_sv as hificnv
 # run Sniffles2
 use rule sniffles2_call from cnv_sv as sniffles2
 
+
 # run cnvkit
 use rule cnvkit_batch from cnv_sv as cnvkit_batch
 
+
 use rule cnvkit_diagram from cnv_sv as cnvkit_diagram
+
 
 # filter VCF files
 module filtering:
