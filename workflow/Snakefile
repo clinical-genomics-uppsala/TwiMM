@@ -97,7 +97,7 @@ module snv_indels:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            branch="develop",
+            branch="deepsomatic_flexible_input",
         )
     # snakefile: config["local_snakefile"]["snv_indels"]
     config:
@@ -105,11 +105,13 @@ module snv_indels:
 
 
 # run DeepSomatic for variant calling
-use rule deepsomatic_tn from snv_indels as deepsomatic_tn with:
+use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only with:
     input:
-        normal="data/bam_haplotagged/{sample}_N.haplotagged.bam",
-        tumor="data/bam_haplotagged/{sample}_T.haplotagged.bam",
-        bai_n="data/bam_haplotagged/{sample}_N.haplotagged.bam.bai",
-        bai_t="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
+        bam="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
+        bai="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
         ref=config.get("reference", {}).get("fasta", ""),
         bed=config.get("reference", {}).get("design_bed", ""),
+        pon=config.get("reference", {}).get("pon", ""),
+    output:
+        tmpdir = temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
+        vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
