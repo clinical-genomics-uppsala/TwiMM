@@ -15,6 +15,39 @@ rule all:
         compile_output_file_list,
 
 
+# mark duplicates in CCS reads
+module prealignment:
+    snakefile:
+        github(
+            "hydra-genetics/prealignment",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
+
+
+use rule pbmarkdup from prealignment as mark_duplicates
+
+
+# map and index BAM files
+module alignment:
+    snakefile:
+        github(
+            "hydra-genetics/alignment",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
+
+
+use rule pbmm2_index from alignment as pbmm2_index
+
+
+use rule pbmm2_align from alignment as pbmm2_align
+
+
 # this module uses my branch
 # with pbsv and HiFiCNV
 module cnv_sv:
@@ -113,5 +146,5 @@ use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only with:
         bed=config.get("reference", {}).get("design_bed", ""),
         pon=config.get("reference", {}).get("pon", ""),
     output:
-        tmpdir = temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
+        tmpdir=temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
         vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
