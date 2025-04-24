@@ -15,6 +15,52 @@ rule all:
         compile_output_file_list,
 
 
+# map and index BAM files
+module alignment:
+    snakefile:
+        github(
+            "hydra-genetics/alignment",
+            path="workflow/Snakefile",
+            commit="82f015d",
+        )
+    config:
+        config
+
+
+module annotation:
+    snakefile:
+        github(
+            "hydra-genetics/annotation",
+            path="workflow/Snakefile",
+            branch="add_whatshap",
+        )
+    config:
+        config
+
+
+module cnv_sv:
+    snakefile:
+        github(
+            "hydra-genetics/cnv_sv",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
+
+
+# filter VCF files
+module filtering:
+    snakefile:
+        github(
+            "hydra-genetics/filtering",
+            path="workflow/Snakefile",
+            tag="v1.1.0",
+        )
+    config:
+        config
+
+
 # mark duplicates in CCS reads
 module prealignment:
     snakefile:
@@ -27,39 +73,85 @@ module prealignment:
         config
 
 
-use rule pbmarkdup from prealignment as mark_duplicates
-
-
-# map and index BAM files
-module alignment:
+# use branch with my function
+# for flexible BAM input
+module snv_indels:
     snakefile:
         github(
-            "hydra-genetics/alignment",
+            "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            branch="develop",
+            branch="deepsomatic_flexible_input",
         )
+    # snakefile: config["local_snakefile"]["snv_indels"]
     config:
         config
 
 
-use rule pbmm2_index from alignment as pbmm2_index
+use rule pbmarkdup from prealignment as mark_duplicates with:
+    input:
+         bam="data/bam_files/{sample}_{type}.unmapped.bam",
+    output:
+        bam="prealignment/pbmarkdup/{sample}_{type}.bam",
+    log:
+        "prealignment/pbmarkdup/{sample}_{type}.bam.log",
+    benchmark:
+        repeat(
+        "prealignment/pbmarkdup/{sample}_{type}.bam.benchmark.tsv",
+        config.get("pbmarkdup",{}).get("benchmark_repeats",1),
+    )
 
 
-use rule pbmm2_align from alignment as pbmm2_align
+#use rule * from alignment as alignment_*
+use rule pbmm2_index from alignment as alignment_pbmm2_index with:
+    output:
+        mmi="alignment/pbmm2_index/ref.mmi"
 
-
-# this module uses my branch
-# with pbsv and HiFiCNV
-module cnv_sv:
-    snakefile:
-        github(
-            "hydra-genetics/cnv_sv",
-            path="workflow/Snakefile",
-            branch="develop",
+use rule pbmm2_align from alignment as alignment_pbmm2_align with:
+    input:
+        reference="alignment/pbmm2_index/ref.mmi",
+        query="prealignment/pbmarkdup/{sample}_{type}.bam"
+    output:
+        bam = "alignment/pbmm2_align/{sample}_{type}.bam",
+    log:
+        bam="alignment/pbmm2_align/{sample}_{type}.bam.log",
+    benchmark:
+        repeat(
+            "alignment/pbmm2_align/{sample}_{type}.bam.benchmark.tsv",
+            config.get("pbmm2_align", {}).get("benchmark_repeats", 1),
         )
-    config:
-        config
 
+# use rule pbmm2_merge from alignment as alignment_pbmm2_merge
+# this one will not cause problems if you have only 1 bam file per sample
+# but will make your pipeline more robust
+# and you can get rid of the special inputs and outputs
+
+# run DeepSomatic on mapped BAM files
+use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only with:
+    input:
+        bam="alignment/pbmm2_align/{sample}_T.bam",
+        #bai="alignment/pbmm2_align/{sample}_T.bam.bai",
+        ref=config.get("reference", {}).get("fasta", ""),
+        bed=config.get("reference", {}).get("design_bed", ""),
+        pon=config.get("reference", {}).get("pon", ""),
+    output:
+        tmpdir=temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
+        vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
+
+
+use rule whatshap_phase from annotation as phasing
+
+# index gzipped phased VCF
+# required for filtering
+use rule tabix from cnv_sv as index_vcf with:
+    wildcard_constraints:
+        file="^annotation/.+",
+
+# filter phased VCF
+use rule bcftools_filter_include_region from filtering as filter_phased_vcf with:
+    wildcard_constraints:
+        file="^annotation/.+",
+
+# STRUCTURAL VARIANTS
 
 # bgzip PBSV VCF
 # required for filtering
@@ -75,13 +167,6 @@ use rule bgzip from cnv_sv as bgzip with:
 use rule tabix from cnv_sv as index_pbsv with:
     wildcard_constraints:
         file="^cnv_sv/.+",
-
-
-# index gzipped DeepSomatic VCF
-# required for filtering
-use rule tabix from cnv_sv as index_deepsomatic with:
-    wildcard_constraints:
-        file="^snv_indels/.+",
 
 
 # run PBSV & HiFiCNV analysis
@@ -105,46 +190,4 @@ use rule cnvkit_batch from cnv_sv as cnvkit_batch
 use rule cnvkit_diagram from cnv_sv as cnvkit_diagram
 
 
-# filter VCF files
-module filtering:
-    snakefile:
-        github(
-            "hydra-genetics/filtering",
-            path="workflow/Snakefile",
-            tag="v1.1.0",
-        )
-    config:
-        config
 
-
-# filter DeepSomatic VCF
-use rule bcftools_filter_include_region from filtering as filter_deepsomatic with:
-    wildcard_constraints:
-        file="^snv_indels/.+",
-
-
-# use branch with my function
-# for flexible BAM input
-module snv_indels:
-    snakefile:
-        github(
-            "hydra-genetics/snv_indels",
-            path="workflow/Snakefile",
-            branch="deepsomatic_flexible_input",
-        )
-    # snakefile: config["local_snakefile"]["snv_indels"]
-    config:
-        config
-
-
-# run DeepSomatic for variant calling
-use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only with:
-    input:
-        bam="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
-        bai="data/bam_haplotagged/{sample}_T.haplotagged.bam.bai",
-        ref=config.get("reference", {}).get("fasta", ""),
-        bed=config.get("reference", {}).get("design_bed", ""),
-        pon=config.get("reference", {}).get("pon", ""),
-    output:
-        tmpdir=temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
-        vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
