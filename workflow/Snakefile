@@ -21,7 +21,7 @@ module alignment:
         github(
             "hydra-genetics/alignment",
             path="workflow/Snakefile",
-            commit="82f015d",
+            branch="develop",
         )
     config:
         config
