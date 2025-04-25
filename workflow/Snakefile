@@ -87,43 +87,17 @@ module snv_indels:
         config
 
 
-use rule pbmarkdup from prealignment as mark_duplicates with:
-    input:
-         bam="data/bam_files/{sample}_{type}.unmapped.bam",
-    output:
-        bam="prealignment/pbmarkdup/{sample}_{type}.bam",
-    log:
-        "prealignment/pbmarkdup/{sample}_{type}.bam.log",
-    benchmark:
-        repeat(
-        "prealignment/pbmarkdup/{sample}_{type}.bam.benchmark.tsv",
-        config.get("pbmarkdup",{}).get("benchmark_repeats",1),
-    )
+use rule pbmarkdup from prealignment as mark_duplicates
 
 
-#use rule * from alignment as alignment_*
-use rule pbmm2_index from alignment as alignment_pbmm2_index with:
-    output:
-        mmi="alignment/pbmm2_index/ref.mmi"
+use rule pbmm2_index from alignment as alignment_pbmm2_index
 
-use rule pbmm2_align from alignment as alignment_pbmm2_align with:
-    input:
-        reference="alignment/pbmm2_index/ref.mmi",
-        query="prealignment/pbmarkdup/{sample}_{type}.bam"
-    output:
-        bam = "alignment/pbmm2_align/{sample}_{type}.bam",
-    log:
-        bam="alignment/pbmm2_align/{sample}_{type}.bam.log",
-    benchmark:
-        repeat(
-            "alignment/pbmm2_align/{sample}_{type}.bam.benchmark.tsv",
-            config.get("pbmm2_align", {}).get("benchmark_repeats", 1),
-        )
 
-# use rule pbmm2_merge from alignment as alignment_pbmm2_merge
-# this one will not cause problems if you have only 1 bam file per sample
-# but will make your pipeline more robust
-# and you can get rid of the special inputs and outputs
+use rule pbmm2_align from alignment as alignment_pbmm2_align
+
+
+use rule pbmm2_merge from alignment as alignment_pbmm2_merge
+
 
 # run DeepSomatic on mapped BAM files
 use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only with:
