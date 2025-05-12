@@ -141,24 +141,24 @@ if not config["haplotagged_bam"]:
 else:
     # already haplotagged BAMs
     # input directly from the config
+    # no phasing and haplotagging required
     use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only_haplotagged
 
-    use rule tabix from cnv_sv as index_vcf_haplotagged
+
+    use rule tabix from cnv_sv as index_vcf_haplotagged with:
+        wildcard_constraints:
+            file="^snv_indels/deepsomatic_t_only.+",
+
 
     use rule bcftools_filter_include_region from filtering as filter_vcf_haplotagged with:
-        input:
-            vcf="snv_indels/deepsomatic_t_only/{sample}.vcf.gz",
-            tabix="snv_indels/deepsomatic_t_only/{sample}.vcf.gz.tbi",
-        output:
-            vcf="snv_indels/deepsomatic_t_only/{sample}_T.include.panel.vcf.gz",
+        wildcard_constraints:
+            file="^snv_indels/deepsomatic_t_only.+",
 
 
 # STRUCTURAL VARIANTS
 
 # run PBSV & HiFiCNV analysis
 use rule pbsv_discover from cnv_sv as pbsv_discover
-    # wildcard_constraints:
-    #     file="^annotation/whatshap_haplotag/.+",
 
 
 use rule pbsv_call from cnv_sv as pbsv_call
