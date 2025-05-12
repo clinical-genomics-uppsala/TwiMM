@@ -45,7 +45,8 @@ module cnv_sv:
     #         path="workflow/Snakefile",
     #         branch="haplotag_get_input_bam",
     #     )
-    snakefile: config["local_snakefile"]["cnv_sv"]
+    snakefile:
+        config["local_snakefile"]["cnv_sv"]
     config:
         config
 
@@ -83,31 +84,29 @@ module snv_indels:
     #         path="workflow/Snakefile",
     #         branch="deepsomatic_flexible_input",
     #     )
-    snakefile: config["local_snakefile"]["snv_indels"]
+    snakefile:
+        config["local_snakefile"]["snv_indels"]
     config:
         config
+
 
 # conditional, if BAMs are not haplotagged
 if not config["haplotagged_bam"]:
 
     use rule pbmarkdup from prealignment as mark_duplicates
 
-
     use rule pbmm2_index from alignment as alignment_pbmm2_index
-
 
     use rule pbmm2_align from alignment as alignment_pbmm2_align with:
         input:
             query="prealignment/pbmarkdup/{sample}_{type}_{processing_unit}_{barcode}.bam",
             reference=expand(
-            "alignment/pbmm2_index/{ref}.{preset}.mmi",
-                ref=os.path.basename(config.get("reference",{}).get("fasta","")),
-                preset=config.get("pbmm2_align",{}).get("preset",""),
+                "alignment/pbmm2_index/{ref}.{preset}.mmi",
+                ref=os.path.basename(config.get("reference", {}).get("fasta", "")),
+                preset=config.get("pbmm2_align", {}).get("preset", ""),
             ),
 
-
     use rule pbmm2_merge from alignment as alignment_pbmm2_merge
-
 
     use rule samtools_index from alignment as samtools_index with:
         wildcard_constraints:
@@ -125,7 +124,6 @@ if not config["haplotagged_bam"]:
             tmpdir=temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
             vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
 
-
     use rule whatshap_phase from annotation as phasing
 
     use rule tabix from cnv_sv as index_vcf with:
@@ -139,16 +137,15 @@ if not config["haplotagged_bam"]:
     use rule whatshap_haplotag from annotation as haplotagging
 
 else:
+
     # already haplotagged BAMs
     # input directly from the config
     # no phasing and haplotagging required
     use rule deepsomatic_t_only from snv_indels as deepsomatic_t_only_haplotagged
 
-
     use rule tabix from cnv_sv as index_vcf_haplotagged with:
         wildcard_constraints:
             file="^snv_indels/deepsomatic_t_only.+",
-
 
     use rule bcftools_filter_include_region from filtering as filter_vcf_haplotagged with:
         wildcard_constraints:
@@ -156,6 +153,7 @@ else:
 
 
 # STRUCTURAL VARIANTS
+
 
 # run PBSV & HiFiCNV analysis
 use rule pbsv_discover from cnv_sv as pbsv_discover
@@ -192,6 +190,3 @@ use rule cnvkit_batch from cnv_sv as cnvkit_batch
 
 
 use rule cnvkit_diagram from cnv_sv as cnvkit_diagram
-
-
-
