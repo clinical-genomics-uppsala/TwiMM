@@ -86,5 +86,12 @@ The following output files should be targeted via another rule:
 |---|---|
 | `twist_myelom/PATH/FILE` | DESCRIPTION |
 
-## :judge: Rule Graph
-![rule_graph_reference](images/rulegraph.svg)
+## :judge: Rule Graphs
+
+### Rule graph for unmapped BAM files
+
+![rule_graph_unmapped_bam](images/rulegraph.svg)
+
+### Rule graph for haplotagged BAM files
+
+![rule_graph_haplotagged_bam](images/rulegraph_haplotagged.svg)
