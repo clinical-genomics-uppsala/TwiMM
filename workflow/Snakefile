@@ -39,14 +39,14 @@ module annotation:
 
 
 module cnv_sv:
-    # snakefile:
-    #     github(
-    #         "hydra-genetics/cnv_sv",
-    #         path="workflow/Snakefile",
-    #         branch="haplotag_get_input_bam",
-    #     )
     snakefile:
-        config["local_snakefile"]["cnv_sv"]
+        github(
+            "hydra-genetics/cnv_sv",
+            path="workflow/Snakefile",
+            branch="haplotag_get_input_bam",
+        )
+    # snakefile:
+    #     config["local_snakefile"]["cnv_sv"]
     config:
         config
 
@@ -78,14 +78,14 @@ module prealignment:
 # use branch with my function
 # for flexible BAM input
 module snv_indels:
-    # snakefile:
-    #     github(
-    #         "hydra-genetics/snv_indels",
-    #         path="workflow/Snakefile",
-    #         branch="deepsomatic_flexible_input",
-    #     )
     snakefile:
-        config["local_snakefile"]["snv_indels"]
+        github(
+            "hydra-genetics/snv_indels",
+            path="workflow/Snakefile",
+            branch="deepsomatic_flexible_input",
+        )
+    # snakefile:
+    #     config["local_snakefile"]["snv_indels"]
     config:
         config
 
