@@ -28,7 +28,3 @@
    - name: "cnvkit_batch_target_coverage"
      output: "results/cnvkit_batch/{sample}/{sample}_T.targetcoverage.cnn"
      input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.targetcoverage.cnn"
-  # CNVkit diagram
-   - name: "cnvkit_diagram"
-     output: "results/cnvkit_diagram/{sample}_T.pdf"
-     input: "cnv_sv/cnvkit_diagram/{sample}_T.pdf"
