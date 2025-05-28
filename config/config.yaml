@@ -22,13 +22,26 @@ cnvkit_batch:
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
+  extra: "--ignore-read-names"
+
+pbmm2_index:
+  container: "docker://hydragenetics/pbmm2:1.16"
+  preset: "HIFI"
+  extra: ""
+
+pbmm2_align:
+  container: "docker://hydragenetics/pbmm2:1.16"
+  preset: "HIFI"
+  extra: ""
+
+pbmm2_merge:
+  container: "docker://hydragenetics/pbmm2:1.16"
 
 deepsomatic_tn:
   container: "docker://google/deepsomatic:1.8.0"
   model: "PACBIO"
   pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
   extra: ""
-
 
 pbsv_call:
   container: "docker://hydragenetics/pbsv:2.9.0"
