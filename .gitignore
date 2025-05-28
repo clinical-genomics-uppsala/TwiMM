@@ -9,4 +9,4 @@ results/
 ref_data/
 modules/
 data/
-config/local_config.yaml
+config/test_config.yaml
