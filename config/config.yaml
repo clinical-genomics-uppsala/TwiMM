@@ -52,6 +52,8 @@ bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1"
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
+trimmer_software: "none"
+
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
   reports:
