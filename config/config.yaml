@@ -4,7 +4,7 @@ resources: "config/resources.yaml"
 samples: "config/samples.tsv"
 units: "config/units.tsv"
 
-default_container: "docker://hydragenetics/common:0.1.9"
+default_container: "docker://hydragenetics/common:3.1.1.1"
 
 reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
@@ -63,7 +63,7 @@ snifffles2_call:
   extra: ""
 
 bcftools_filter_include_region:
-  default_container: "docker://hydragenetics/common:3.1.1"
+  default_container: "docker://hydragenetics/common:3.1.1.1"
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 trimmer_software: "None"
