@@ -7,16 +7,17 @@ units: "config/units.tsv"
 default_container: "docker://hydragenetics/common:0.1.9"
 
 reference:
-  fasta: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
-  fai: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: "human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: "panel64.add20.bed"
+  fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  # design_bed: "panel64.add20.bed"
 
 unit_bam: true
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
-  normal_reference: "reference.cnn"
+  normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
   method: "hybrid"
 
 pbmarkdup:
@@ -24,22 +25,23 @@ pbmarkdup:
 
 deepsomatic_tn:
   container: "docker://google/deepsomatic:1.8.0"
-  extra: ""
   model: "PACBIO"
+  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  extra: ""
+
 
 pbsv_call:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  reference: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   extra: ""
 
 pbsv_discover:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  trf: "human_GRCh38_no_alt_analysis_set.trf.bed"
+  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
 hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "cnv.excluded_regions.common_50.hg38.bed.gz"
+  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed.gz"
   extra: ""
 
 snifffles2_call:
@@ -48,7 +50,7 @@ snifffles2_call:
 
 bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1"
-  panel: "panel64.add20.bed"
+  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
