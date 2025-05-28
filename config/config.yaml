@@ -13,7 +13,8 @@ reference:
   design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
   # design_bed: "panel64.add20.bed"
 
-unit_bam: true
+haplotagged_bam: false
+haplotagging: "whatshap"
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
