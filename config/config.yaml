@@ -68,7 +68,7 @@ whatshap_phase:
 
 whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"
-  extra: "--ignore-read-groups"
+  extra: " --ignore-read-groups"
 
 bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1.1"
