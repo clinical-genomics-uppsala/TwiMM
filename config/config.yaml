@@ -62,6 +62,14 @@ snifffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
 
+whatshap_phase:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: ""
+
+whatshap_haplotag:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: ""
+
 bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1.1"
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
