@@ -121,7 +121,7 @@ use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only wit
         bai="alignment/pbmm2_align/{sample}_T.bam.bai",
         ref=config.get("reference", {}).get("fasta", ""),
         bed=config.get("reference", {}).get("design_bed", ""),
-        pon=config.get("deepsomatic_tn", {}).get("pon", ""),
+        pon=config.get("deepsomatic_t_only", {}).get("pon", ""),
     output:
         tmpdir=temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
         vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
