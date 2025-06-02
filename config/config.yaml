@@ -38,7 +38,7 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
-deepsomatic_tn:
+deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.8.0"
   model: "PACBIO"
   pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
