@@ -55,10 +55,10 @@ pbsv_discover:
 
 hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed.gz"
+  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
   extra: ""
 
-snifffles2_call:
+sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
 
