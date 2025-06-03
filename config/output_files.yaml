@@ -22,9 +22,9 @@
      input: "cnv_sv/sniffles2_call/{sample}_T.snf"
   # CNVkit batch segments called
    - name: "cnvkit_batch_segments_called"
-     output: "results/cnvkit_batch/{sample}/{sample}_T.call.cns"
-     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.call.cns"
+     output: "results/cnvkit_batch/{sample}/{sample}_T.haplotagged.call.cns"
+     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.haplotagged.call.cns"
   # CNVkit batch target coverage
    - name: "cnvkit_batch_target_coverage"
-     output: "results/cnvkit_batch/{sample}/{sample}_T.targetcoverage.cnn"
-     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.targetcoverage.cnn"
+     output: "results/cnvkit_batch/{sample}/{sample}_T.haplotagged.targetcoverage.cnn"
+     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.haplotagged.targetcoverage.cnn"
