@@ -175,4 +175,11 @@ use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
 
 # run cnvkit
-use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch
+use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
+    output:
+        antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.antitargetcoverage.cnn"),
+        bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.bintest.cns"),
+        regions=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cnr"),
+        segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns"),
+        segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
+        target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
