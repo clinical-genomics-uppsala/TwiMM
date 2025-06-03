@@ -32,7 +32,7 @@ module annotation:
         github(
             "hydra-genetics/annotation",
             path="workflow/Snakefile",
-            branch="add_bai_to_whatshap",
+            branch="develop",
         )
     config:
         config
