@@ -1,3 +1,3 @@
-sample	type	platform	machine	processing_unit	barcode	methylation	bam	status
-2022.MM.16	T	PACBIO	REVIO	m84045_231122_151755_s3	NA	Yes	data/bam_files/2022.MM.16_T.haplotagged.bam	haplotagged
-2022.MM.32	T	PACBIO	REVIO	m84045_231122_151756_s3	NA	Yes	data/bam_files/2022.MM.32_T.unmapped.bam	unmapped
+sample	type	platform	machine	processing_unit	barcode	methylation	bam
+2022.MM.16	T	PACBIO	REVIO	m84045_231122_151755_s3	NAS	Yes	/projects/wp2/nobackup/Twist_Myelom/Test_Analyses/pr_038/analysis/pr_038_001/2022.MM.16.deepvariant.haplotagged.bam
+2022.MM.22	T	PACBIO	REVIO	m84045_231122_151756_s3	NAS	Yes	/projects/wp2/nobackup/Twist_Myelom/Test_Analyses/pr_038/analysis/pr_038_001/2022.MM.22.deepvariant.haplotagged.bam

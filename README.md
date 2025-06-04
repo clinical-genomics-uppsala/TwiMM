@@ -14,7 +14,7 @@
 
 ## :speech_balloon: Introduction
 
-The module consists of alignment  ....
+A pipeline to analys Twist Myeloma data
 
 ## :heavy_exclamation_mark: Dependencies
 
@@ -34,19 +34,19 @@ Input data should be added to [`samples.tsv`](https://github.com/hydra-genetics/
 and [`units.tsv`](https://github.com/hydra-genetics/twist_myelom/blob/develop/config/units.tsv).
 The following information need to be added to these files:
 
-| Column Id         | Description                                                                     |
-|-------------------|---------------------------------------------------------------------------------|
+| Column Id         | Description                                                             |
+|-------------------|-------------------------------------------------------------------------|
 | **`samples.tsv`** |
-| sample            | unique sample/patient id, one per row                                           |
-| **`units.tsv`**   | processed and raw BAM files should be in separate units files                   |
-| sample            | same sample/patient id as in `samples.tsv`                                      |
-| type              | data type identifier (one letter), can be one of **T**umor, **N**ormal, **R**NA |
-| platform          | type of sequencing platform, e.g. `PACBIO`                                      |
-| machine           | specific machine id, e.g. `Revio`                                               |
-| processing_unit   | ?                                                                               |
-| barcode           | sequence library barcode/index or any character string, but not `NA`            |
-| methylation       | Yes/No                                                                          |
-| bam               | path to BAM file                                                                |
+| sample            | unique sample/patient id, one per row                                   |
+| **`units.tsv`**   | processed and raw BAM files should be in separate units files           |
+| sample            | same sample/patient id as in `samples.tsv`                              |
+| type              | data type identifier (one letter), can be one of **T**umor, **N**ormal  |
+| platform          | type of sequencing platform, e.g. `PACBIO`                              |
+| machine           | specific machine id, e.g. `Revio`                                       |
+| processing_unit   | ?                                                                       |
+| barcode           | sequence library barcode/index or any character string, but not `NA`    |
+| methylation       | Yes/No                                                                  |
+| bam               | path to BAM file                                                        |
 
 ## :white_check_mark: Testing
 
@@ -59,39 +59,16 @@ $ snakemake -s ../../Snakefile --configfiles ../../config/config.yaml config/con
 `../../config/config.yaml` is the original config-file, while `config/config.yaml` is the test config. By defining two config-files the latter overwrites any overlapping variables in the first config-file.
 ## :rocket: Usage
 
-To use this module in your workflow, follow the description in the
-[snakemake docs](https://snakemake.readthedocs.io/en/stable/snakefiles/modularization.html#modules).
-Add the module to your `Snakefile` like so:
-
-```bash
-module prealignment:
-    snakefile:
-        github(
-            "twist_myelom",
-            path="workflow/Snakefile",
-            tag="1.0.0",
-        )
-    config:
-        config
-
-
-use rule * from twist_myelom as twist_myelom_*
-```
+To use this pipeline, refer to [snakemake docs](https://snakemake.readthedocs.io/en/stable/executing/cli.html).
 
 ### Output files
 
 The following output files should be targeted via another rule:
 
-| File | Description |
-|---|---|
+| File                     | Description |
+|--------------------------|-------------|
 | `twist_myelom/PATH/FILE` | DESCRIPTION |
 
 ## :judge: Rule Graphs
 
-### Rule graph for unmapped BAM files
-
-![rule_graph_unmapped_bam](images/rulegraph.svg)
-
-### Rule graph for haplotagged BAM files
-
-![rule_graph_haplotagged_bam](images/rulegraph_haplotagged.svg)
+![rule_graph](images/rulegraph.svg)
