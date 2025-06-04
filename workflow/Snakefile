@@ -110,9 +110,11 @@ use rule samtools_index from alignment as alignment_samtools_index_whatshap with
     wildcard_constraints:
         file="^annotation/whatshap_haplotag/.+",
 
+
 use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
     wildcard_constraints:
         file="^alignment/pbmm2_align/.+",
+
 
 # SNV & INDELS
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
