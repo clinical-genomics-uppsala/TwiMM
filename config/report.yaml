@@ -1,0 +1,12 @@
+cnv_html_report:
+#  cytobands: true
+  show_table: false
+
+general_report:
+  name: "CNV Report"
+  description: "This report summarizes the CNV analysis results."
+  type: "CNV"
+  input: "reports/cnv_html_report/{sample}_{type}.{tc_method}.cnv_report.html"
+  nav_header: "CNV Analysis"
+  sections: "gg"
+  files: ""
