@@ -72,6 +72,16 @@ module prealignment:
     config:
         config
 
+# CNVkit reports
+module reports:
+    snakefile:
+        github(
+            "hydra-genetics/reports",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
 
 # use branch with my function
 # for flexible BAM input
@@ -185,3 +195,12 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
         segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns"),
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
+
+
+use rule cnv_json from reports as reports_cnv_json
+
+
+use rule merge_cnv_json from reports as reports_merge_cnv_json
+
+
+use rule cnv_html_report from reports as reports_cnv_html_report

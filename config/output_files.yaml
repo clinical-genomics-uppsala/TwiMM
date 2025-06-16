@@ -28,3 +28,7 @@
    - name: "cnvkit_batch_target_coverage"
      output: "results/cnvkit_batch/{sample}/{sample}_T.haplotagged.targetcoverage.cnn"
      input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.haplotagged.targetcoverage.cnn"
+  # Report files
+   - name: "report"
+     output: "results/cnv_html_report/{sample}_{type}.{tc_method}.cnv_report.html"
+     input: "reports/cnv_html_report/{sample}_{type}.{tc_method}.cnv_report.html"
