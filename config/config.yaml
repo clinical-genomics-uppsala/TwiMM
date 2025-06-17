@@ -76,6 +76,18 @@ bcftools_filter_include_region:
 
 trimmer_software: "None"
 
+general_report: "config/report.yaml"
+
+svdb_merge:
+  tc_method:
+    - name: pathology
+      cnv_caller:
+        - cnvkit
+
+cnv_html_report:
+  show_table: true
+  cytobands: false
+
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
   reports:
