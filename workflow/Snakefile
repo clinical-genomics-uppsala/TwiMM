@@ -196,8 +196,12 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
 
+# use rule * from reports exclude all
 
-use rule cnv_json from reports as reports_cnv_json
+use rule cnv_json from reports as reports_cnv_json with:
+    input:
+        ratios=get_cnv_ratios,
+        segements=get_cnv_segments,
 
 
 use rule merge_cnv_json from reports as reports_merge_cnv_json
