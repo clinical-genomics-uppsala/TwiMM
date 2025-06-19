@@ -184,3 +184,25 @@ def generate_copy_rules(output_spec):
 
 
 generate_copy_rules(output_spec)
+
+
+def get_cnv_ratios(wildcards):
+    if wildcards.caller == "cnvkit":
+        return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cnr"
+
+    raise NotImplementedError(f"not implemented for caller {wildcards.caller}")
+
+
+def get_cnv_segments(wildcards):
+    if wildcards.caller == "cnvkit":
+        return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"
+
+    raise NotImplementedError(f"not implemented for caller {wildcards.caller}")
+
+
+def get_tc_file(wildcards):
+    tc_method = wildcards.tc_method
+    if tc_method == "pathology":
+        return config["samples"]
+    else:
+        return f"cnv_sv/{tc_method}_purity_file/{wildcards.sample}_{wildcards.type}.purity.txt"

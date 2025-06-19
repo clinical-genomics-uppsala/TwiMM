@@ -73,6 +73,18 @@ module prealignment:
         config
 
 
+# CNVkit reports
+module reports:
+    snakefile:
+        github(
+            "hydra-genetics/reports",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
+
+
 # use branch with my function
 # for flexible BAM input
 module snv_indels:
@@ -185,3 +197,30 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
         segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns"),
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
+
+
+# CNV reports
+use rule cnv_json from reports as reports_cnv_json with:
+    input:
+        ratios=get_cnv_ratios,
+        segments=get_cnv_segments,
+
+
+use rule merge_cnv_json from reports as reports_merge_cnv_json
+
+
+use rule cnv_html_report from reports as reports_cnv_html_report with:
+    input:
+        json="reports/cnv_html_report/{sample}_{type}.{tc_method}.merged.json",
+        html_template="workflow/templates/cnv_html_report/index.html",
+        js_files=[
+            "workflow/templates/assets/js/d3.v7.min.js",
+            "workflow/templates/cnv_html_report/01-chromosome-plot.js",
+            "workflow/templates/cnv_html_report/02-genome-plot.js",
+            "workflow/templates/cnv_html_report/03-results-table.js",
+            "workflow/templates/cnv_html_report/04-window-summary.js",
+            "workflow/templates/cnv_html_report/05-main.js",
+        ],
+        css_files=["workflow/templates/assets/css/icons.css", "workflow/templates/cnv_html_report/style.css"],
+        tc_file=get_tc_file,
+        extra_table_files=[t["path"] for t in config.get("cnv_html_report", {}).get("extra_tables", [])],

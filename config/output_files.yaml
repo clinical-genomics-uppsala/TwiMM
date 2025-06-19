@@ -28,3 +28,15 @@
    - name: "cnvkit_batch_target_coverage"
      output: "results/cnvkit_batch/{sample}/{sample}_T.haplotagged.targetcoverage.cnn"
      input: "cnv_sv/cnvkit_batch/{sample}/{sample}_T.haplotagged.targetcoverage.cnn"
+  # Report files
+   - name: "report"
+     output: "results/cnv_html_report/{sample}_{type}.pathology.cnv_report.html"
+     input: "reports/cnv_html_report/{sample}_{type}.pathology.cnv_report.html"
+  # mapped and tagged BAM files
+   - name: "mapped_bam"
+     output: "results/whatshap_haplotag/{sample}_T.haplotagged.bam"
+     input: "annotation/whatshap_haplotag/{sample}_T.haplotagged.bam"
+  # BAM index files
+   - name: "mapped_bam_index"
+     output: "results/whatshap_haplotag/{sample}_T.haplotagged.bam.bai"
+     input: "annotation/whatshap_haplotag/{sample}_T.haplotagged.bam.bai"

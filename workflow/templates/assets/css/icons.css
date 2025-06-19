@@ -1,0 +1,62 @@
+/*!
+ * Bootstrap Icons v1.11.2 (https://icons.getbootstrap.com/)
+ * Copyright 2019-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/icons/blob/main/LICENSE)
+ */
+
+/*
+ * This is a manually created subset of the Bootstrap Icons.
+ * The glyphs that are included are:
+ *
+ * U+F33A: exclamation-triangle-fill
+ * U+F332: exclamation-circle-fill
+ * U+F430: info-circle-fill
+ * U+F504: question-circle-fill
+ * U+F52A: search
+ * U+F62A: x
+ * U+F659: x-lg
+ */
+
+@font-face {
+  font-display: block;
+  font-family: "bootstrap-icons";
+  src: url("data:font/woff2;charset=utf-8;base64,d09GMgABAAAAAAO0AAsAAAAABsAAAANmAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHCoGYABkCoZIhUYBNgIkAxQLEgAEIAWBEAeBFxtoBVGU7UUL4EdCdhZzS0IzvoH6aKXF2pJrQTzMvd5L8omwVUNkYabGwsyTUMSOSM3NliCTc9nukdo+qSkGh+ef0gyM2IRMJhO30P0cshpLUk/QD4Dr+ieuqXtb1XnTAOQrVk1VNNrrIm08wIkMo8J0FPW8WoOwsUShz7nX7f6HAFaKlFHmLVi2Duex3edOEEYD0HXScE3qchMD8IRPQJVX3cTJ8tYKBhV4+KoD8/fxrK87uFnqQEwWkgBE0aT0gJr2oyJOprFqAjduVOjr9k3pbw9oA9VB2mSzrs/e116xv7N9tmH9bflreYBQ+GaM7swTi2m+1NTLm1QqVZCAw2FxB67Dc4uyJeCIJ/ZOo2aTtNu406Gtlk24CZCgSodKljgfJrDclVJGGlMBIQKhkFCWTUVkI06kbksFPBx3xypAOx3cbpNmE7VasMRp0uDcT7JQSctKjqnB6rlnZpQCVCWVjK0hg58ZXNMqFZhP6DpWt8KAjm+IC6W4AKaAaRok4O3py/fP3+fT8df/75gOhOtl2ejulbw/4McP+nYPz/KbAB7oN0rAQFCJLlnpS0IoFeSLglxeUMhZiwWGNSZGhjY3hwoRrJZCbisGvUce96oTeIETSE9N7e1fR2/oZNpl2Lgb5AbqL05dewe811OLh+UFSrd7jbfmFnlvGuXI3uhospXHGExHNj3zA17D3yLHLNU763Tw+jLAxVGEUdO+Ut2SFfPHwC+beX5u5YLNdk3JKq6+s2I5vGvBYUfgVeXHqEGyjUt1C9e1p6zM78Pla5uHP48/+j/euPf2gMVL5uHkm/Nvxb+3PPZw+fHL/59SGsia15uzO3dRZAD5ujtnvWz4EoJej8fbyAwLZHLKepwEAKQuDX0SpClRNBzXdRmXNmmiPAB+nCKAQHT7qvs7TRsw26QOcK3wOH6APqL/k8XSA5hRjoEzuj+qkf8ZMSpgB2tioI+vzcIsO2noUVaqBx2GGVmBimgWhCSM9QpOktWqrFoDvYEgdcYIvj2cpL5znMUbnmE3p2hwmL2c5ARnWcN+DnKeY+zmDBvYzxnOchiNN5CmQ5M2CgCg0uY3iyKqaGIQo5jEzFZC+y/tPbb7+FvI1PiBDt1469REZMhXa64TB5F23+E56mb/XZsjMBqv6ZR2qXHsIAAA")
+    format("woff2");
+}
+
+.bi::before,
+[class^="bi-"]::before,
+[class*=" bi-"]::before {
+  display: inline-block;
+  font-family: bootstrap-icons !important;
+  font-style: normal;
+  font-weight: normal !important;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: -0.125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bi-exclamation-triangle-fill::before {
+  content: "\f33a";
+}
+.bi-exclamation-circle-fill::before {
+  content: "\f332";
+}
+.bi-question-circle-fill::before {
+  content: "\f504";
+}
+.bi-info-circle-fill::before {
+  content: "\f430";
+}
+.bi-search::before {
+  content: "\f52a";
+}
+.bi-x::before {
+  content: "\f62a";
+}
+.bi-x-lg::before {
+  content: "\f659";
+}
