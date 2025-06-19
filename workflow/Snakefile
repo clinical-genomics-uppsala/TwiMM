@@ -72,6 +72,7 @@ module prealignment:
     config:
         config
 
+
 # CNVkit reports
 module reports:
     snakefile:
@@ -82,6 +83,7 @@ module reports:
         )
     config:
         config
+
 
 # use branch with my function
 # for flexible BAM input
@@ -211,13 +213,14 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
     input:
         json="reports/cnv_html_report/{sample}_{type}.{tc_method}.merged.json",
         html_template="workflow/templates/cnv_html_report/index.html",
-        js_files=["workflow/templates/assets/js/d3.v7.min.js",
-                  "workflow/templates/cnv_html_report/01-chromosome-plot.js",
-                  "workflow/templates/cnv_html_report/02-genome-plot.js",
-                  "workflow/templates/cnv_html_report/03-results-table.js",
-                  "workflow/templates/cnv_html_report/04-window-summary.js",
-                  "workflow/templates/cnv_html_report/05-main.js"],
-        css_files=["workflow/templates/assets/css/icons.css",
-                   "workflow/templates/cnv_html_report/style.css"],
+        js_files=[
+            "workflow/templates/assets/js/d3.v7.min.js",
+            "workflow/templates/cnv_html_report/01-chromosome-plot.js",
+            "workflow/templates/cnv_html_report/02-genome-plot.js",
+            "workflow/templates/cnv_html_report/03-results-table.js",
+            "workflow/templates/cnv_html_report/04-window-summary.js",
+            "workflow/templates/cnv_html_report/05-main.js",
+        ],
+        css_files=["workflow/templates/assets/css/icons.css", "workflow/templates/cnv_html_report/style.css"],
         tc_file=get_tc_file,
-        extra_table_files=[t["path"] for t in config.get("cnv_html_report",{}).get("extra_tables",[])],
+        extra_table_files=[t["path"] for t in config.get("cnv_html_report", {}).get("extra_tables", [])],
