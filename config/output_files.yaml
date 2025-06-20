@@ -40,3 +40,11 @@
    - name: "mapped_bam_index"
      output: "results/whatshap_haplotag/{sample}_T.haplotagged.bam.bai"
      input: "annotation/whatshap_haplotag/{sample}_T.haplotagged.bam.bai"
+  # Depth: median depth per target
+   - name: "median_depth"
+     output: "results/mosdepth_bed/{sample}_T.regions.bed.gz"
+     input: "qc/mosdepth_bed/{sample}_T.regions.bed.gz"
+  # Depth: depth per base
+   - name: "depth_per_base"
+     output: "results/mosdepth_bed/{sample}_T.per-base.bed.gz"
+     input: "qc/mosdepth_bed/{sample}_T.per-base.bed.gz"

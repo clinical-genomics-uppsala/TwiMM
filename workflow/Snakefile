@@ -98,6 +98,18 @@ module snv_indels:
         config
 
 
+# for depth of coverage
+module qc:
+    snakefile:
+        github(
+            "hydra-genetics/qc",
+            path="workflow/Snakefile",
+            branch="develop",
+        )
+    config:
+        config
+
+
 # MAPPING
 use rule pbmarkdup from prealignment as prealignment_pbmarkdup
 
@@ -224,3 +236,11 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
         css_files=["workflow/templates/assets/css/icons.css", "workflow/templates/cnv_html_report/style.css"],
         tc_file=get_tc_file,
         extra_table_files=[t["path"] for t in config.get("cnv_html_report", {}).get("extra_tables", [])],
+
+
+# depth of coverage
+use rule mosdepth_bed from qc as qc_mosdepth_bed with:
+    input:
+        bam="annotation/whatshap_haplotag/{sample}_T.haplotagged.bam",
+        bai="annotation/whatshap_haplotag/{sample}_T.haplotagged.bam.bai",
+        bed=config.get("reference", {}).get("design_bed", ""),
