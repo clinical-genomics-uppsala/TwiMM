@@ -10,8 +10,10 @@ reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  # this bed file is ok to use for SNV calling
   design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
-  # design_bed: "panel64.add20.bed"
+  # this one is ok for coverage analysis
+  targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
 haplotagged_bam: false
 haplotagging: "whatshap"
