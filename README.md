@@ -1,6 +1,10 @@
-# <img src="images/hydragenetics.png" width=40 /> hydra-genetics/twist_myelom
+# <img src="images/hydragenetics.png" width=40 /> hydra-genetics/TwiMy
 
-#### Twist myelom data processing
+<p align="center">
+<a href="https://twist-myeloma-pipeline.readthedocs.io/en/latest/"></a>Documentation on ReadTheDocs
+</p>
+
+#### Data processing
 
 ![Lint](https://github.com/hydra-genetics/twist_myelom/actions/workflows/lint.yaml/badge.svg?branch=develop)
 ![Snakefmt](https://github.com/hydra-genetics/twist_myelom/actions/workflows/snakefmt.yaml/badge.svg?branch=develop)
@@ -14,16 +18,16 @@
 
 ## :speech_balloon: Introduction
 
-A pipeline to analys Twist Myeloma data
+TwiMy pipeline is a bioinformatic pipeline designed to analyse hybrid capture long-read (PacBio) sequencing data from the multiple myeloma gene panel.
 
 ## :heavy_exclamation_mark: Dependencies
 
 In order to use this module, the following dependencies are required:
 
-[![hydra-genetics](https://img.shields.io/badge/hydragenetics-v1.3.0-blue)](https://github.com/hydra-genetics/)
+[![hydra-genetics](https://img.shields.io/badge/hydragenetics-v3.0.0-blue)](https://github.com/hydra-genetics/)
 [![pandas](https://img.shields.io/badge/pandas-1.3.1-blue)](https://pandas.pydata.org/)
 [![python](https://img.shields.io/badge/python-3.8-blue)
-[![snakemake](https://img.shields.io/badge/snakemake-6.8.0-blue)](https://snakemake.readthedocs.io/en/stable/)
+[![snakemake](https://img.shields.io/badge/snakemake-7.8.0-blue)](https://snakemake.readthedocs.io/en/stable/)
 [![singularity](https://img.shields.io/badge/singularity-3.0.0-blue)](https://sylabs.io/docs/)
 
 ## :school_satchel: Preparations
