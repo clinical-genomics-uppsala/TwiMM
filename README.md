@@ -1,18 +1,18 @@
 # <img src="images/hydragenetics.png" width=40 /> hydra-genetics/TwiMy
 
 <p align="center">
-<a href="https://twist-myeloma-pipeline.readthedocs.io/en/latest/"></a>Documentation on ReadTheDocs
+<a href="https://twist-myeloma-pipeline.readthedocs.io/en/latest/">Documentation on ReadTheDocs</a>
 </p>
 
 #### Data processing
 
-![Lint](https://github.com/hydra-genetics/twist_myelom/actions/workflows/lint.yaml/badge.svg?branch=develop)
-![Snakefmt](https://github.com/hydra-genetics/twist_myelom/actions/workflows/snakefmt.yaml/badge.svg?branch=develop)
-![snakemake dry run](https://github.com/hydra-genetics/twist_myelom/actions/workflows/snakemake-dry-run.yaml/badge.svg?branch=develop)
-![integration test](https://github.com/hydra-genetics/twist_myelom/actions/workflows/integration.yaml/badge.svg?branch=develop)
+![Lint](https://github.com/clinical-genomics-uppsala/twist_myeloma_pipeline/actions/workflows/lint.yaml/badge.svg?branch=develop)
+![Snakefmt](https://github.com/clinical-genomics-uppsala/twist_myeloma_pipeline/actions/workflows/snakefmt.yaml/badge.svg?branch=develop)
+![snakemake dry run](https://github.com/clinical-genomics-uppsala/twist_myeloma_pipeline/actions/workflows/snakemake-dry-run.yaml/badge.svg?branch=develop)
+![integration test](https://github.com/clinical-genomics-uppsala/twist_myeloma_pipeline/actions/workflows/integration.yaml/badge.svg?branch=develop)
 
-![pycodestyle](https://github.com/hydra-genetics/twist_myelom/actions/workflows/pycodestyle.yaml/badge.svg?branch=develop)
-![pytest](https://github.com/hydra-genetics/twist_myelom/actions/workflows/pytest.yaml/badge.svg?branch=develop)
+![pycodestyle](https://github.com/clinical-genomics-uppsala/twist_myeloma_pipeline/actions/workflows/pycodestyle.yaml/badge.svg?branch=develop)
+![pytest](https://github.com/clinical-genomics-uppsala/twist_myeloma_pipeline/actions/workflows/pytest.yaml/badge.svg?branch=develop)
 
 [![License: GPL-3](https://img.shields.io/badge/License-GPL3-yellow.svg)](https://opensource.org/licenses/gpl-3.0.html)
 
