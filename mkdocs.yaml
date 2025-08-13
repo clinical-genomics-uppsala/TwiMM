@@ -1,7 +1,8 @@
 site_name: Twist_Myeloma
 nav:
   - Introduction: intro.md
-  - Softwares: softwares.md
+  - Overview: overview.md
+  - Software: softwares.md
 
 theme: readthedocs
 extra_css: [extra.css]
