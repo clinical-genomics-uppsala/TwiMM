@@ -5,8 +5,8 @@ Below is a list of the key software components used in the pipeline:
 
 | Software       | Version    | Description                                                                                                                  |
 |----------------|------------|------------------------------------------------------------------------------------------------------------------------------|
-| Snakemake      | >=7.8.0,<8 | A workflow management system that allows for the creation of reproducible and scalable data analyses.                        |
-| Hydra-genetics | 3.0.0      | A framework for building and managing Snakemake pipelines, providing a structured approach to bioinformatics workflows.      |
+| snakemake      | >=7.8.0,<8 | A workflow management system that allows for the creation of reproducible and scalable data analyses.                        |
+| hydra-genetics | 3.0.0      | A framework for building and managing Snakemake pipelines, providing a structured approach to bioinformatics workflows.      |
 | deepsomatic    | 1.8.0      | A tool for somatic variant calling in long-read sequencing data, specifically designed for PacBio data.                      |
 | bcftools       | 1.16       | A set of utilities for manipulating variant call format (VCF) and binary call format (BCF) files.                            |
 | samtools       | 1.16       | A suite of programs for interacting with high-throughput sequencing data, including BAM file manipulation.                   |
