@@ -1,8 +1,19 @@
 site_name: Twist_Myeloma
 nav:
-  - Introduction: intro.md
-  - Overview: overview.md
-  - Software: softwares.md
+  - Overview:
+    - Introduction: intro.md
+    - Pipeline overview: overview.md
+    - Result files: result_files.md
+    - Pipeline setup and configuration: setup.md
+    - Reference files: references.md
+  - Running the pipeline:
+    - Basic: running.md
+  - Pipeline specific rules:
+    - Rule list: softwares.md
+  - Project info:
+      - Citations: citations.md
+      - Credits: credits.md
+      - License: license.md
 
 theme: readthedocs
 extra_css: [extra.css]
