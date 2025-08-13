@@ -1,0 +1,6 @@
+files:
+  - name: "CNV Report"
+    description: "This report summarizes the CNV analysis results."
+    type: "CNV"
+    input: "results/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"
+    nav_header: "CNV Analysis"
