@@ -1,2 +1,9 @@
 ---
- output: "../../config/output_files.yaml"
+output: "../../config/output_files.yaml"
+
+reference:
+  fasta: "../../.tests/integration/ref_data/GCA_000001405.fasta"
+  fai: "../../.tests/integration/ref_data/GCA_000001405.fasta.fai"
+  trf: "../../.tests/integration/ref_data/human_trf.bed"
+  design_bed: "../../.tests/integration/ref_data/design.bed"
+  targets_bed: "../../.tests/integration/ref_data/targets.bed"
