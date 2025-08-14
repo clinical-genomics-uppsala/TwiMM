@@ -7,3 +7,9 @@ reference:
   trf: "../../.tests/integration/ref_data/human_trf.bed"
   design_bed: "../../.tests/integration/ref_data/design.bed"
   targets_bed: "../../.tests/integration/ref_data/targets.bed"
+
+deepsomatic_t_only:
+  pon: "../../.tests/integration/ref_data/bcftools_merge/normal_db.vcf.gz"
+
+cnvkit_batch:
+  normal_reference: "../../.tests/integration/ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
