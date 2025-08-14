@@ -1,2 +1,2 @@
 sample	type	platform	machine	processing_unit	barcode	methylation	bam
-2022.MM.16	T	PACBIO	REVIO	m84045_231122_151755_s3	NAS	Yes	.tests/integration/data/2022.MM.16.bam
+2022.MM.16	T	PACBIO	REVIO	m84045_231122_151755_s3	NAS	Yes	../../.tests/integration/data/2022.MM.16.bam
