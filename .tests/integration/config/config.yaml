@@ -1,15 +1,29 @@
 ---
 output: "../../config/output_files.yaml"
+resources: "../../.tests/integration/config/resources.yaml"
+samples: "../../.tests/integration/config/samples.tsv"
+units: "../../.tests/integration/config/units.tsv"
 
 reference:
-  fasta: "../../.tests/integration/ref_data/GCA_000001405.fasta"
-  fai: "../../.tests/integration/ref_data/GCA_000001405.fasta.fai"
+  fasta: "../../.tests/integration/ref_data/genome.fasta"
+  fai: "../../.tests/integration/ref_data/genome.fasta.fai"
   trf: "../../.tests/integration/ref_data/human_trf.bed"
-  design_bed: "../../.tests/integration/ref_data/design.bed"
-  targets_bed: "../../.tests/integration/ref_data/targets.bed"
+  design_bed: "../../.tests/integration/ref_data/test_genes.bed"
+  targets_bed: "../../.tests/integration/ref_data/test_genes.bed"
 
 deepsomatic_t_only:
-  pon: "../../.tests/integration/ref_data/bcftools_merge/normal_db.vcf.gz"
+  pon: "../../.tests/integration/ref_data/bcftools_merge/normal_db.vcf"
 
 cnvkit_batch:
   normal_reference: "../../.tests/integration/ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
+
+bcftools_filter_include_region:
+  panel: "../../.tests/integration/ref_data/test_genes.bed"
+
+pbsv_discover:
+  trf: "../../.tests/integration/ref_data/human_trf.bed"
+
+hificnv:
+  exclude: "../../.tests/integration/ref_data/cnv_excluded_regions.bed"
+
+general_report: "../../config/report.yaml"
