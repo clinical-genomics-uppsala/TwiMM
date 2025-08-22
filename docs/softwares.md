@@ -1,6 +1,6 @@
-# Software used in the TwiMy pipeline
+# Software used in the TwiMM pipeline
 
-The TwiMy pipeline utilizes various software tools to process and analyze PacBio hybrid capture sequencing data. 
+The TwiMM pipeline utilizes various software tools to process and analyze PacBio hybrid capture sequencing data. 
 Below is a list of the key software components used in the pipeline:
 
 | Software       | Version    | Description                                                                                                                  |
