@@ -1,5 +1,26 @@
 # Changelog
 
+### [0.1.1](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v0.1.0...v0.1.1) (2025-08-22)
+
+
+### Documentation
+
+* add credits.md ([6ecb0de](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/6ecb0de99cf7b06c9272e50a1180a6edbb05aabe))
+* add overview.md (incl. to mkdocs.yaml) ([54157ff](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/54157ffb27c5754efe4cd61445d7203b9988819f))
+* add result_files.md ([bc080b4](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/bc080b491332d0fd1571450803b61e0e913c17e2))
+* fix hierarchy in overview.md ([301a28a](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/301a28ad33859666f87314557e5b69ecaf7ee825))
+* fix links/badges in README.md ([13204e3](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/13204e33bb0b4e3780d1eb850c1fa570572eb4cc))
+* full structure of mkdocs.yaml ([b7a982f](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/b7a982fb870e89a11bd29ceccae688a5b27a083a))
+* update badge groups in README.md ([f732cfc](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/f732cfc4a63b647c1a228fbc1ff01bbf580891b0))
+* update docs ([596124f](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/596124f2d65fdc74747f703e079fcb9d553f0eab))
+* update index.md ([a9d1fb7](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/a9d1fb7cdce0edc1c8335a9729670dea07ab0dbf))
+* update index.md and intro.md ([6105415](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/6105415b25f1c21c1ae97e545e66daa49029017f))
+* update intro.md and index.md ([81ab675](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/81ab675d2913a35a54d1ca1a25f2db8a7c550277))
+* update README.md ([bc6db96](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/bc6db9608f88540a73b9b95b3756da691f77b0c9))
+* update README.md ([5d6236b](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/5d6236b2d204f0199e8fa40462ef8f782df49969))
+* update software versions and descriptions ([f94caf6](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/f94caf66c682f49ef276a93db05db5fdea00759f))
+* update softwares.md ([1f58c0c](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/1f58c0c786e2381c67c73735747599b1438cca56))
+
 ## 0.1.0 (2025-04-11)
 
 
