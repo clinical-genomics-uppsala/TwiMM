@@ -1,11 +1,8 @@
-# Welcome to twist_myelom
+# TwiMM pipeline
 
-A short introduction to our awesome pipeline twist_myelom
+**This project is under active development** :smiley:
 
-# Hydra-genetics
-
-We are an organization/community with the goal of making [snakemake](https://snakemake.readthedocs.io/en/stable/index.html) pipeline development easier, faster, a bit more structured and of higher quality.
-
-We do this by providing [snakemake modules](https://snakemake.readthedocs.io/en/stable/snakefiles/modularization.html#modules) that can be combined to create a complete analysis or included in already existing pipelines. All modules are subjected to extensive testing to make sure that new releases doesn't unexpectedly break existing pipeline or deviate from guidelines and best practices on how to write code.
-
+The TwiMM pipeline is a bioinformatic pipeline designed to analyse targeted long-read (PacBio) sequencing data for the multiple myeloma gene panel.
+It reports small variants, CNVs, SVs and translocations as well as QC metrics and plots.
+It is built using Snakemake and the [hydra-genetics](https://github.com/hydra-genetics/hydra-genetics) framework for efficient data processing and analysis.
 

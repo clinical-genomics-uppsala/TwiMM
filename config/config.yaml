@@ -4,51 +4,95 @@ resources: "config/resources.yaml"
 samples: "config/samples.tsv"
 units: "config/units.tsv"
 
-default_container: "docker://hydragenetics/common:0.1.9"
+default_container: "docker://hydragenetics/common:3.1.1.1"
 
 reference:
-  fasta: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
-  fai: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: "human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: "panel64.add20.bed"
+  fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  # this bed file is ok to use for SNV calling
+  design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  # this one is ok for coverage analysis
+  targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
-unit_bam: true
+haplotagged_bam: false
+haplotagging: "whatshap"
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
-  normal_reference: "reference.cnn"
+  normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
   method: "hybrid"
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
+  extra: "--ignore-read-names"
 
-deepsomatic_tn:
-  container: "docker://google/deepsomatic:1.8.0"
+pbmm2_index:
+  container: "docker://hydragenetics/pbmm2:1.16"
+  preset: "HIFI"
   extra: ""
+
+pbmm2_align:
+  container: "docker://hydragenetics/pbmm2:1.16"
+  preset: "HIFI"
+  extra: ""
+
+pbmm2_merge:
+  container: "docker://hydragenetics/pbmm2:1.16"
+
+deepsomatic_t_only:
+  container: "docker://google/deepsomatic:1.8.0"
   model: "PACBIO"
+  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  extra: ""
 
 pbsv_call:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  reference: "GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   extra: ""
 
 pbsv_discover:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  trf: "human_GRCh38_no_alt_analysis_set.trf.bed"
+  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
 hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "cnv.excluded_regions.common_50.hg38.bed.gz"
+  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
   extra: ""
 
-snifffles2_call:
+sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
 
+whatshap_phase:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: ""
+
+whatshap_haplotag:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: " --ignore-read-groups"
+
 bcftools_filter_include_region:
-  default_container: "docker://hydragenetics/common:3.1.1"
-  panel: "panel64.add20.bed"
+  default_container: "docker://hydragenetics/common:3.1.1.1"
+  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+
+mosdepth_bed:
+  container: "docker://hydragenetics/mosdepth:0.3.6"
+  extra: ""
+
+trimmer_software: "None"
+
+general_report: "config/report.yaml"
+
+svdb_merge:
+  tc_method:
+    - name: pathology
+      cnv_caller:
+        - cnvkit
+
+cnv_html_report:
+  show_table: true
+  cytobands: false
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"

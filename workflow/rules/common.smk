@@ -50,12 +50,14 @@ except WorkflowError as we:
         schema_section = ".".join(re.findall(r"\['([^']+)'\]", schema_hiearachy)[1::2])
         sys.exit(f"{error_msg} in {schema_section}")
 
-date_string = datetime.now().strftime('%Y%m%d--%H-%M-%S')
+# date_string = datetime.now().strftime('%Y%m%d--%H-%M-%S')
+date_string = "twist_myelom"
 pipeline_version = get_pipeline_version(workflow, pipeline_name="twist_myelom")
 version_files = touch_pipeline_version_file_name(pipeline_version, date_string=date_string, directory="results/versions/software")
 if use_container(workflow):
     version_files += touch_software_version_file(config, date_string=date_string, directory="results/versions/software")
 add_version_files_to_multiqc(config, version_files)
+
 
 onstart:
     export_pipeline_version_as_file(pipeline_version, date_string=date_string, directory="results/versions/software")
@@ -64,16 +66,17 @@ onstart:
         # From the config retrieve all dockers used and parse labels for software versions. Add
         # this information to config dict.
         update_config, software_info = add_software_version_to_config(config, workflow, False)
-        # Print all softwares used as files. Additional parameters that can be set
+        # Print all software used as files. Additional parameters that can be set
         # - directory, default value: software_versions
         # - file_name_ending, default value: mqc_versions.yaml
         # date_string, a string that will be added to the folder name to make it unique (preferably a timestamp)
-        export_software_version_as_files(software_info, date_string=date_string, directory="results/versions/software")
-    # print config dict as a file. Additional parameters that can be set
-    # output_file, default config
-    # output_directory, default = None, i.e no folder
-    # date_string, a string that will be added to the folder name to make it unique (preferably a timestamp)
+        export_software_version_as_file(software_info, date_string=date_string, directory="results/versions/software")
+        # print config dict as a file. Additional parameters that can be set
+        # output_file, default config
+        # output_directory, default = None, i.e no folder
+        # date_string, a string that will be added to the folder name to make it unique (preferably a timestamp)
     export_config_as_file(update_config, date_string=date_string, directory="results/versions")
+
 
 ### Read and validate resources file
 
@@ -181,3 +184,25 @@ def generate_copy_rules(output_spec):
 
 
 generate_copy_rules(output_spec)
+
+
+def get_cnv_ratios(wildcards):
+    if wildcards.caller == "cnvkit":
+        return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cnr"
+
+    raise NotImplementedError(f"not implemented for caller {wildcards.caller}")
+
+
+def get_cnv_segments(wildcards):
+    if wildcards.caller == "cnvkit":
+        return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"
+
+    raise NotImplementedError(f"not implemented for caller {wildcards.caller}")
+
+
+def get_tc_file(wildcards):
+    tc_method = wildcards.tc_method
+    if tc_method == "pathology":
+        return config["samples"]
+    else:
+        return f"cnv_sv/{tc_method}_purity_file/{wildcards.sample}_{wildcards.type}.purity.txt"

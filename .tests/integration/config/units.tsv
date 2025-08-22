@@ -1,0 +1,2 @@
+sample	type	platform	machine	processing_unit	barcode	methylation	bam
+TEST_DATA	T	PACBIO	REVIO	m84045_231122_151755_s3	NAS	Yes	../../.tests/integration/data/test_reads.bam

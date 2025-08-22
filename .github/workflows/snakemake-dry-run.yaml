@@ -5,11 +5,11 @@ on:
    # Triggers the workflow on push or pull request events but only for the master and develop branch
   push:
     branches:
-     - develop
+    # - develop
      - main
   pull_request:
     branches:
-     - develop
+    # - develop
      - main
 
   # Allows you to run this workflow manually from the Actions tab
