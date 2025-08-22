@@ -47,4 +47,4 @@ jobs:
       - name: Integration test - small dataset PacBio
         working-directory: .tests/integration
         run: |
-          snakemake -s ../../workflow/Snakefile -j 1 --show-failed-logs --configfiles ../../config/config.yaml config/config.yaml  --use-singularity --singularity-args  " --cleanenv --bind /home/runner "
+          mkdir singularity_files && snakemake -s ../../workflow/Snakefile -j 2 --show-failed-logs --configfiles ../../config/config.yaml config/config.yaml  --use-singularity --singularity-args  " --cleanenv --bind /home/runner " --singularity-prefix singularity_files 
