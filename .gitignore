@@ -10,6 +10,7 @@ describe_workflow.rst
 describe_jupyter_notebook.txt
 twist_myelom
 results/
+vep_cache/
 ref_data/
 alignment/
 annotation/
