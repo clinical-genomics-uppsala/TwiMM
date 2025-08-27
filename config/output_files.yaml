@@ -48,3 +48,15 @@
    - name: "depth_per_base"
      output: "results/mosdepth_bed/{sample}_T.per-base.bed.gz"
      input: "qc/mosdepth_bed/{sample}_T.per-base.bed.gz"
+  # VEP
+   - name: "vep_annotation"
+     output: "results/vep_annotation/{sample}_T.vep_annotated.vcf"
+     input: "snv_indels/deepsomatic_t_only/{sample}_T.vep_annotated.vcf"
+  # CNVKit call
+   - name: "cnvkit_call"
+     output: "results/cnv_sv/{sample}_T.pathology.loh.cns"
+     input: "cnv_sv/cnvkit_call/{sample}_T.pathology.loh.cns"
+  # cnvkit vcf
+   - name: "cnvkit_vcf"
+     output: "results/cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"
+     input: "cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"

@@ -64,6 +64,16 @@ sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
 
+vep:
+  container: "docker://hydragenetics/vep:113.0"
+  vep_cache: "vep_cache"
+  mode: "--offline --cache --refseq "
+  extra: ""
+
+filter_vcf:
+  germline: "config/filters/config_hard_filter_germline_vep105.yaml"
+
+
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
   extra: ""

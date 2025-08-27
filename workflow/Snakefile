@@ -55,7 +55,7 @@ module filtering:
         github(
             "hydra-genetics/filtering",
             path="workflow/Snakefile",
-            tag="v1.1.0",
+            branch="develop",
         )
     config:
         config
@@ -200,7 +200,7 @@ use rule hificnv from cnv_sv as cnv_sv_hificnv
 use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
 
-# run cnvkit
+# run CNVkit
 use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
     output:
         antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.antitargetcoverage.cnn"),
@@ -210,14 +210,60 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
 
+# to create 'germline' vcf from gnomAD
+# it annotaes your vcf with gnomad frequencies
+# which you can then use to filter out (or  keep!) some variants
+# use svn_indels VCF as input to VEP
+# cause that's how it is in the original cnvkit_call
+use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+"
 
-# CNV reports
+use rule vep from annotation as annotation_vep with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+"
+
+# vep output has to be bgzipped and indexed
+use rule bgzip from cnv_sv as bgzip_vep_vcf with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+"
+
+# use rule tabix from cnv_sv as tabix_vep_vcf with:
+#     wildcard_constraints:
+#         file="snv_indels/deepsomatic_t_only/.+_T.vep_annotated.vcf.gz"
+    
+# now you can filter it (keep the populational variants)
+use rule filter_vcf from filtering as filtering_filter_vcf with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+"
+
+
+# outputs loh.cns file
+use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
+    input:
+        segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
+        vcf="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf"
+
+# this one takes the loh file
+use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
+    input:
+        segment="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf"
+
+
+use rule annotate_cnv from annotation as annotation_annotate_cnv
+
+
+
+# CNVkit reports
 use rule cnv_json from reports as reports_cnv_json with:
     input:
         ratios=get_cnv_ratios,
         segments=get_cnv_segments,
 
 
+# this one has filtered_cnv_vcfs, cnv_vcfs, germline_vcf as input
+# they are clearly omitted here
+#
 use rule merge_cnv_json from reports as reports_merge_cnv_json
 
 
