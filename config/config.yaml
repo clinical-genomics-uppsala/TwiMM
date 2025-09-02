@@ -15,13 +15,21 @@ reference:
   # this one is ok for coverage analysis
   targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
-haplotagged_bam: false
+aligner: "pbmm2"
 haplotagging: "whatshap"
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
   normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
   method: "hybrid"
+
+cnvkit_call:
+  container: "docker://hydragenetics/cnvkit:0.9.9"
+  extra: ""
+
+cnvkit_vcf:
+  container: "docker://hydragenetics/cnvkit:0.9.9"
+  extra: ""
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
@@ -66,9 +74,9 @@ sniffles2_call:
 
 vep:
   container: "docker://hydragenetics/vep:113.0"
-  vep_cache: "vep_cache"
-  mode: "--offline --cache --refseq "
-  extra: ""
+  vep_cache: "/data/ref_genomes/VEP"
+  mode: "--offline --cache "
+  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD"
 
 filter_vcf:
   germline: "config/filters/config_hard_filter_germline_vep105.yaml"
