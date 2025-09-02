@@ -287,8 +287,6 @@ rule cnvkit_call_new_wrapper:
         config.get("cnvkit_call", {}).get("container", config["default_container"])
     message:
         "{rule}: call cnvs with loh info into cnv_sv/cnvkit_call/{wildcards.sample}_{wildcards.type}.loh.cns"
-    # wrapper:
-    #     "v3.3.6/bio/cnvkit/call"
     script:
         "scripts/cnvkit_call.py"
 
