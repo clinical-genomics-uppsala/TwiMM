@@ -18,6 +18,9 @@ reference:
 aligner: "pbmm2"
 haplotagging: "whatshap"
 
+claires_to_call:
+  container: "docker://ontresearch/clairs-to:latest"
+
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
   normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
@@ -51,7 +54,7 @@ pbmm2_merge:
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.8.0"
   model: "PACBIO"
-  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  #pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
   extra: ""
 
 pbsv_call:

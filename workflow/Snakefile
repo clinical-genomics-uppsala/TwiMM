@@ -145,6 +145,14 @@ use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only wit
     wildcard_constraints:
         type="T",
 
+use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call with:
+    input:
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
+        ref=config.get("reference", {}).get("fasta", ""),
+        bed=config.get("reference", {}).get("design_bed", ""),
+
+use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat
 
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase
 
