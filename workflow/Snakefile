@@ -43,7 +43,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="haplotag_get_input_bam",
+            branch="develop",
         )
     config:
         config
@@ -195,6 +195,10 @@ use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
 # run CNVkit
 use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
+    input:
+        bam="snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
+        bai="snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai",
+        reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
     output:
         antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.antitargetcoverage.cnn"),
         bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.bintest.cns"),
