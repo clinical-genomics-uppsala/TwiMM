@@ -247,27 +247,6 @@ use rule filter_vcf from filtering as filtering_filter_vcf with:
 #         vcf="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf"
 
 
-def get_tc(wildcards):
-    """
-    Get the tumor cell content of a sample. If the tumor content
-    cannot be identified, return an empty string.
-    """
-    tc_method = wildcards.tc_method
-    if tc_method == "pathology":
-        sample = get_sample(samples, wildcards)
-        if not "tumor_content" in sample:
-            return ""
-        return get_sample(samples, wildcards)["tumor_content"]
-    else:
-        tc_file = f"cnv_sv/{tc_method}_purity_file/{wildcards.sample}_{wildcards.type}.purity.txt"
-        if not os.path.exists(tc_file):
-            return ""
-        else:
-            with open(tc_file, "r") as f:
-                tc = f.read()
-            return tc
-
-
 rule cnvkit_call_new_wrapper:
     input:
         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
@@ -277,7 +256,7 @@ rule cnvkit_call_new_wrapper:
         segment=temp("cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns"),
     params:
         extra=config.get("cnvkit_call", {}).get("extra", ""),
-        purity=get_tc,
+        purity=0.9,
     log:
         "cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns.log",
     benchmark:
