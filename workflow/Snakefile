@@ -143,7 +143,7 @@ use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
 # SNV & INDELS
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
     wildcard_constraints:
-        type="T"
+        type="T",
 
 
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase
@@ -207,6 +207,7 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
 
+
 # to create 'germline' vcf from gnomAD
 # it annotaes your vcf with gnomad frequencies
 # which you can then use to filter out (or  keep!) some variants
@@ -214,25 +215,29 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
 # cause that's how it is in the original cnvkit_call
 use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
     wildcard_constraints:
-        file="snv_indels/deepsomatic_t_only/.+"
+        file="snv_indels/deepsomatic_t_only/.+",
+
 
 use rule vep from annotation as annotation_vep with:
     wildcard_constraints:
-        file="snv_indels/deepsomatic_t_only/.+"
+        file="snv_indels/deepsomatic_t_only/.+",
+
 
 # vep output has to be bgzipped and indexed
 use rule bgzip from cnv_sv as bgzip_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/deepsomatic_t_only/.+"
+        file="snv_indels/deepsomatic_t_only/.+",
+
 
 use rule tabix from cnv_sv as tabix_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/deepsomatic_t_only/.+_T.vep_annotated.vcf.gz"
-    
+        file="snv_indels/deepsomatic_t_only/.+_T.vep_annotated.vcf.gz",
+
+
 # now you can filter it (keep the populational variants)
 use rule filter_vcf from filtering as filtering_filter_vcf with:
     wildcard_constraints:
-        file="snv_indels/deepsomatic_t_only/.+"
+        file="snv_indels/deepsomatic_t_only/.+",
 
 
 # outputs loh.cns file
@@ -240,7 +245,6 @@ use rule filter_vcf from filtering as filtering_filter_vcf with:
 #     input:
 #         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
 #         vcf="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf"
-        
 
 
 def get_tc(wildcards):
@@ -262,6 +266,7 @@ def get_tc(wildcards):
             with open(tc_file, "r") as f:
                 tc = f.read()
             return tc
+
 
 rule cnvkit_call_new_wrapper:
     input:
@@ -294,14 +299,14 @@ rule cnvkit_call_new_wrapper:
     script:
         "scripts/cnvkit_call.py"
 
+
 # this one takes the loh file
 use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
     input:
-        segment="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf"
+        segment="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf",
 
 
 use rule annotate_cnv from annotation as annotation_annotate_cnv
-
 
 
 # CNVkit reports
