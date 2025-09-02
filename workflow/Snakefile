@@ -43,7 +43,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="haplotag_get_input_bam",
+            branch="develop",
         )
     config:
         config
@@ -55,7 +55,7 @@ module filtering:
         github(
             "hydra-genetics/filtering",
             path="workflow/Snakefile",
-            tag="v1.1.0",
+            branch="develop",
         )
     config:
         config
@@ -92,7 +92,7 @@ module snv_indels:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            branch="deepsomatic_flexible_input",
+            branch="develop",
         )
     config:
         config
@@ -132,7 +132,7 @@ use rule pbmm2_merge from alignment as alignment_pbmm2_merge
 
 use rule samtools_index from alignment as alignment_samtools_index_whatshap with:
     wildcard_constraints:
-        file="^annotation/whatshap_haplotag/.+",
+        file="^snv_indels/whatshap_haplotag/.+",
 
 
 use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
@@ -142,31 +142,24 @@ use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
 
 # SNV & INDELS
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
-    input:
-        bam="alignment/pbmm2_align/{sample}_T.bam",
-        bai="alignment/pbmm2_align/{sample}_T.bam.bai",
-        ref=config.get("reference", {}).get("fasta", ""),
-        bed=config.get("reference", {}).get("design_bed", ""),
-        pon=config.get("deepsomatic_t_only", {}).get("pon", ""),
-    output:
-        tmpdir=temp(directory("snv_indels/deepsomatic_t_only/{sample}.tmp")),
-        vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
+    wildcard_constraints:
+        type="T",
 
 
-use rule whatshap_phase from annotation as annotation_whatshap_phase
+use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase
 
 
 use rule tabix from cnv_sv as cnv_sv_tabix with:
     wildcard_constraints:
-        file="^annotation/whatshap_phase/.+",
+        file="^snv_indels/whatshap_phase/.+",
 
 
 use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region with:
     wildcard_constraints:
-        file="^annotation/whatshap_phase/.+",
+        file="^snv_indels/whatshap_phase/.+",
 
 
-use rule whatshap_haplotag from annotation as annotation_whatshap_haplotag
+use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag
 
 
 # STRUCTURAL VARIANTS
@@ -200,8 +193,12 @@ use rule hificnv from cnv_sv as cnv_sv_hificnv
 use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
 
-# run cnvkit
+# run CNVkit
 use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
+    input:
+        bam="snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
+        bai="snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai",
+        reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
     output:
         antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.antitargetcoverage.cnn"),
         bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.bintest.cns"),
@@ -211,13 +208,96 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
 
 
-# CNV reports
+# to create 'germline' vcf from gnomAD
+# it annotaes your vcf with gnomad frequencies
+# which you can then use to filter out (or  keep!) some variants
+# use svn_indels VCF as input to VEP
+# cause that's how it is in the original cnvkit_call
+use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+",
+
+
+use rule vep from annotation as annotation_vep with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+",
+
+
+# vep output has to be bgzipped and indexed
+use rule bgzip from cnv_sv as bgzip_vep_vcf with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+",
+
+
+use rule tabix from cnv_sv as tabix_vep_vcf with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+_T.vep_annotated.vcf.gz",
+
+
+# now you can filter it (keep the populational variants)
+use rule filter_vcf from filtering as filtering_filter_vcf with:
+    wildcard_constraints:
+        file="snv_indels/deepsomatic_t_only/.+",
+
+
+# outputs loh.cns file
+# use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
+#     input:
+#         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
+#         vcf="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf"
+
+
+rule cnvkit_call_new_wrapper:
+    input:
+        segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
+        vcf="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf",
+        tc_file=get_tc_file,
+    output:
+        segment=temp("cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns"),
+    params:
+        extra=config.get("cnvkit_call", {}).get("extra", ""),
+        purity=0.9,
+    log:
+        "cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns.log",
+    benchmark:
+        repeat(
+            "cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns.benchmark.tsv",
+            config.get("cnvkit_call", {}).get("benchmark_repeats", 1),
+        )
+    threads: config.get("cnvkit_call", {}).get("threads", config["default_resources"]["threads"])
+    resources:
+        mem_mb=config.get("cnvkit_call", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("cnvkit_call", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("cnvkit_call", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("cnvkit_call", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("cnvkit_call", {}).get("time", config["default_resources"]["time"]),
+    container:
+        config.get("cnvkit_call", {}).get("container", config["default_container"])
+    message:
+        "{rule}: call cnvs with loh info into cnv_sv/cnvkit_call/{wildcards.sample}_{wildcards.type}.loh.cns"
+    script:
+        "scripts/cnvkit_call.py"
+
+
+# this one takes the loh file
+use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
+    input:
+        segment="snv_indels/deepsomatic_t_only/{sample}_{type}.vep_annotated.filter.germline.vcf",
+
+
+use rule annotate_cnv from annotation as annotation_annotate_cnv
+
+
+# CNVkit reports
 use rule cnv_json from reports as reports_cnv_json with:
     input:
         ratios=get_cnv_ratios,
         segments=get_cnv_segments,
 
 
+# this one has filtered_cnv_vcfs, cnv_vcfs, germline_vcf as input
+# they are clearly omitted here
+#
 use rule merge_cnv_json from reports as reports_merge_cnv_json
 
 
