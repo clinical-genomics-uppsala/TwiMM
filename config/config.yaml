@@ -18,8 +18,10 @@ reference:
 aligner: "pbmm2"
 haplotagging: "whatshap"
 
-claires_to_call:
-  container: "docker://ontresearch/clairs-to:latest"
+clairs_to_call:
+  container: "docker://hkubal/clairs-to:latest"
+  extra: ""
+  platform: "hifi_revio"
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
