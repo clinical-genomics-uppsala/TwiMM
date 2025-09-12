@@ -1,8 +1,8 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples.tsv"
-units: "config/units.tsv"
+samples: "config/samples_2022.MM.13.tsv"
+units: "config/units_2022.MM.13.tsv"
 
 default_container: "docker://hydragenetics/common:3.1.1.1"
 
@@ -18,10 +18,24 @@ reference:
 aligner: "pbmm2"
 haplotagging: "whatshap"
 
+annotate_cnv:
+  tag: "germline"
+  bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+
+bcftools_filter_include_region:
+  default_container: "docker://hydragenetics/common:3.1.1.1"
+  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+
+caller: "cnvkit"
+
 clairs_to_call:
   container: "docker://hkubal/clairs-to:latest"
   extra: ""
   platform: "hifi_revio"
+
+cnv_html_report:
+  show_table: true
+  cytobands: false
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
@@ -34,6 +48,35 @@ cnvkit_call:
 
 cnvkit_vcf:
   container: "docker://hydragenetics/cnvkit:0.9.9"
+  extra: ""
+
+deepsomatic_t_only:
+  container: "docker://google/deepsomatic:1.8.0"
+  model: "PACBIO"
+  #pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  extra: ""
+
+filter_vcf:
+  germline: "config/filters/config_hard_filter_germline_vep105.yaml"
+
+general_report: "config/report.yaml"
+
+hificnv:
+  container: "docker://hydragenetics/hificnv:1.0.1"
+  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
+  extra: ""
+
+merge_cnv_json:
+  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.vcf"
+  unfiltered_cnv_vcfs: 
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"
+  filtered_cnv_vcfs: 
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"
+  annotations: 
+    - "ref_data/Myelom_expected_coverage_annotated_Oct2024_genes_only.bed"
+
+mosdepth_bed:
+  container: "docker://hydragenetics/mosdepth:0.3.6"
   extra: ""
 
 pbmarkdup:
@@ -53,12 +96,6 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
-deepsomatic_t_only:
-  container: "docker://google/deepsomatic:1.8.0"
-  model: "PACBIO"
-  #pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
-  extra: ""
-
 pbsv_call:
   container: "docker://hydragenetics/pbsv:2.9.0"
   extra: ""
@@ -68,44 +105,9 @@ pbsv_discover:
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
-hificnv:
-  container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
-  extra: ""
-
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
-
-vep:
-  container: "docker://hydragenetics/vep:113.0"
-  vep_cache: "/data/ref_genomes/VEP"
-  mode: "--offline --cache "
-  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD"
-
-filter_vcf:
-  germline: "config/filters/config_hard_filter_germline_vep105.yaml"
-
-
-whatshap_phase:
-  container: "docker://hydragenetics/whatshap:2.2"
-  extra: ""
-
-whatshap_haplotag:
-  container: "docker://hydragenetics/whatshap:2.2"
-  extra: " --ignore-read-groups"
-
-bcftools_filter_include_region:
-  default_container: "docker://hydragenetics/common:3.1.1.1"
-  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
-
-mosdepth_bed:
-  container: "docker://hydragenetics/mosdepth:0.3.6"
-  extra: ""
-
-trimmer_software: "None"
-
-general_report: "config/report.yaml"
 
 svdb_merge:
   tc_method:
@@ -113,9 +115,21 @@ svdb_merge:
       cnv_caller:
         - cnvkit
 
-cnv_html_report:
-  show_table: true
-  cytobands: false
+trimmer_software: "None"
+
+vep:
+  container: "docker://hydragenetics/vep:113.0"
+  vep_cache: "/data/ref_genomes/VEP"
+  mode: "--offline --cache "
+  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD --af_gnomad --af"
+
+whatshap_phase:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: ""
+
+whatshap_haplotag:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: " --ignore-read-groups --skip-missing-contigs" # --skip-missing-contigs
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
