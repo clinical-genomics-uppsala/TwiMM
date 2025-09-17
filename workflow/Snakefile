@@ -165,6 +165,7 @@ use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase with:
         fasta=config.get("reference", {}).get("fasta", ""),
 # output is phased.vcf.gz
 
+
 # index the phased vcf
 use rule tabix from cnv_sv as cnv_sv_tabix with:
     wildcard_constraints:
@@ -258,15 +259,6 @@ rule cnv_sv_cnvkit_batch_local:
 # use svn_indels VCF as input to VEP
 # cause that's how it is in the original cnvkit_call
 
-# use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
-#     wildcard_constraints:
-#         file="snv_indels/deepsomatic_t_only/.+",
-
-
-# use rule vep from annotation as annotation_vep_deeps with:
-#     wildcard_constraints:
-#         file="snv_indels/deepsomatic_t_only/.+",
-
 # index phased.inlcude.panel.vcf
 use rule tabix from cnv_sv as cnv_sv_tabix_include_panel with:
     wildcard_constraints:
@@ -293,13 +285,36 @@ use rule tabix from cnv_sv as tabix_vep_vcf with:
 
 
 # now you can filter it (keep the populational variants)
-# use rule filter_vcf from filtering as filtering_filter_vcf_deeps with:
-#     wildcard_constraints:
-#         file="snv_indels/deepsomatic_t_only/.+",
-
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.phased\.include\.panel\.vep_annotated",
+
+# fix AF entries
+rule fix_af:
+    input:
+        vcf="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.filter.germline.vcf",
+    output:
+        vcf=temp("snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.filter.germline.fix_af.vcf"),
+    log:
+        "snv_indels/whatshap_phase/{sample}_{type}.fix_af.vcf.log",
+    benchmark:
+        repeat(
+            "snv_indels/whatshap_phase/{sample}_{type}.fix_af.vcf.benchmark.tsv",
+            config.get("fix_af", {}).get("benchmark_repeats", 1),
+        )
+    threads: config.get("fix_af", {}).get("threads", config["default_resources"]["threads"])
+    resources:
+        mem_mb=config.get("fix_af", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("fix_af", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("fix_af", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("fix_af", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("fix_af", {}).get("time", config["default_resources"]["time"]),
+    container:
+        config.get("fix_af", {}).get("container", config["default_container"])
+    message:
+        "{rule}: fix missing allele frequency field in format column in {input.vcf}"
+    script:
+        "scripts/fix_af.py"
 
 # outputs loh.cns file
 # use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
@@ -348,6 +363,14 @@ use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
         tc_method="pathology"
 # output: vcf=temp("cnv_sv/cnvkit_vcf/{sample}_{type}.{tc_method}.vcf"),
 
+# bgzip and index this pathology.vcf file
+# use rule bgzip from cnv_sv as cnv_sv_bgzip_cnvkit_vcf_pathology with:
+#     wildcard_constraints:
+#         file="cnv_sv/cnvkit_vcf/.+\.pathology",
+
+# use rule tabix from cnv_sv as cnv_sv_tabix_cnvkit_vcf_pathology with:
+#     wildcard_constraints:
+#         file="cnv_sv/cnvkit_vcf/.+\.pathology",
 
 use rule annotate_cnv from annotation as annotation_annotate_cnvkit_vcf with:
     input:
@@ -372,22 +395,6 @@ use rule bgzip from cnv_sv as cnv_sv_bgzip_cnvkit_vcf with:
 use rule tabix from cnv_sv as cnv_sv_tabix_cnvkit_vcf with:
     wildcard_constraints:
         file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline",
-
-# filter this annotated cnv vcf
-use rule filter_vcf from filtering as filtering_filter_vcf_cnvkit_vcf with:
-    wildcard_constraints:
-    #     file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv",
-        tag="germline"
-    input:
-        vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf.gz",
-        vcf_index="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf.gz.tbi",
-        filter_config=lambda wildcards: config["filter_vcf"][wildcards.tag],
-    output:
-        vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.filter.{tag}.vcf"
-    log:
-        "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.filter.{tag}.vcf.log",
-    benchmark:
-        repeat("cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.filter.{tag}.vcf.benchmark.tsv", config.get("filter_vcf", {}).get("benchmark_repeats", 1))
 
 # CNVkit reports
 # the inputs here are cns and cnr files from cnvkit_batch
