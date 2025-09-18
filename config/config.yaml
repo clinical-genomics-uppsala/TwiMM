@@ -1,8 +1,8 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples_2022.MM.13.tsv"
-units: "config/units_2022.MM.13.tsv"
+samples: "config/samples.tsv"
+units: "config/units.tsv"
 
 default_container: "docker://hydragenetics/common:3.1.1.1"
 
@@ -20,7 +20,7 @@ haplotagging: "whatshap"
 
 annotate_cnv:
   tag: "germline"
-  bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  germline: "ref_data/panel_full_genes.bed"
 
 bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1.1"
@@ -51,13 +51,13 @@ cnvkit_vcf:
   extra: ""
 
 deepsomatic_t_only:
-  container: "docker://google/deepsomatic:1.8.0"
+  container: "docker://google/deepsomatic:1.9.0"
   model: "PACBIO"
   #pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
   extra: ""
 
 filter_vcf:
-  germline: "config/filters/config_hard_filter_germline_vep105.yaml"
+  germline: "config/filters/config_hard_filter_germline_vep.yaml"
 
 general_report: "config/report.yaml"
 
@@ -67,11 +67,11 @@ hificnv:
   extra: ""
 
 merge_cnv_json:
-  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.vcf"
+  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.fix_af.vcf"
   unfiltered_cnv_vcfs: 
-    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs: 
-    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   annotations: 
     - "ref_data/Myelom_expected_coverage_annotated_Oct2024_genes_only.bed"
 
@@ -121,7 +121,7 @@ vep:
   container: "docker://hydragenetics/vep:113.0"
   vep_cache: "/data/ref_genomes/VEP"
   mode: "--offline --cache "
-  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD --af_gnomad --af"
+  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD --af_gnomad --af --variant_class"
 
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
