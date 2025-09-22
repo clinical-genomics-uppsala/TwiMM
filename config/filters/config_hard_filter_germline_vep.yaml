@@ -11,3 +11,7 @@ filters:
     description: "Hard filter variants that are not SNVs"
     expression: "(!exist[SNV, VEP:VARIANT_CLASS])"
     soft_filter: "False"
+  low_confidence:
+    description: "Hard filter low confidence variants"
+    expression: "(FORMAT:GQ < 20 or QUAL < 12)"
+    soft_filter: "False"
