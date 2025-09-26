@@ -128,11 +128,7 @@ use rule pbmm2_align from alignment as alignment_pbmm2_align with:
 
 
 use rule pbmm2_merge from alignment as alignment_pbmm2_merge
-
-
-use rule samtools_index from alignment as alignment_samtools_index_haplotagged_bam with:
-    wildcard_constraints:
-        file="^snv_indels/whatshap_haplotag/.+",
+# output: bam=temp("alignment/pbmm2_align/{sample}_{type}.bam")
 
 
 use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
@@ -184,12 +180,19 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 
 use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
     input:
-        aln=lambda wildcards: get_input_bam(wildcards)[0],
-        bai=lambda wildcards: get_input_bam(wildcards)[1],
+        aln="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
         ref=config.get("reference", {}).get("fasta", ""),
         fai=config.get("reference", {}).get("fai", ""),
         vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.vcf.gz",
         tbi="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.vcf.gz.tbi",
+# output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
+
+
+use rule samtools_index from alignment as alignment_samtools_index_haplotagged_bam with:
+    wildcard_constraints:
+        file="^snv_indels/whatshap_haplotag/.+\.haplotagged",
+
 
 # SNV & INDELS from DeepSomatic-TO
 # use custom PoN from config
@@ -199,7 +202,7 @@ use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only wit
         type="T",
 # output snv_indels/deepsomatic_t_only/{sample}_{type}.vcf.gz
 
-# Pahse DeepSomatic-TO output
+# Phase DeepSomatic-TO output
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_deepsomatic with:
     input:
         vcf="snv_indels/deepsomatic_t_only/{sample}_T.vcf.gz",
@@ -224,7 +227,10 @@ use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
     wildcard_constraints:
         file="^snv_indels/whatshap_phase/.+\.deepsomatic\.phased",
 
-
+# annotate DeepSomatic-TO VCF with VEP
+use rule vep from annotation as annotation_vep_deepsomatic with:
+    wildcard_constraints:
+        file="snv_indels/whatshap_phase/.+\.deepsomatic\.phased",
 
 # STRUCTURAL VARIANTS
 # run PBSV & HiFiCNV analysis
@@ -258,8 +264,22 @@ use rule hificnv from cnv_sv as cnv_sv_hificnv
 # run Sniffles2
 use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
+# bgzip & tabix Sniffles2 VCF
+use rule bgzip from cnv_sv as cnv_sv_bgzip_sniffles with:
+    wildcard_constraints:
+        file="cnv_sv/sniffles2_call/.+",
 
-# run CNVkit
+use rule tabix from cnv_sv as cnv_sv_tabix_sniffles with:
+    wildcard_constraints:
+        file="cnv_sv/sniffles2_call/.+",
+
+# filter Sniffles2 results
+use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_sniffles with:
+    wildcard_constraints:
+        file="cnv_sv/sniffles2_call/.+",
+# output: vcf=temp("cnv_sv/sniffles2_call/{sample}_{type}.vcf"),
+
+# run CNVkits
 #use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
 rule cnv_sv_cnvkit_batch_local:
     input:
