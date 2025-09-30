@@ -14,7 +14,7 @@ chromosome_of_interest = "chr4"
 
 # Read sample names
 samples_df = pd.read_csv(input_tsv, sep="\t")
-sample_names = samples_df['sample'].tolist()
+sample_names = samples_df["sample"].tolist()
 
 # Prepare output data
 output_rows = []
@@ -25,41 +25,38 @@ for sample in sample_names:
         print(f"File not found: {vcf_file}")
         continue
 
-    with open(vcf_file, 'r') as f:
+    with open(vcf_file, "r") as f:
         for line in f:
             if line.startswith("#"):
                 continue  # Skip header lines
-            parts = line.strip().split('\t')
+            parts = line.strip().split("\t")
             chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:10]
 
             if chrom != chromosome_of_interest or "BND" not in id_:
                 continue
 
-
-          # --- ALT column processing ---
+            # --- ALT column processing ---
             # Remove square brackets
             # Remove brackets and leading/trailing base (A,C,G,T) from each allele
-            alt_clean = ','.join(
-                re.sub(r'^[ACGT]?([\w\d_]+:[\d]+)[ACGT]?$', r'\1', allele)
-                for allele in alt.replace('[', '').replace(']', '').split(',')
+            alt_clean = ",".join(
+                re.sub(r"^[ACGT]?([\w\d_]+:[\d]+)[ACGT]?$", r"\1", allele)
+                for allele in alt.replace("[", "").replace("]", "").split(",")
             )
 
-
-           # Split ALT into TRANS_CHROM and TRANS_POS
+            # Split ALT into TRANS_CHROM and TRANS_POS
             # If ALT contains a colon, split; else leave empty
             trans_chrom, trans_pos = "", ""
-            if ':' in alt_clean:
-                trans_chrom, trans_pos = alt_clean.split(':', 1)
-
+            if ":" in alt_clean:
+                trans_chrom, trans_pos = alt_clean.split(":", 1)
 
             # Parse INFO
-            info_dict = dict(item.split('=') for item in info.split(';') if '=' in item)
+            info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
             coverage = info_dict.get("COVERAGE", "")
             vaf = info_dict.get("VAF", "")
 
             # Parse FORMAT and sample data
-            format_keys = format_.split(':')
-            format_values = sample_data.split(':')
+            format_keys = format_.split(":")
+            format_values = sample_data.split(":")
             format_dict = dict(zip(format_keys, format_values))
 
             row = {
@@ -74,7 +71,7 @@ for sample in sample_names:
                 "GENOTYPE": format_dict.get("GT", ""),
                 "GENOME QUALITY": format_dict.get("GQ", ""),
                 "DEPTH REF": format_dict.get("DR", ""),
-                "DEPTH TRANS": format_dict.get("DV", "")
+                "DEPTH TRANS": format_dict.get("DV", ""),
             }
             output_rows.append(row)
 
