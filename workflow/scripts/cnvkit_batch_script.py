@@ -76,6 +76,7 @@ with TemporaryDirectory() as tmpdirname:
         except FileNotFoundError as e:
             temp_files = listdir(tmpdirname)
             logging.error(
-                f"Couldn't locate file {join(tmpdirname, filename)} to copy it to {output_file} possible files are {[basename(f) for f in temp_files]}"
+                f"Couldn't locate file {join(tmpdirname, filename)} to copy it to {output_file}. "
+                f"Possible files are {[basename(f) for f in temp_files]}"
             )
             raise e
