@@ -382,6 +382,9 @@ rule fix_af:
     script:
         "scripts/fix_af.py"
 
+# TODO:filter out NonSomatic variants
+# use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic
+
 # outputs loh.cns file
 # use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
 #     input:
