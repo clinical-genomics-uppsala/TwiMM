@@ -26,6 +26,9 @@ bcftools_filter_include_region:
   default_container: "docker://hydragenetics/common:3.1.1.1"
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
+bcftools_view:
+  extra: "-i FILTER!=NonSomatic"
+
 caller: "cnvkit"
 
 clairs_to_call:
@@ -53,7 +56,7 @@ cnvkit_vcf:
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
   model: "PACBIO"
-  #pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
   extra: ""
 
 filter_vcf:
