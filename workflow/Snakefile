@@ -128,6 +128,8 @@ use rule pbmm2_align from alignment as alignment_pbmm2_align with:
 
 
 use rule pbmm2_merge from alignment as alignment_pbmm2_merge
+
+
 # output: bam=temp("alignment/pbmm2_align/{sample}_{type}.bam")
 
 
@@ -144,9 +146,11 @@ use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call with:
         ref=config.get("reference", {}).get("fasta", ""),
         bed=config.get("reference", {}).get("design_bed", ""),
 
+
 use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat with:
     output:
         vcf="snv_indels/clairs_to/{sample}_{type}.vcf.gz",
+
 
 # Phase ClairS-TO output only
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_clairs with:
@@ -167,6 +171,7 @@ use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_clairs with
             config.get("whatshap_phase", {}).get("benchmark_repeats", 1),
         )
 
+
 # index the phased vcf from clairs
 use rule tabix from cnv_sv as cnv_sv_tabix_clairs with:
     wildcard_constraints:
@@ -186,6 +191,8 @@ use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
         fai=config.get("reference", {}).get("fai", ""),
         vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.vcf.gz",
         tbi="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.vcf.gz.tbi",
+
+
 # output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
 
 
@@ -200,7 +207,10 @@ use rule samtools_index from alignment as alignment_samtools_index_haplotagged_b
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
     wildcard_constraints:
         type="T",
+
+
 # output snv_indels/deepsomatic_t_only/{sample}_{type}.vcf.gz
+
 
 # Phase DeepSomatic-TO output
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_deepsomatic with:
@@ -227,10 +237,12 @@ use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
     wildcard_constraints:
         file="^snv_indels/whatshap_phase/.+\.deepsomatic\.phased",
 
+
 # annotate DeepSomatic-TO VCF with VEP
 use rule vep from annotation as annotation_vep_deepsomatic with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.deepsomatic\.phased",
+
 
 # STRUCTURAL VARIANTS
 # run PBSV & HiFiCNV analysis
@@ -264,23 +276,29 @@ use rule hificnv from cnv_sv as cnv_sv_hificnv
 # run Sniffles2
 use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
+
 # bgzip & tabix Sniffles2 VCF
 use rule bgzip from cnv_sv as cnv_sv_bgzip_sniffles with:
     wildcard_constraints:
         file="cnv_sv/sniffles2_call/.+",
 
+
 use rule tabix from cnv_sv as cnv_sv_tabix_sniffles with:
     wildcard_constraints:
         file="cnv_sv/sniffles2_call/.+",
+
 
 # filter Sniffles2 results
 use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_sniffles with:
     wildcard_constraints:
         file="cnv_sv/sniffles2_call/.+",
+
+
 # output: vcf=temp("cnv_sv/sniffles2_call/{sample}_{type}.vcf"),
 
+
 # run CNVkits
-#use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
+# use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
 rule cnv_sv_cnvkit_batch_local:
     input:
         bam=["snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"],
@@ -325,10 +343,12 @@ rule cnv_sv_cnvkit_batch_local:
 # use svn_indels VCF as input to VEP
 # cause that's how it is in the original cnvkit_call
 
+
 # index phased.inlcude.panel.vcf
 use rule tabix from cnv_sv as cnv_sv_tabix_include_panel with:
     wildcard_constraints:
         file="^snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel",
+
 
 use rule vep from annotation as annotation_vep_clairs with:
     wildcard_constraints:
@@ -354,6 +374,7 @@ use rule tabix from cnv_sv as tabix_vep_vcf with:
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated",
+
 
 # fix AF entries
 rule fix_af:
@@ -382,6 +403,7 @@ rule fix_af:
     script:
         "scripts/fix_af.py"
 
+
 # TODO:filter out NonSomatic variants
 # use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic
 
@@ -394,7 +416,7 @@ rule fix_af:
 
 rule cnvkit_call_new_wrapper:
     wildcard_constraints:
-        tc_method="pathology"
+        tc_method="pathology",
     input:
         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
         vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.vcf",
@@ -429,7 +451,9 @@ rule cnvkit_call_new_wrapper:
 # this one takes the loh file from cnvkit_call
 use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
     wildcard_constraints:
-        tc_method="pathology"
+        tc_method="pathology",
+
+
 # output: vcf=temp("cnv_sv/cnvkit_vcf/{sample}_{type}.{tc_method}.vcf"),
 
 # bgzip and index this pathology.vcf file
@@ -441,9 +465,10 @@ use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
 #     wildcard_constraints:
 #         file="cnv_sv/cnvkit_vcf/.+\.pathology",
 
+
 use rule annotate_cnv from annotation as annotation_annotate_cnvkit_vcf with:
     input:
-        vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf"
+        vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf",
     output:
         vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf",
     params:
@@ -456,14 +481,17 @@ use rule annotate_cnv from annotation as annotation_annotate_cnvkit_vcf with:
             config.get("annotate_cnv", {}).get("benchmark_repeats", 1),
         )
 
+
 # one more round of bgzip+tabix
 use rule bgzip from cnv_sv as cnv_sv_bgzip_cnvkit_vcf with:
     wildcard_constraints:
         file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline",
 
+
 use rule tabix from cnv_sv as cnv_sv_tabix_cnvkit_vcf with:
     wildcard_constraints:
         file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline",
+
 
 # CNVkit reports
 # the inputs here are cns and cnr files from cnvkit_batch
@@ -471,16 +499,21 @@ use rule tabix from cnv_sv as cnv_sv_tabix_cnvkit_vcf with:
 use rule cnv_json from reports as reports_cnv_json with:
     wildcard_constraints:
         tc_method="pathology",
-        caller="cnvkit"
+        caller="cnvkit",
     input:
         ratios="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cnr",
         segments="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
+
+
 # output: json=temp("reports/cnv_html_report/{sample}_{type}.{caller}.{tc_method}.json"),
 
 # this one has filtered_cnv_vcfs, cnv_vcfs, germline_vcf as input
 
+
 # ["reports/cnv_html_report/{sample}_{type}.{caller}.{tc_method}.json".format(caller=c, **wildcards) for c in callers]
 use rule merge_cnv_json from reports as reports_merge_cnv_json
+
+
 # output: "reports/cnv_html_report/{sample}_{type}.{tc_method}.merged.json"
 
 
