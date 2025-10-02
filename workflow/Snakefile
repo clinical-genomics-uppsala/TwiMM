@@ -374,14 +374,26 @@ use rule tabix from cnv_sv as tabix_vep_vcf with:
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated",
+# output: vcf=temp("{file}.filter.{tag}.vcf"), tag='germline'
 
+# gzip this file
+use rule bgzip from cnv_sv as bgzip_filtered_vep_vcf with:
+    wildcard_constraints:
+        file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
+
+# filter out NonSomatic variants
+# output: vcf=temp("{file}.bcftools_view.{tag}.vcf.gz"),
+use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic with:
+    wildcard_constraints:
+        file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
+        # tag="germline",
 
 # fix AF entries
 rule fix_af:
     input:
-        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.vcf",
+        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
     output:
-        vcf=temp("snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.fix_af.vcf"),
+        vcf=temp("snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"),
     log:
         "snv_indels/whatshap_phase/{sample}_{type}.fix_af.vcf.log",
     benchmark:
@@ -404,9 +416,6 @@ rule fix_af:
         "scripts/fix_af.py"
 
 
-# TODO:filter out NonSomatic variants
-# use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic
-
 # outputs loh.cns file
 # use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
 #     input:
@@ -419,7 +428,7 @@ rule cnvkit_call_new_wrapper:
         tc_method="pathology",
     input:
         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
-        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.vcf",
+        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
         tc_file=get_tc_file,
     output:
         segment=temp("cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns"),

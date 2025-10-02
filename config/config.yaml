@@ -27,7 +27,7 @@ bcftools_filter_include_region:
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 bcftools_view:
-  extra: "-i FILTER!=NonSomatic"
+  extra: "-i 'FILTER=\"PASS\"'"
 
 caller: "cnvkit"
 
@@ -70,7 +70,7 @@ hificnv:
   extra: ""
 
 merge_cnv_json:
-  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.fix_af.vcf"
+  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
   unfiltered_cnv_vcfs: 
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs: 
