@@ -56,10 +56,19 @@ FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
 import pandas as pd
 import gzip
 import re
+import logging
 
+
+# Set up logging
+logging.basicConfig(
+    format="{asctime} - {levelname} - {message}",
+    style="{",
+    datefmt="%Y-%m-%d %H:%M",
+    level=logging.INFO,
+)
 
 # Functions
-def parse_info(info_str):
+def parse_info(info_str: str) -> dict:
     """
     Parse the INFO field from a VCF line
     param info_str: The INFO field from the VCF
@@ -73,7 +82,7 @@ def parse_info(info_str):
     return info_dict
 
 
-def parse_format(format_str, sample_str):
+def parse_format(format_str: str, sample_str: str) -> dict:
     """
     Parse the FORMAT and sample fields from a VCF line
     param format_str: The FORMAT field from the VCF
@@ -85,21 +94,26 @@ def parse_format(format_str, sample_str):
     return dict(zip(keys, values))
 
 
-def parse_vcf_line(line, vep_fields, format_fields):
+def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
     """
     Parse a single VCF line into a dictionary
     param line: A line from a VCF file
+    param vep_fields: List of VEP annotation fields
+    param format_fields: List of FORMAT fields to extract
     return: Dictionary with parsed fields
     """
     fields = line.strip().split("\t")
     chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = fields[:10]
 
     info_dict = parse_info(info)
+    logging.debug(f"Parsed INFO: {info_dict}")
     format_dict = parse_format(fmt, sample)
+    logging.debug(f"Parsed FORMAT: {format_dict}")
 
     csq_data = info_dict.get("CSQ", "").split(",")[0]  # take first annotation
     csq_values = csq_data.split("|")
     csq_dict = dict(zip(vep_fields, csq_values))
+    logging.debug(f"Parsed VEP CSQ: {csq_dict}")
 
     row = {"CHROM": chrom, "POS": pos, "REF": ref, "ALT": alt, "QUAL": qual, "FILTER": fltr}
 
@@ -110,7 +124,7 @@ def parse_vcf_line(line, vep_fields, format_fields):
     return row
 
 
-def parse_sv_vcf_line(line, wcards):
+def parse_sv_vcf_line(line: str, wcards: dict) -> dict:
     """
     Parse a single structural variant VCF line into a dictionary
     param line: A line from a VCF file
@@ -123,16 +137,19 @@ def parse_sv_vcf_line(line, wcards):
     # Clean ID field
     match = re.search(r'\.(.*?)\.', id_)
     id_clean = match.group(1)
+    logging.debug(f"Parsed ID: {id_} -> {id_clean}")
 
     # Parse INFO
     info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
     coverage = info_dict.get("COVERAGE", "")
     vaf = info_dict.get("VAF", "")
+    logging.debug(f"Parsed INFO: {info_dict}")
 
     # Parse FORMAT and sample data
     format_keys = format_.split(":")
     format_values = sample_data.split(":")
     format_dict = dict(zip(format_keys, format_values))
+    logging.debug(f"Parsed FORMAT: {format_dict}")
 
     row = {
         "SAMPLE": wcards.sample,
@@ -150,7 +167,7 @@ def parse_sv_vcf_line(line, wcards):
     }
     return row
 
-def open_vcf(vcf_path):
+def open_vcf(vcf_path: str):
     """
     Open a VCF file, handling gzip if necessary
     param vcf_path: Path to the VCF file
@@ -162,7 +179,7 @@ def open_vcf(vcf_path):
         return open(vcf_path, "r")
 
 
-def vcf_to_df(vcf_path, vep, fields):
+def vcf_to_df(vcf_path: str, vep: list, fields: list) -> pd.DataFrame:
     """
     Convert a VEP annotated VCF file to a DataFrame
     param vcf_path: Path to the VCF file
@@ -179,7 +196,7 @@ def vcf_to_df(vcf_path, vep, fields):
     return df
 
 
-def snv_vcf_to_df(vcf_path, wcards):
+def snv_vcf_to_df(vcf_path: str, wcards: dict) -> pd.DataFrame:
     """
     Convert a structural variant VCF file to a DataFrame
     param vcf_path: Path to the VCF file
@@ -218,13 +235,15 @@ def filter_vcf(vcf_df, column, value):
 
 
 if __name__ == "__main__":
+    # et up logging
+    log_file = snakemake.log[0]
+    
+    logging.info("Script started")
+
     # Get input and output paths from snakemake
     vcf_snv=snakemake.input.vcf_snv
     vcf_sv=snakemake.input.vcf_sv
     output_xlsx=snakemake.output.xlsx
-
-    # fake wildcards dictionary
-    wildcards_dict = {'sample': "2022.MM.14"}
     
     # read SNV vcf file
     vcf_df=pick_vcf_columns(vcf_to_df(vcf_snv, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
@@ -233,7 +252,7 @@ if __name__ == "__main__":
     snv_df=filter_vcf(vcf_df, "FILTER", "PASS")
 
     # read SV vcf file
-    sv_df=snv_vcf_to_df(vcf_sv, wildcards_dict)
+    sv_df=snv_vcf_to_df(vcf_sv, snakemake.wildcards)
     # filter both chr4 and BND
     tn_chr4=filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
     # filter both chr14 and BND
