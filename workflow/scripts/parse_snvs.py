@@ -55,6 +55,7 @@ FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
 # Imports
 import pandas as pd
 import gzip
+import re
 
 
 # Functions
@@ -109,6 +110,46 @@ def parse_vcf_line(line, vep_fields, format_fields):
     return row
 
 
+def parse_sv_vcf_line(line, wcards):
+    """
+    Parse a single structural variant VCF line into a dictionary
+    param line: A line from a VCF file
+    param wcards: snakemake wildcards object
+    return: Dictionary with parsed fields
+    """
+    parts = line.strip().split("\t")
+    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:10]
+    
+    # Clean ID field
+    match = re.search(r'\.(.*?)\.', id_)
+    id_clean = match.group(1)
+
+    # Parse INFO
+    info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
+    coverage = info_dict.get("COVERAGE", "")
+    vaf = info_dict.get("VAF", "")
+
+    # Parse FORMAT and sample data
+    format_keys = format_.split(":")
+    format_values = sample_data.split(":")
+    format_dict = dict(zip(format_keys, format_values))
+
+    row = {
+        "SAMPLE": wcards.sample,
+        "CHROM": chrom,
+        "POS": pos,
+        "TYPE": id_clean,
+        "ALT": alt,
+        "FILTER": filter_,
+        "COVERAGE": coverage,
+        "VAF": vaf,
+        "GENOTYPE": format_dict.get("GT", ""),
+        "GENOME QUALITY": format_dict.get("GQ", ""),
+        "DEPTH REF": format_dict.get("DR", ""),
+        "DEPTH TRANS": format_dict.get("DV", ""),
+    }
+    return row
+
 def open_vcf(vcf_path):
     """
     Open a VCF file, handling gzip if necessary
@@ -136,7 +177,25 @@ def vcf_to_df(vcf_path, vep, fields):
             rows.append(row)
     df = pd.DataFrame(rows)
     return df
-    
+
+
+def snv_vcf_to_df(vcf_path, wcards):
+    """
+    Convert a structural variant VCF file to a DataFrame
+    param vcf_path: Path to the VCF file
+    param wcards: snakemake wildcards object
+    return: DataFrame with parsed VCF data
+    """
+    rows = []
+    with open_vcf(vcf_path) as vcf:
+        for line in vcf:
+            if line.startswith("#"):
+                continue
+            row = parse_sv_vcf_line(line, wcards)
+            rows.append(row)
+    df = pd.DataFrame(rows)
+    return df
+
 
 def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.DataFrame:
     """
@@ -160,15 +219,25 @@ def filter_vcf(vcf_df, column, value):
 
 if __name__ == "__main__":
     # Get input and output paths from snakemake
-    vcf_file=snakemake.input.vcf
+    vcf_snv=snakemake.input.vcf_snv
+    vcf_sv=snakemake.input.vcf_sv
     output_xlsx=snakemake.output.xlsx
 
-    vcf_df=pick_vcf_columns(vcf_to_df(vcf_file, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
+    # fake wildcards dictionary
+    wildcards_dict = {'sample': "2022.MM.14"}
+    
+    # read SNV vcf file
+    vcf_df=pick_vcf_columns(vcf_to_df(vcf_snv, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
     vcf_df.columns=COLUMNS_READABLE_NAMES
-
     snv_tp53=filter_vcf(vcf_df, "GENE", "TP53")
-
     snv_df=filter_vcf(vcf_df, "FILTER", "PASS")
+
+    # read SV vcf file
+    sv_df=snv_vcf_to_df(vcf_sv, wildcards_dict)
+    # filter both chr4 and BND
+    tn_chr4=filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
+    # filter both chr14 and BND
+    tn_chr14=filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
 
     with pd.ExcelWriter(output_xlsx, engine='xlsxwriter') as writer:
         # All the SNVs in one sheet
@@ -188,3 +257,15 @@ if __name__ == "__main__":
         max_row, max_col = snv_tp53.shape
         # Set autofilter on the header row 
         worksheet_tp53.autofilter(0, 0, max_row, max_col - 1)
+
+        # Translocations (BND) from chr4
+        tn_chr4.to_excel(writer, sheet_name='Tn_chr4', index=False)
+        worksheet_sv = writer.sheets['Tn_chr4']
+        max_row, max_col = tn_chr4.shape
+        worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
+
+        # Translocations (BND) from chr14
+        tn_chr14.to_excel(writer, sheet_name='Tn_chr14', index=False)
+        worksheet_sv = writer.sheets['Tn_chr14']
+        max_row, max_col = tn_chr14.shape
+        worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
