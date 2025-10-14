@@ -196,7 +196,7 @@ def vcf_to_df(vcf_path: str, vep: list, fields: list) -> pd.DataFrame:
     return df
 
 
-def snv_vcf_to_df(vcf_path: str, wcards: dict) -> pd.DataFrame:
+def sv_vcf_to_df(vcf_path: str, wcards: dict) -> pd.DataFrame:
     """
     Convert a structural variant VCF file to a DataFrame
     param vcf_path: Path to the VCF file
@@ -235,7 +235,7 @@ def filter_vcf(vcf_df, column, value):
 
 
 if __name__ == "__main__":
-    # et up logging
+    # set up logging
     log_file = snakemake.log[0]
     
     logging.info("Script started")
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     snv_df=filter_vcf(vcf_df, "FILTER", "PASS")
 
     # read SV vcf file
-    sv_df=snv_vcf_to_df(vcf_sv, snakemake.wildcards)
+    sv_df=sv_vcf_to_df(vcf_sv, snakemake.wildcards)
     # filter both chr4 and BND
     tn_chr4=filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
     # filter both chr14 and BND
