@@ -149,7 +149,7 @@ use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call with:
 
 use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat with:
     output:
-        vcf="snv_indels/clairs_to/{sample}_{type}.vcf.gz",
+        vcf=temp("snv_indels/clairs_to/{sample}_{type}.vcf.gz"),
 
 
 # Phase ClairS-TO output only
@@ -258,7 +258,7 @@ use rule bgzip from cnv_sv as cnv_sv_bgzip with:
     input:
         vcf="{file}_T.vcf",
     output:
-        "{file}_T.vcf.gz",
+        temp("{file}_T.vcf.gz"),
     wildcard_constraints:
         file="^cnv_sv/pbsv_call/.+",
 
@@ -362,7 +362,7 @@ use rule bgzip from cnv_sv as bgzip_vep_vcf with:
     input:
         vcf="{file}_T.clairs.phased.include.panel.vep_annotated.vcf",
     output:
-        gz="{file}_T.clairs.phased.include.panel.vep_annotated.vcf.gz",
+        gz=temp("{file}_T.clairs.phased.include.panel.vep_annotated.vcf.gz"),
 
 
 use rule tabix from cnv_sv as tabix_vep_vcf with:
@@ -486,7 +486,7 @@ use rule annotate_cnv from annotation as annotation_annotate_cnvkit_vcf with:
     input:
         vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf",
     output:
-        vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf",
+        vcf=temp("cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf"),
     params:
         bed=lambda wildcards: config.get("annotate_cnv", {}).get(wildcards.tag, ""),
     log:
