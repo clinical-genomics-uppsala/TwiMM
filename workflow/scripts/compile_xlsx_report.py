@@ -113,7 +113,7 @@ def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
     return row
 
 
-def parse_sv_vcf_line(line: str, wcards: dict) -> dict:
+def parse_sv_vcf_line(line: str) -> dict:
     """
     Parse a single structural variant VCF line into a dictionary
     param line: A line from a VCF file
@@ -138,7 +138,6 @@ def parse_sv_vcf_line(line: str, wcards: dict) -> dict:
     format_dict = dict(zip(format_keys, format_values))
 
     row = {
-        "SAMPLE": wcards.sample,
         "CHROM": chrom,
         "POS": pos,
         "TYPE": id_clean,
@@ -152,6 +151,60 @@ def parse_sv_vcf_line(line: str, wcards: dict) -> dict:
         "DEPTH TRANS": format_dict.get("DV", ""),
     }
     return row
+
+
+def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
+    """
+    Parse a single CNVkit VCF line into a dictionary
+    param vcf_line: A line from a CNVkit VCF file
+    return: Dictionary with parsed fields
+    """
+    # Split the line into its tab-separated fields
+    fields = vcf_line.strip().split('\t')
+    
+    # Basic columns
+    chrom = fields[0]
+    pos = int(fields[1])
+    variant_type = fields[4].strip('<>')  # Remove angle brackets from ALT field
+
+    # Parse INFO field
+    info_dict = parse_info(fields[7]) 
+
+    # Extract desired INFO fields
+    genes = info_dict.get('Genes', '')
+    end = int(info_dict.get('END', 0))
+    svlen = int(info_dict.get('SVLEN', 0))
+    log_odds_ratio = float(info_dict.get('LOG_ODDS_RATIO', 'nan'))
+    corr_cn = float(info_dict.get('CORR_CN', 'nan'))
+    probes = int(info_dict.get('PROBES', 0))
+    baf = float(info_dict.get('BAF', 'nan'))
+
+    # Parse FORMAT and sample fields
+    format_dict = parse_format(format_str=fields[8], sample_str=fields[9])
+    # extract certain fields
+    gt = format_dict.get('GT', '')
+    cnq = float(format_dict.get('CNQ', ''))
+    dp = float(format_dict.get('DP', ''))
+
+    # Build the row dictionary
+    row = {
+        'CHROM': chrom,
+        'POS': pos,
+        'VARIANT_TYPE': variant_type,
+        'GENE': genes,
+        'END': end,
+        'SVLEN': svlen,
+        'LOG_ODDS_RATIO': log_odds_ratio,
+        'CORR_CN': corr_cn,
+        'PROBES': probes,
+        'BAF': baf,
+        'GT': gt,
+        'CNQ': cnq,
+        'DP': dp,
+    }
+
+    return row
+
 
 def open_vcf(vcf_path: str):
     """
@@ -182,22 +235,23 @@ def vcf_to_df(vcf_path: str, vep: list, fields: list) -> pd.DataFrame:
     return df
 
 
-def sv_vcf_to_df(vcf_path: str, wcards: dict) -> pd.DataFrame:
+def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
     """
     Convert a structural variant VCF file to a DataFrame
     param vcf_path: Path to the VCF file
-    param wcards: snakemake wildcards object
+    param cnvkit: whether to parse CNVkit-specific fields
     return: DataFrame with parsed VCF data
     """
-    rows = []
+    parse_line = parse_cnvkit_vcf_line if cnvkit else parse_sv_vcf_line
+
     with open_vcf(vcf_path) as vcf:
-        for line in vcf:
-            if line.startswith("#"):
-                continue
-            row = parse_sv_vcf_line(line, wcards)
-            rows.append(row)
-    df = pd.DataFrame(rows)
-    return df
+        rows = [
+            parse_line(line)
+            for line in vcf
+            if not line.startswith("#")
+        ]
+
+    return pd.DataFrame(rows)
 
 
 def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.DataFrame:
@@ -234,8 +288,10 @@ if __name__ == "__main__":
     logging.info(f"Sample name: {snakemake.wildcards.sample}")
 
     # Get input and output paths from snakemake
+    
     vcf_snv=snakemake.input.vcf_snv
     vcf_sv=snakemake.input.vcf_sv
+    vcf_cnv=snakemake.input.vcf_cnv
     output_xlsx=snakemake.output.xlsx
     
     # read SNV vcf file
@@ -247,7 +303,7 @@ if __name__ == "__main__":
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
     
     # read SV vcf file
-    sv_df=sv_vcf_to_df(vcf_sv, snakemake.wildcards)
+    sv_df=sv_vcf_to_df(vcf_sv, cnvkit=False)
     logging.info(f"Total SVs read: {len(sv_df)}")
     # filter both chr4 and BND
     tn_chr4=filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
@@ -255,6 +311,10 @@ if __name__ == "__main__":
     # filter both chr14 and BND
     tn_chr14=filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
+
+    # read CNVkit VCF file
+    cnv_df=sv_vcf_to_df(vcf_cnv, cnvkit=True)
+    logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     with pd.ExcelWriter(output_xlsx, engine='xlsxwriter') as writer:
         # All the SNVs in one sheet
@@ -286,5 +346,11 @@ if __name__ == "__main__":
         worksheet_sv = writer.sheets['Tn_chr14']
         max_row, max_col = tn_chr14.shape
         worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
+
+        # CNVs in a separate sheet
+        cnv_df.to_excel(writer, sheet_name='CNV', index=False)
+        worksheet_cnv = writer.sheets['CNV']
+        max_row, max_col = cnv_df.shape
+        worksheet_cnv.autofilter(0, 0, max_row, max_col - 1)
 
     logging.info("Script finished successfully")
