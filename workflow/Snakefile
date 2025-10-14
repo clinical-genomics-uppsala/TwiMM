@@ -374,12 +374,16 @@ use rule tabix from cnv_sv as tabix_vep_vcf with:
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated",
+
+
 # output: vcf=temp("{file}.filter.{tag}.vcf"), tag='germline'
+
 
 # gzip this file
 use rule bgzip from cnv_sv as bgzip_filtered_vep_vcf with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
+
 
 # filter out NonSomatic variants
 # output: vcf=temp("{file}.bcftools_view.{tag}.vcf.gz"),
@@ -388,12 +392,15 @@ use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic with
         file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
         # tag="germline",
 
+
 # fix AF entries
 rule fix_af:
     input:
         vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
     output:
-        vcf=temp("snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"),
+        vcf=temp(
+            "snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+        ),
     log:
         "snv_indels/whatshap_phase/{sample}_{type}.fix_af.vcf.log",
     benchmark:
@@ -549,6 +556,7 @@ use rule mosdepth_bed from qc as qc_mosdepth_bed with:
         bam="annotation/whatshap_haplotag/{sample}_T.haplotagged.bam",
         bai="annotation/whatshap_haplotag/{sample}_T.haplotagged.bam.bai",
         bed=config.get("reference", {}).get("targets_bed", ""),
+
 
 # Excel report with SNVs and SVs
 rule reports_compile_xlsx_report:
