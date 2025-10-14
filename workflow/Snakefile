@@ -555,6 +555,7 @@ rule reports_compile_xlsx_report:
     input:
         vcf_snv="snv_indels/whatshap_phase/{sample}_T.clairs.phased.include.panel.vep_annotated.vcf.gz",
         vcf_sv="cnv_sv/sniffles2_call/{sample}_T.include.panel.vcf.gz",
+        vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf",
     output:
         xlsx=temp("reports/xlsx_reports/{sample}_combined_variants.xlsx"),
     log:
