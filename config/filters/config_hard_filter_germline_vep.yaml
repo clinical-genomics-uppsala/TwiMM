@@ -13,5 +13,5 @@ filters:
     soft_filter: "False"
   low_confidence:
     description: "Hard filter low confidence variants"
-    expression: "(FORMAT:GQ < 20 or QUAL < 12)"
+    expression: "(FORMAT:GQ < 20 or QUAL < 10)"
     soft_filter: "False"
