@@ -576,4 +576,4 @@ rule reports_compile_xlsx_report:
     message:
         "{rule}: compile SNV and SV VCFs into Excel report for {wildcards.sample}"
     script:
-        "scripts/parse_snvs.py"
+        "scripts/compile_xlsx_report.py"
