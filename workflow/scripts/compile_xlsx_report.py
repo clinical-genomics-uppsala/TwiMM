@@ -1,11 +1,49 @@
 # Columns to keep and their readable names
-COLUMNS_KEEP = ["CHROM", "POS", "REF", "ALT", "QUAL", "FILTER", "Consequence", 
-                       "IMPACT", "SYMBOL", "Feature_type", "BIOTYPE", "EXON", "INTRON", 
-                       "Existing_variation", "VARIANT_CLASS", "AF", "GT", "GQ", "DP", "AD"]
+COLUMNS_KEEP = [
+    "CHROM",
+    "POS",
+    "REF",
+    "ALT",
+    "QUAL",
+    "FILTER",
+    "Consequence",
+    "IMPACT",
+    "SYMBOL",
+    "Feature_type",
+    "BIOTYPE",
+    "EXON",
+    "INTRON",
+    "Existing_variation",
+    "VARIANT_CLASS",
+    "AF",
+    "GT",
+    "GQ",
+    "DP",
+    "AD",
+]
 
-COLUMNS_READABLE_NAMES = ["CHROM", "POS", "REF", "ALT", "QUAL", "FILTER", "Consequence", 
-                       "IMPACT", "GENE", "FEATURE", "TYPE", "EXON", "INTRON", 
-                       "KNOWN_VARIATION", "VARIANT_CLASS", "AF", "GT", "GQ", "DP", "AD"]
+COLUMNS_READABLE_NAMES = [
+    "CHROM",
+    "POS",
+    "REF",
+    "ALT",
+    "QUAL",
+    "FILTER",
+    "Consequence",
+    "IMPACT",
+    "GENE",
+    "FEATURE",
+    "TYPE",
+    "EXON",
+    "INTRON",
+    "KNOWN_VARIATION",
+    "VARIANT_CLASS",
+    "AF",
+    "GT",
+    "GQ",
+    "DP",
+    "AD",
+]
 
 # VEP CSQ field format
 VEP_FIELDS = [
@@ -122,9 +160,9 @@ def parse_sv_vcf_line(line: str) -> dict:
     """
     parts = line.strip().split("\t")
     chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:10]
-    
+
     # Clean ID field
-    match = re.search(r'\.(.*?)\.', id_)
+    match = re.search(r"\.(.*?)\.", id_)
     id_clean = match.group(1)
 
     # Parse INFO
@@ -160,47 +198,47 @@ def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
     return: Dictionary with parsed fields
     """
     # Split the line into its tab-separated fields
-    fields = vcf_line.strip().split('\t')
-    
+    fields = vcf_line.strip().split("\t")
+
     # Basic columns
     chrom = fields[0]
     pos = int(fields[1])
-    variant_type = fields[4].strip('<>')  # Remove angle brackets from ALT field
+    variant_type = fields[4].strip("<>")  # Remove angle brackets from ALT field
 
     # Parse INFO field
-    info_dict = parse_info(fields[7]) 
+    info_dict = parse_info(fields[7])
 
     # Extract desired INFO fields
-    genes = info_dict.get('Genes', '')
-    end = int(info_dict.get('END', 0))
-    svlen = int(info_dict.get('SVLEN', 0))
-    log_odds_ratio = float(info_dict.get('LOG_ODDS_RATIO', 'nan'))
-    corr_cn = float(info_dict.get('CORR_CN', 'nan'))
-    probes = int(info_dict.get('PROBES', 0))
-    baf = float(info_dict.get('BAF', 'nan'))
+    genes = info_dict.get("Genes", "")
+    end = int(info_dict.get("END", 0))
+    svlen = int(info_dict.get("SVLEN", 0))
+    log_odds_ratio = float(info_dict.get("LOG_ODDS_RATIO", "nan"))
+    corr_cn = float(info_dict.get("CORR_CN", "nan"))
+    probes = int(info_dict.get("PROBES", 0))
+    baf = float(info_dict.get("BAF", "nan"))
 
     # Parse FORMAT and sample fields
     format_dict = parse_format(format_str=fields[8], sample_str=fields[9])
     # extract certain fields
-    gt = format_dict.get('GT', '')
-    cnq = float(format_dict.get('CNQ', ''))
-    dp = float(format_dict.get('DP', ''))
+    gt = format_dict.get("GT", "")
+    cnq = float(format_dict.get("CNQ", ""))
+    dp = float(format_dict.get("DP", ""))
 
     # Build the row dictionary
     row = {
-        'CHROM': chrom,
-        'POS': pos,
-        'VARIANT_TYPE': variant_type,
-        'GENE': genes,
-        'END': end,
-        'SVLEN': svlen,
-        'LOG_ODDS_RATIO': log_odds_ratio,
-        'CORR_CN': corr_cn,
-        'PROBES': probes,
-        'BAF': baf,
-        'GT': gt,
-        'CNQ': cnq,
-        'DP': dp,
+        "CHROM": chrom,
+        "POS": pos,
+        "VARIANT_TYPE": variant_type,
+        "GENE": genes,
+        "END": end,
+        "SVLEN": svlen,
+        "LOG_ODDS_RATIO": log_odds_ratio,
+        "CORR_CN": corr_cn,
+        "PROBES": probes,
+        "BAF": baf,
+        "GT": gt,
+        "CNQ": cnq,
+        "DP": dp,
     }
 
     return row
@@ -245,11 +283,7 @@ def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
     parse_line = parse_cnvkit_vcf_line if cnvkit else parse_sv_vcf_line
 
     with open_vcf(vcf_path) as vcf:
-        rows = [
-            parse_line(line)
-            for line in vcf
-            if not line.startswith("#")
-        ]
+        rows = [parse_line(line) for line in vcf if not line.startswith("#")]
 
     return pd.DataFrame(rows)
 
@@ -259,7 +293,7 @@ def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.D
     Pick relevant columns from the VCF DataFrame
     param vcf_df: DataFrame with VCF data
     return: DataFrame with selected columns
-    """   
+    """
     return vcf_df[columns_to_keep]
 
 
@@ -283,73 +317,73 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M",
         level=logging.INFO,
     )
-    
+
     logging.info("Script started")
     logging.info(f"Sample name: {snakemake.wildcards.sample}")
 
     # Get input and output paths from snakemake
-    
-    vcf_snv=snakemake.input.vcf_snv
-    vcf_sv=snakemake.input.vcf_sv
-    vcf_cnv=snakemake.input.vcf_cnv
-    output_xlsx=snakemake.output.xlsx
-    
+
+    vcf_snv = snakemake.input.vcf_snv
+    vcf_sv = snakemake.input.vcf_sv
+    vcf_cnv = snakemake.input.vcf_cnv
+    output_xlsx = snakemake.output.xlsx
+
     # read SNV vcf file
-    vcf_df=pick_vcf_columns(vcf_to_df(vcf_snv, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
-    vcf_df.columns=COLUMNS_READABLE_NAMES
-    snv_tp53=filter_vcf(vcf_df, "GENE", "TP53")
-    snv_df=filter_vcf(vcf_df, "FILTER", "PASS")
+    vcf_df = pick_vcf_columns(vcf_to_df(vcf_snv, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
+    vcf_df.columns = COLUMNS_READABLE_NAMES
+    snv_tp53 = filter_vcf(vcf_df, "GENE", "TP53")
+    snv_df = filter_vcf(vcf_df, "FILTER", "PASS")
     logging.info(f"Total SNVs after filtering: {len(snv_df)}")
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
-    
+
     # read SV vcf file
-    sv_df=sv_vcf_to_df(vcf_sv, cnvkit=False)
+    sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
     logging.info(f"Total SVs read: {len(sv_df)}")
     # filter both chr4 and BND
-    tn_chr4=filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
+    tn_chr4 = filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
     logging.info(f"Translocations from chr4: {len(tn_chr4)}")
     # filter both chr14 and BND
-    tn_chr14=filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
+    tn_chr14 = filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
 
     # read CNVkit VCF file
-    cnv_df=sv_vcf_to_df(vcf_cnv, cnvkit=True)
+    cnv_df = sv_vcf_to_df(vcf_cnv, cnvkit=True)
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
-    with pd.ExcelWriter(output_xlsx, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         # All the SNVs in one sheet
-        snv_df.to_excel(writer, sheet_name='SNV', index=False)
-        workbook  = writer.book
-        worksheet_snv = writer.sheets['SNV']
+        snv_df.to_excel(writer, sheet_name="SNV", index=False)
+        workbook = writer.book
+        worksheet_snv = writer.sheets["SNV"]
         # Get the dimensions of the dataframe
         max_row, max_col = snv_df.shape
         # Set autofilter on the header row
         worksheet_snv.autofilter(0, 0, max_row, max_col - 1)
-        
+
         # TP53 SNVs in a separate sheet
-        snv_tp53.to_excel(writer, sheet_name='TP53', index=False)
+        snv_tp53.to_excel(writer, sheet_name="TP53", index=False)
         # separate sheet for TP53 variantsß
-        worksheet_tp53 = writer.sheets['TP53']
+        worksheet_tp53 = writer.sheets["TP53"]
         # its dimensions
         max_row, max_col = snv_tp53.shape
-        # Set autofilter on the header row 
+        # Set autofilter on the header row
         worksheet_tp53.autofilter(0, 0, max_row, max_col - 1)
 
         # Translocations (BND) from chr4
-        tn_chr4.to_excel(writer, sheet_name='Tn_chr4', index=False)
-        worksheet_sv = writer.sheets['Tn_chr4']
+        tn_chr4.to_excel(writer, sheet_name="Tn_chr4", index=False)
+        worksheet_sv = writer.sheets["Tn_chr4"]
         max_row, max_col = tn_chr4.shape
         worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
 
         # Translocations (BND) from chr14
-        tn_chr14.to_excel(writer, sheet_name='Tn_chr14', index=False)
-        worksheet_sv = writer.sheets['Tn_chr14']
+        tn_chr14.to_excel(writer, sheet_name="Tn_chr14", index=False)
+        worksheet_sv = writer.sheets["Tn_chr14"]
         max_row, max_col = tn_chr14.shape
         worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
 
         # CNVs in a separate sheet
-        cnv_df.to_excel(writer, sheet_name='CNV', index=False)
-        worksheet_cnv = writer.sheets['CNV']
+        cnv_df.to_excel(writer, sheet_name="CNV", index=False)
+        worksheet_cnv = writer.sheets["CNV"]
         max_row, max_col = cnv_df.shape
         worksheet_cnv.autofilter(0, 0, max_row, max_col - 1)
 
