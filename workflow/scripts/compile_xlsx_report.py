@@ -1,3 +1,10 @@
+# Imports
+import pandas as pd
+import gzip
+import re
+import logging
+
+
 # Columns to keep and their readable names
 COLUMNS_KEEP = [
     "CHROM",
@@ -89,12 +96,6 @@ VEP_FIELDS = [
 
 # FORMAT fields to extract
 FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
-
-# Imports
-import pandas as pd
-import gzip
-import re
-import logging
 
 
 # Functions
