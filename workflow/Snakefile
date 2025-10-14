@@ -551,12 +551,12 @@ use rule mosdepth_bed from qc as qc_mosdepth_bed with:
         bed=config.get("reference", {}).get("targets_bed", ""),
 
 # Excel report with SNVs and SVs
-rule compile_xlsx_report:
+rule reports_compile_xlsx_report:
     input:
         vcf_snv="snv_indels/whatshap_phase/{sample}_T.clairs.phased.include.panel.vep_annotated.vcf.gz",
         vcf_sv="cnv_sv/sniffles2_call/{sample}_T.include.panel.vcf.gz",
     output:
-        xlsx="reports/xlsx_reports/{sample}_combined_variants.xlsx",
+        xlsx=temp("reports/xlsx_reports/{sample}_combined_variants.xlsx"),
     log:
         "reports/xlsx_reports/{sample}_combined_variants.xlsx.log",
     benchmark:
