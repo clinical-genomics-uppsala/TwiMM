@@ -59,14 +59,6 @@ import re
 import logging
 
 
-# Set up logging
-logging.basicConfig(
-    format="{asctime} - {levelname} - {message}",
-    style="{",
-    datefmt="%Y-%m-%d %H:%M",
-    level=logging.INFO,
-)
-
 # Functions
 def parse_info(info_str: str) -> dict:
     """
@@ -106,14 +98,11 @@ def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
     chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = fields[:10]
 
     info_dict = parse_info(info)
-    logging.debug(f"Parsed INFO: {info_dict}")
     format_dict = parse_format(fmt, sample)
-    logging.debug(f"Parsed FORMAT: {format_dict}")
 
     csq_data = info_dict.get("CSQ", "").split(",")[0]  # take first annotation
     csq_values = csq_data.split("|")
     csq_dict = dict(zip(vep_fields, csq_values))
-    logging.debug(f"Parsed VEP CSQ: {csq_dict}")
 
     row = {"CHROM": chrom, "POS": pos, "REF": ref, "ALT": alt, "QUAL": qual, "FILTER": fltr}
 
@@ -137,19 +126,16 @@ def parse_sv_vcf_line(line: str, wcards: dict) -> dict:
     # Clean ID field
     match = re.search(r'\.(.*?)\.', id_)
     id_clean = match.group(1)
-    logging.debug(f"Parsed ID: {id_} -> {id_clean}")
 
     # Parse INFO
     info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
     coverage = info_dict.get("COVERAGE", "")
     vaf = info_dict.get("VAF", "")
-    logging.debug(f"Parsed INFO: {info_dict}")
 
     # Parse FORMAT and sample data
     format_keys = format_.split(":")
     format_values = sample_data.split(":")
     format_dict = dict(zip(format_keys, format_values))
-    logging.debug(f"Parsed FORMAT: {format_dict}")
 
     row = {
         "SAMPLE": wcards.sample,
@@ -235,10 +221,17 @@ def filter_vcf(vcf_df, column, value):
 
 
 if __name__ == "__main__":
-    # set up logging
-    log_file = snakemake.log[0]
+    # Set up logging
+    logging.basicConfig(
+        filename=snakemake.log[0],
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+        level=logging.INFO,
+    )
     
     logging.info("Script started")
+    logging.info(f"Sample name: {snakemake.wildcards.sample}")
 
     # Get input and output paths from snakemake
     vcf_snv=snakemake.input.vcf_snv
@@ -250,13 +243,18 @@ if __name__ == "__main__":
     vcf_df.columns=COLUMNS_READABLE_NAMES
     snv_tp53=filter_vcf(vcf_df, "GENE", "TP53")
     snv_df=filter_vcf(vcf_df, "FILTER", "PASS")
-
+    logging.info(f"Total SNVs after filtering: {len(snv_df)}")
+    logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
+    
     # read SV vcf file
     sv_df=sv_vcf_to_df(vcf_sv, snakemake.wildcards)
+    logging.info(f"Total SVs read: {len(sv_df)}")
     # filter both chr4 and BND
     tn_chr4=filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
+    logging.info(f"Translocations from chr4: {len(tn_chr4)}")
     # filter both chr14 and BND
     tn_chr14=filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
+    logging.info(f"Translocations from chr14: {len(tn_chr14)}")
 
     with pd.ExcelWriter(output_xlsx, engine='xlsxwriter') as writer:
         # All the SNVs in one sheet
@@ -288,3 +286,5 @@ if __name__ == "__main__":
         worksheet_sv = writer.sheets['Tn_chr14']
         max_row, max_col = tn_chr14.shape
         worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
+
+    logging.info("Script finished successfully")
