@@ -216,7 +216,11 @@ def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
     log_odds_ratio = float(info_dict.get("LOG_ODDS_RATIO", "nan"))
     corr_cn = float(info_dict.get("CORR_CN", "nan"))
     probes = int(info_dict.get("PROBES", 0))
-    baf = float(info_dict.get("BAF", "nan"))
+    try:
+        baf = float(info_dict.get("BAF", "nan"))
+    except ValueError:
+        logging.info(f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is")
+        baf = info_dict.get("BAF", "nan")
 
     # Parse FORMAT and sample fields
     format_dict = parse_format(format_str=fields[8], sample_str=fields[9])
