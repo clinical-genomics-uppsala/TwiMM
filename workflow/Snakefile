@@ -160,14 +160,14 @@ use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_clairs with
         bam="alignment/pbmm2_align/{sample}_T.bam",
         fasta=config.get("reference", {}).get("fasta", ""),
     output:
-        vcf=temp("snv_indels/whatshap_phase/{sample}_T.clairs.phased.vcf.gz"),
+        vcf=temp("snv_indels/clairs_to/{sample}_T.clairs.phased.vcf.gz"),
     params:
         extra=config.get("whatshap_phase", {}).get("extra", ""),
     log:
-        "snv_indels/whatshap_phase/{sample}_T.clairs.phased.vcf.gz.log",
+        "snv_indels/clairs_to/{sample}_T.clairs.phased.vcf.gz.log",
     benchmark:
         repeat(
-            "snv_indels/whatshap_phase/{sample}_T.clairs.phased.vcf.gz.benchmark.tsv",
+            "snv_indels/clairs_to/{sample}_T.clairs.phased.vcf.gz.benchmark.tsv",
             config.get("whatshap_phase", {}).get("benchmark_repeats", 1),
         )
 
@@ -175,12 +175,12 @@ use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_clairs with
 # index the phased vcf from clairs
 use rule tabix from cnv_sv as cnv_sv_tabix_clairs with:
     wildcard_constraints:
-        file="^snv_indels/whatshap_phase/.+\.clairs\.phased",
+        file="^snv_indels/clairs_to/.+\.clairs\.phased",
 
 
 use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_clairs with:
     wildcard_constraints:
-        file="^snv_indels/whatshap_phase/.+\.clairs\.phased",
+        file="^snv_indels/clairs_to/.+\.clairs\.phased",
 
 
 use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
@@ -189,8 +189,8 @@ use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
         bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
         ref=config.get("reference", {}).get("fasta", ""),
         fai=config.get("reference", {}).get("fai", ""),
-        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.vcf.gz",
-        tbi="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.vcf.gz.tbi",
+        vcf="snv_indels/clairs_to/{sample}_{type}.clairs.phased.vcf.gz",
+        tbi="snv_indels/clairs_to/{sample}_{type}.clairs.phased.vcf.gz.tbi",
 
 
 # output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
@@ -220,14 +220,14 @@ use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_deepsomatic
         bam="alignment/pbmm2_align/{sample}_T.bam",
         fasta=config.get("reference", {}).get("fasta", ""),
     output:
-        vcf=temp("snv_indels/whatshap_phase/{sample}_T.deepsomatic.phased.vcf.gz"),
+        vcf=temp("snv_indels/deepsomatic_t_only/{sample}_T.deepsomatic.phased.vcf.gz"),
     params:
         extra=config.get("whatshap_phase", {}).get("extra", ""),
     log:
-        "snv_indels/whatshap_phase/{sample}_T.deepsomatic.phased.vcf.gz.log",
+        "snv_indels/deepsomatic_t_only/{sample}_T.deepsomatic.phased.vcf.gz.log",
     benchmark:
         repeat(
-            "snv_indels/whatshap_phase/{sample}_T.deepsomatic.phased.vcf.gz.benchmark.tsv",
+            "snv_indels/deepsomatic_t_only/{sample}_T.deepsomatic.phased.vcf.gz.benchmark.tsv",
             config.get("whatshap_phase", {}).get("benchmark_repeats", 1),
         )
 
@@ -235,13 +235,13 @@ use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_deepsomatic
 # index the phased vcf from deepsomatic
 use rule tabix from cnv_sv as cnv_sv_tabix_deepsomatic with:
     wildcard_constraints:
-        file="^snv_indels/whatshap_phase/.+\.deepsomatic\.phased",
+        file="^snv_indels/deepsomatic_t_only/.+\.deepsomatic\.phased",
 
 
 # annotate DeepSomatic-TO VCF with VEP
 use rule vep from annotation as annotation_vep_deepsomatic with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+\.deepsomatic\.phased",
+        file="snv_indels/deepsomatic_t_only/.+\.deepsomatic\.phased",
 
 
 # STRUCTURAL VARIANTS
@@ -347,18 +347,18 @@ rule cnv_sv_cnvkit_batch_local:
 # index phased.inlcude.panel.vcf
 use rule tabix from cnv_sv as cnv_sv_tabix_include_panel with:
     wildcard_constraints:
-        file="^snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel",
+        file="^snv_indels/clairs_to/.+\.clairs\.phased\.include\.panel",
 
 
 use rule vep from annotation as annotation_vep_clairs with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel",
+        file="snv_indels/clairs_to/.+\.clairs\.phased\.include\.panel",
 
 
 # vep output has to be bgzipped and indexed
 use rule bgzip from cnv_sv as bgzip_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+",
+        file="snv_indels/clairs_to/.+",
     input:
         vcf="{file}_T.clairs.phased.include.panel.vep_annotated.vcf",
     output:
@@ -367,13 +367,13 @@ use rule bgzip from cnv_sv as bgzip_vep_vcf with:
 
 use rule tabix from cnv_sv as tabix_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+_T\.clairs\.phased\.include\.panel\.vep_annotated",
+        file="snv_indels/clairs_to/.+_T\.clairs\.phased\.include\.panel\.vep_annotated",
 
 
 # now you can filter it (keep the populational variants)
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated",
+        file="snv_indels/clairs_to/.+\.clairs\.phased\.include\.panel\.vep_annotated",
 
 
 # output: vcf=temp("{file}.filter.{tag}.vcf"), tag='germline'
@@ -382,46 +382,32 @@ use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
 # gzip this file
 use rule bgzip from cnv_sv as bgzip_filtered_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
+        file="snv_indels/clairs_to/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
 
 
 # filter out NonSomatic variants
 # output: vcf=temp("{file}.bcftools_view.{tag}.vcf.gz"),
 use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
+        file="snv_indels/clairs_to/.+\.clairs\.phased\.include\.panel\.vep_annotated\.filter\.germline",
         # tag="germline",
 
 
 # fix AF entries
-rule fix_af:
+use rule fix_af from snv_indels as snv_indels_fix_af with:
     input:
-        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
+        vcf="snv_indels/clairs_to/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
     output:
         vcf=temp(
-            "snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+            "snv_indels/clairs_to/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
         ),
     log:
-        "snv_indels/whatshap_phase/{sample}_{type}.fix_af.vcf.log",
+        "snv_indels/clairs_to/{sample}_{type}.fix_af.vcf.log",
     benchmark:
         repeat(
-            "snv_indels/whatshap_phase/{sample}_{type}.fix_af.vcf.benchmark.tsv",
+            "snv_indels/clairs_to/{sample}_{type}.fix_af.vcf.benchmark.tsv",
             config.get("fix_af", {}).get("benchmark_repeats", 1),
         )
-    threads: config.get("fix_af", {}).get("threads", config["default_resources"]["threads"])
-    resources:
-        mem_mb=config.get("fix_af", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
-        mem_per_cpu=config.get("fix_af", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
-        partition=config.get("fix_af", {}).get("partition", config["default_resources"]["partition"]),
-        threads=config.get("fix_af", {}).get("threads", config["default_resources"]["threads"]),
-        time=config.get("fix_af", {}).get("time", config["default_resources"]["time"]),
-    container:
-        config.get("fix_af", {}).get("container", config["default_container"])
-    message:
-        "{rule}: fix missing allele frequency field in format column in {input.vcf}"
-    script:
-        "scripts/fix_af.py"
-
 
 # outputs loh.cns file
 # use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
@@ -435,7 +421,7 @@ rule cnvkit_call_new_wrapper:
         tc_method="pathology",
     input:
         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns",
-        vcf="snv_indels/whatshap_phase/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
+        vcf="snv_indels/clairs_to/{sample}_{type}.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
         tc_file=get_tc_file,
     output:
         segment=temp("cnv_sv/cnvkit_call/{sample}_{type}.{tc_method}.loh.cns"),
@@ -561,7 +547,7 @@ use rule mosdepth_bed from qc as qc_mosdepth_bed with:
 # Excel report with SNVs and SVs
 rule reports_compile_xlsx_report:
     input:
-        vcf_snv="snv_indels/whatshap_phase/{sample}_T.clairs.phased.include.panel.vep_annotated.vcf.gz",
+        vcf_snv="snv_indels/clairs_to/{sample}_T.clairs.phased.include.panel.vep_annotated.vcf.gz",
         vcf_sv="cnv_sv/sniffles2_call/{sample}_T.include.panel.vcf.gz",
         vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf",
     output:

@@ -1,8 +1,8 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples.tsv"
-units: "config/units.tsv"
+samples: "config/samples_single_test.tsv"
+units: "config/units_single_test.tsv"
 
 default_container: "docker://hydragenetics/common:3.1.1.1"
 
@@ -27,7 +27,8 @@ bcftools_filter_include_region:
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 bcftools_view:
-  extra: "-i 'FILTER=\"PASS\"'"
+  # extra: "-i 'FILTER=\"PASS\"'"
+  extra: ""
 
 caller: "cnvkit"
 
@@ -68,9 +69,9 @@ hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
   exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
   extra: ""
-
+  
 merge_cnv_json:
-  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+  germline_vcf: "snv_indels/clairs_to/{sample}_T.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
   unfiltered_cnv_vcfs: 
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs: 
