@@ -156,7 +156,6 @@ def parse_sv_vcf_line(line: str) -> dict:
     """
     Parse a single structural variant VCF line into a dictionary
     param line: A line from a VCF file
-    param wcards: snakemake wildcards object
     return: Dictionary with parsed fields
     """
     parts = line.strip().split("\t")
@@ -170,19 +169,29 @@ def parse_sv_vcf_line(line: str) -> dict:
     info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
     coverage = info_dict.get("COVERAGE", "")
     vaf = info_dict.get("VAF", "")
+    support = info_dict.get("SUPPORT", "")
+    strand = info_dict.get("STRAND", "")
+    # available for INS & DEL only
+    end = info_dict.get("END", "")
+    svlen = info_dict.get("SVLEN", "")
 
     # Parse FORMAT and sample data
     format_keys = format_.split(":")
     format_values = sample_data.split(":")
     format_dict = dict(zip(format_keys, format_values))
 
+    # this may require subsetting depending on your needs
     row = {
         "CHROM": chrom,
         "POS": pos,
+        "END": end,
         "TYPE": id_clean,
+        "SVLEN": svlen,
         "ALT": alt,
         "FILTER": filter_,
         "COVERAGE": coverage,
+        "SUPPORT": support,
+        "STRAND": strand,
         "VAF": vaf,
         "GENOTYPE": format_dict.get("GT", ""),
         "GENOME QUALITY": format_dict.get("GQ", ""),
