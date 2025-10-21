@@ -5,99 +5,6 @@ import re
 import logging
 
 
-# Columns to keep and their readable names
-COLUMNS_KEEP = [
-    "CHROM",
-    "POS",
-    "REF",
-    "ALT",
-    "QUAL",
-    "FILTER",
-    "Consequence",
-    "IMPACT",
-    "SYMBOL",
-    "Feature_type",
-    "BIOTYPE",
-    "EXON",
-    "INTRON",
-    "Existing_variation",
-    "VARIANT_CLASS",
-    "AF",
-    "GT",
-    "GQ",
-    "DP",
-    "AD",
-]
-
-COLUMNS_READABLE_NAMES = [
-    "CHROM",
-    "POS",
-    "REF",
-    "ALT",
-    "QUAL",
-    "FILTER",
-    "Consequence",
-    "IMPACT",
-    "GENE",
-    "FEATURE",
-    "TYPE",
-    "EXON",
-    "INTRON",
-    "KNOWN_VARIATION",
-    "VARIANT_CLASS",
-    "AF",
-    "GT",
-    "GQ",
-    "DP",
-    "AD",
-]
-
-# VEP CSQ field format
-VEP_FIELDS = [
-    "Allele",
-    "Consequence",
-    "IMPACT",
-    "SYMBOL",
-    "Gene",
-    "Feature_type",
-    "Feature",
-    "BIOTYPE",
-    "EXON",
-    "INTRON",
-    "HGVSc",
-    "HGVSp",
-    "cDNA_position",
-    "CDS_position",
-    "Protein_position",
-    "Amino_acids",
-    "Codons",
-    "Existing_variation",
-    "DISTANCE",
-    "STRAND",
-    "FLAGS",
-    "VARIANT_CLASS",
-    "SYMBOL_SOURCE",
-    "HGNC_ID",
-    "AF",
-    "gnomADe_AF",
-    "gnomADe_AFR_AF",
-    "gnomADe_AMR_AF",
-    "gnomADe_ASJ_AF",
-    "gnomADe_EAS_AF",
-    "gnomADe_FIN_AF",
-    "gnomADe_MID_AF",
-    "gnomADe_NFE_AF",
-    "gnomADe_REMAINING_AF",
-    "gnomADe_SAS_AF",
-    "CLIN_SIG",
-    "SOMATIC",
-    "PHENO",
-]
-
-# FORMAT fields to extract
-FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
-
-
 # Functions
 def parse_info(info_str: str) -> dict:
     """
@@ -323,6 +230,97 @@ def filter_vcf(vcf_df, column, value):
 
 
 if __name__ == "__main__":
+    # Columns to keep and their readable names
+    COLUMNS_KEEP = [
+        "CHROM",
+        "POS",
+        "REF",
+        "ALT",
+        "QUAL",
+        "FILTER",
+        "Consequence",
+        "IMPACT",
+        "SYMBOL",
+        "Feature_type",
+        "BIOTYPE",
+        "EXON",
+        "INTRON",
+        "Existing_variation",
+        "VARIANT_CLASS",
+        "AF",
+        "GT",
+        "GQ",
+        "DP",
+        "AD",
+    ]
+
+    COLUMNS_READABLE_NAMES = [
+        "CHROM",
+        "POS",
+        "REF",
+        "ALT",
+        "QUAL",
+        "FILTER",
+        "Consequence",
+        "IMPACT",
+        "GENE",
+        "FEATURE",
+        "TYPE",
+        "EXON",
+        "INTRON",
+        "KNOWN_VARIATION",
+        "VARIANT_CLASS",
+        "AF",
+        "GT",
+        "GQ",
+        "DP",
+        "AD",
+    ]
+
+    # VEP CSQ field format
+    VEP_FIELDS = [
+        "Allele",
+        "Consequence",
+        "IMPACT",
+        "SYMBOL",
+        "Gene",
+        "Feature_type",
+        "Feature",
+        "BIOTYPE",
+        "EXON",
+        "INTRON",
+        "HGVSc",
+        "HGVSp",
+        "cDNA_position",
+        "CDS_position",
+        "Protein_position",
+        "Amino_acids",
+        "Codons",
+        "Existing_variation",
+        "DISTANCE",
+        "STRAND",
+        "FLAGS",
+        "VARIANT_CLASS",
+        "SYMBOL_SOURCE",
+        "HGNC_ID",
+        "AF",
+        "gnomADe_AF",
+        "gnomADe_AFR_AF",
+        "gnomADe_AMR_AF",
+        "gnomADe_ASJ_AF",
+        "gnomADe_EAS_AF",
+        "gnomADe_FIN_AF",
+        "gnomADe_MID_AF",
+        "gnomADe_NFE_AF",
+        "gnomADe_REMAINING_AF",
+        "gnomADe_SAS_AF",
+        "CLIN_SIG",
+        "SOMATIC",
+        "PHENO",
+    ]
+
+    # FORMAT fields to extract
+    FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
     # Set up logging
     logging.basicConfig(
         filename=snakemake.log[0],
