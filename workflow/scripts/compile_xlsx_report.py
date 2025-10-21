@@ -318,7 +318,7 @@ if __name__ == "__main__":
         "SOMATIC",
         "PHENO",
     ]
-    
+
     # IDID - Insertion/Deletion/Inversion/Duplication columns
     IDID_COLUMNS = [
         "Sample",
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
 
     # read SV vcf file and extract IDID variants
-    sv_chr14_pass =  filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "FILTER", "PASS")
+    sv_chr14_pass = filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "FILTER", "PASS")
     # keep TYPE!=BND
     sv_chr14_idid = sv_chr14_pass[~sv_chr14_pass['TYPE'].isin(['BND'])]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
