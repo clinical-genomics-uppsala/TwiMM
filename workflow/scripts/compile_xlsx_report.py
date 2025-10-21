@@ -318,6 +318,23 @@ if __name__ == "__main__":
         "SOMATIC",
         "PHENO",
     ]
+    
+    # IDID - Insertion/Deletion/Inversion/Duplication columns
+    IDID_COLUMNS = [
+        "Sample",
+        "POS",
+        "END",
+        "TYPE",
+        "SVLEN",
+        "FILTER",
+        "COVERAGE",
+        "DEPTH REF",
+        "DEPTH VARIANT",
+        "STRAND",
+        "VAF",
+        "GENOTYPE",
+        "GENOME QUALITY",
+    ]
 
     # FORMAT fields to extract
     FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
@@ -358,6 +375,12 @@ if __name__ == "__main__":
     tn_chr14 = filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
 
+    # read SV vcf file and extract IDID variants
+    sv_chr14_pass =  filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "FILTER", "PASS")
+    # keep TYPE!=BND
+    sv_chr14_idid = sv_chr14_pass[~sv_chr14_pass['TYPE'].isin(['BND'])]
+    logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
+
     # read CNVkit VCF file
     cnv_df = sv_vcf_to_df(vcf_cnv, cnvkit=True)
     logging.info(f"Total CNVs read: {len(cnv_df)}")
@@ -392,6 +415,12 @@ if __name__ == "__main__":
         worksheet_sv = writer.sheets["Tn_chr14"]
         max_row, max_col = tn_chr14.shape
         worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
+
+        # IDID variants from chr14
+        sv_chr14_idid.to_excel(writer, sheet_name="IDID_chr14", index=False)
+        worksheet_idid = writer.sheets["IDID_chr14"]
+        max_row, max_col = sv_chr14_idid.shape
+        worksheet_idid.autofilter(0, 0, max_row, max_col - 1)
 
         # CNVs in a separate sheet
         cnv_df.to_excel(writer, sheet_name="CNV", index=False)
