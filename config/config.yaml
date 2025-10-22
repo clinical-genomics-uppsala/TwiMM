@@ -47,8 +47,9 @@ cnvkit_batch:
   method: "hybrid"
 
 cnvkit_call:
-  container: "docker://hydragenetics/cnvkit:0.9.9"
+  container: "docker://etal/cnvkit:0.9.11"
   extra: ""
+  purity: 0.9
 
 cnvkit_vcf:
   container: "docker://hydragenetics/cnvkit:0.9.9"
