@@ -16,7 +16,10 @@ reference:
   targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
 aligner: "pbmm2"
-haplotagging: "whatshap"
+# this is used by get_input_haplotagged_bam function in workflow/Snakefile
+# to get the path to haplotagged bams
+haplotag_path: "snv_indels/whatshap_haplotag"
+haplotag_suffix: "haplotagged"
 
 annotate_cnv:
   tag: "germline"
@@ -43,11 +46,11 @@ cnv_html_report:
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.9"
-  normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
+  normal_reference: "ref_data/cnvkit.PoN.cnn"
   method: "hybrid"
 
 cnvkit_call:
-  container: "docker://etal/cnvkit:0.9.11"
+  container: "docker://hydragenetics/cnvkit:0.9.11"
   extra: ""
   purity: 0.9
 
