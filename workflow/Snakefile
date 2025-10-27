@@ -43,7 +43,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="develop",
+            branch="fix_input_functions",
         )
     config:
         config
@@ -295,13 +295,12 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 
 
 # run CNVkits
-# use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
-rule cnv_sv_cnvkit_batch_local:
+use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
     input:
-        bam=["snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"],
-        bai=["snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai"],
-        #reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
-        reference="../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn",
+        bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config["haplotag_path"], suffix="haplotagged")[0],
+        bai=lambda wildcards: get_input_haplotagged_bam(wildcards, config["haplotag_path"], suffix="haplotagged")[1],
+        reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
+        # reference="ref_data/cnvkit.PoN.cnn",
     output:
         antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.antitargetcoverage.cnn"),
         bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.bintest.cns"),
@@ -309,29 +308,6 @@ rule cnv_sv_cnvkit_batch_local:
         segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cns"),
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"),
         target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.targetcoverage.cnn"),
-    params:
-        extra=config.get("cnvkit_batch", {}).get("extra", ""),
-        method=config.get("cnvkit_batch", {}).get("method", "hybrid"),
-    log:
-        "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns.log",
-    benchmark:
-        repeat(
-            "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns.benchmark.tsv",
-            config.get("cnvkit_batch", {}).get("benchmark_repeats", 1),
-        )
-    threads: config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"])
-    resources:
-        mem_mb=config.get("cnvkit_batch", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
-        mem_per_cpu=config.get("cnvkit_batch", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
-        partition=config.get("cnvkit_batch", {}).get("partition", config["default_resources"]["partition"]),
-        threads=config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"]),
-        time=config.get("cnvkit_batch", {}).get("time", config["default_resources"]["time"]),
-    container:
-        config.get("cnvkit_batch", {}).get("container", config["default_container"])
-    message:
-        "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
-    script:
-        "scripts/cnvkit_batch_script.py"
 
 
 # to create 'germline' vcf from gnomAD
