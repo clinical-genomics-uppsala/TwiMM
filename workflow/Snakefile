@@ -297,10 +297,9 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 # run CNVkits
 use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
     input:
-        bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config["haplotag_path"], suffix="haplotagged")[0],
-        bai=lambda wildcards: get_input_haplotagged_bam(wildcards, config["haplotag_path"], suffix="haplotagged")[1],
+        bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[0],
+        bai=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[1],
         reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
-        # reference="ref_data/cnvkit.PoN.cnn",
     output:
         antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.antitargetcoverage.cnn"),
         bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.bintest.cns"),
@@ -314,8 +313,7 @@ use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
 # it annotates your vcf with gnomad frequencies
 # which you can then use to filter out (or  keep!) some variants
 # use svn_indels VCF as input to VEP
-# cause that's how it is in the original cnvkit_call
-
+# cause that's how it is in the original cnvkit_call rule
 
 # index phased.inlcude.panel.vcf
 use rule tabix from cnv_sv as cnv_sv_tabix_include_panel with:
