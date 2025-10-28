@@ -16,7 +16,7 @@ from hydra_genetics.utils.resources import load_resources
 from hydra_genetics.utils.samples import *
 from hydra_genetics.utils.units import *
 
-from hydra_genetics.utils.misc import export_config_as_file
+from hydra_genetics.utils.misc import export_config_as_file, get_input_haplotagged_bam, get_input_aligned_bam, get_longread_bam
 from hydra_genetics.utils.software_versions import add_version_files_to_multiqc
 from hydra_genetics.utils.software_versions import add_software_version_to_config
 from hydra_genetics.utils.software_versions import export_pipeline_version_as_file
