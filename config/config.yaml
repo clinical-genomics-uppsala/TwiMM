@@ -1,8 +1,8 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples_single_test.tsv"
-units: "config/units_single_test.tsv"
+samples: "config/samples.tsv"
+units: "config/units.tsv"
 
 default_container: "docker://hydragenetics/common:3.1.1.1"
 
@@ -45,7 +45,7 @@ cnv_html_report:
   cytobands: false
 
 cnvkit_batch:
-  container: "docker://hydragenetics/cnvkit:0.9.9"
+  container: "docker://hydragenetics/cnvkit:0.9.11"
   normal_reference: "ref_data/cnvkit.PoN.cnn"
   method: "hybrid"
 
@@ -75,7 +75,7 @@ hificnv:
   extra: ""
   
 merge_cnv_json:
-  germline_vcf: "snv_indels/clairs_to/{sample}_T.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+  germline_vcf: "snv_indels/clairs_to/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
   unfiltered_cnv_vcfs: 
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs: 
