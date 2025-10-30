@@ -67,16 +67,20 @@ with TemporaryDirectory() as tmpdirname:
         "{extra}) {log}"
     )
 
-    for output_file in output_list:
-        filename = basename(output_file)
-        parent = dirname(output_file)
+    # collect existing output filenames
+    temp_files = sorted(listdir(tmpdirname))
+    # collect paths of destination directories (from snakemake rule)
+    destination_paths = sorted(output_list)
+    # copy them existing files to their destinations with snakemake-specified names
+    for source, destination in zip(temp_files, destination_paths):
+        # filename = basename(output_file)
+        # parent = dirname(output_file)
 
         try:
-            shutil.copy2(join(tmpdirname, filename), output_file)
+            shutil.copy2(join(tmpdirname, source), destination)
         except FileNotFoundError as e:
-            temp_files = listdir(tmpdirname)
             logging.error(
-                f"Couldn't locate file {join(tmpdirname, filename)} to copy it to {output_file}. "
+                f"Couldn't locate file {join(tmpdirname, source)} to copy it to {destination}. "
                 f"Possible files are {[basename(f) for f in temp_files]}"
             )
             raise e
