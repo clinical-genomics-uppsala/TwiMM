@@ -24,3 +24,6 @@ general_report: "../../config/report.yaml"
 
 vep:
   vep_cache: "ref_data/VEP"
+
+filter_vcf:
+  germline: "../../config/filters/config_hard_filter_germline_vep.yaml"
