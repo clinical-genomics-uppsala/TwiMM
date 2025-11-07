@@ -1,0 +1,12 @@
+jobs: 8
+keep-going: True
+restart-times: 0
+rerun-incomplete: True
+max-jobs-per-second: 4
+max-status-checks-per-second: 4
+use-singularity: True
+drmaa: "-p {resources.partition} -t {resources.time} -n {resources.threads} --mem={resources.mem_mb} --mem-per-cpu={resources.mem_per_cpu} -J {rule} -A wp2 -e slurm/{rule}_%j.err -o slurm/{rule}_%j.out --nodes=1-1"
+default-resources: [gres=""]
+drmaa-log-dir: "slurm"
+singularity-args: "--no-home --cleanenv -B /projects,/beegfs-storage,/tmp,/data/ref_genomes/VEP"
+singularity-prefix: "/projects/wp2/nobackup/Twist_Myelom/singularity_cache/"
