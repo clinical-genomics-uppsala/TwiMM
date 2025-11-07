@@ -51,10 +51,8 @@ extra = snakemake.params.get("extra", "")
 with TemporaryDirectory() as tmpdirname:
     if create_reference:
         output = f"--output-reference {join(tmpdirname, 'reference.cnn')}"
-        output_list = [snakemake.output.reference]
     # MY CASE
     else:
-        output_list = [value for key, value in snakemake.output.items()]
         output = f"-d {tmpdirname} "
     shell(
         "(cnvkit.py batch {input_bam_files} "
@@ -67,16 +65,44 @@ with TemporaryDirectory() as tmpdirname:
         "{extra}) {log}"
     )
 
-    for output_file in output_list:
-        filename = basename(output_file)
-        parent = dirname(output_file)
+    # actual generated files
+    temp_files = listdir(tmpdirname)
 
+    # mapping of file suffixes to snakemake.output attributes
+    file_map = {
+        "antitargetcoverage.cnn": "antitarget_coverage",
+        "bintest.cns": "bins",
+        "cnr": "regions",
+        "call.cns": "segments_called",
+        "targetcoverage.cnn": "target_coverage",
+        "cns": "segments",
+        "reference.cnn": "reference",
+    }
+
+    sources = []
+    destinations = []
+
+    for file in temp_files:
+        for suffix, attr in file_map.items():
+            if file.endswith(suffix):
+                # Skip ambiguous matches
+                if attr == "segments" and any(
+                    x in file for x in ["call.cns", "bintest.cns"]
+                ):
+                    continue
+                output_path = getattr(snakemake.output, attr, None)
+                if output_path is not None:
+                    destinations.append(output_path)
+                    sources.append(file)
+                break  # stop after first match
+
+    # build destination paths:
+    for source, destination in zip(sources, destinations):
         try:
-            shutil.copy2(join(tmpdirname, filename), output_file)
+            shutil.copy2(join(tmpdirname, source), destination)
         except FileNotFoundError as e:
-            temp_files = listdir(tmpdirname)
             logging.error(
-                f"Couldn't locate file {join(tmpdirname, filename)} to copy it to {output_file}. "
+                f"Couldn't locate file {join(tmpdirname, source)} to copy it to {destination}. "
                 f"Possible files are {[basename(f) for f in temp_files]}"
             )
             raise e

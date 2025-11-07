@@ -16,7 +16,10 @@ reference:
   targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
 aligner: "pbmm2"
-haplotagging: "whatshap"
+# this is used by get_input_haplotagged_bam function in workflow/Snakefile
+# to get the path to haplotagged bams
+haplotag_path: "snv_indels/whatshap_haplotag"
+haplotag_suffix: "haplotagged"
 
 annotate_cnv:
   tag: "germline"
@@ -27,7 +30,8 @@ bcftools_filter_include_region:
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 bcftools_view:
-  extra: "-i 'FILTER=\"PASS\"'"
+  # extra: "-i 'FILTER=\"PASS\"'"
+  extra: ""
 
 caller: "cnvkit"
 
@@ -41,13 +45,14 @@ cnv_html_report:
   cytobands: false
 
 cnvkit_batch:
-  container: "docker://hydragenetics/cnvkit:0.9.9"
-  normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
+  container: "docker://hydragenetics/cnvkit:0.9.11"
+  normal_reference: "ref_data/cnvkit.PoN.cnn"
   method: "hybrid"
 
 cnvkit_call:
-  container: "docker://hydragenetics/cnvkit:0.9.9"
+  container: "docker://hydragenetics/cnvkit:0.9.11"
   extra: ""
+  purity: 0.9
 
 cnvkit_vcf:
   container: "docker://hydragenetics/cnvkit:0.9.9"
@@ -68,9 +73,9 @@ hificnv:
   container: "docker://hydragenetics/hificnv:1.0.1"
   exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
   extra: ""
-
+  
 merge_cnv_json:
-  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.clairs.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+  germline_vcf: "snv_indels/clairs_to/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
   unfiltered_cnv_vcfs: 
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs: 
