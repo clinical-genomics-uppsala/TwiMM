@@ -11,9 +11,6 @@ reference:
   design_bed: "ref_data/test_genes.bed"
   targets_bed: "ref_data/test_genes.bed"
 
-deepsomatic_t_only:
-  pon: "ref_data/bcftools_merge/normal_db.vcf"
-
 cnvkit_batch:
   normal_reference: "ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
 
@@ -23,7 +20,14 @@ bcftools_filter_include_region:
 pbsv_discover:
   trf: "ref_data/human_trf.bed"
 
-hificnv:
-  exclude: "ref_data/cnv_excluded_regions.bed"
-
 general_report: "../../config/report.yaml"
+
+vep:
+  vep_cache: "ref_data/VEP"
+
+filter_vcf:
+  germline: "../../config/filters/config_hard_filter_germline_vep.yaml"
+
+merge_cnv_json:
+  annotations:
+   - "ref_data/myeloma_annotated_genes_only.bed"

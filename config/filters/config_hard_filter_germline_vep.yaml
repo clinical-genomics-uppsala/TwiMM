@@ -1,0 +1,17 @@
+filters:
+  germline:
+    description: "Hard filter germline"
+    expression: "(VEP:AF < 0.001)"
+    soft_filter: "False"
+  ad:
+    description: "Hard filter variants with few observations (AD lower than 10)"
+    expression: "(FORMAT:AD:1 < 10 or FORMAT:AD:0 < 10)"
+    soft_filter: "False"
+  snp_type:
+    description: "Hard filter variants that are not SNVs"
+    expression: "(!exist[SNV, VEP:VARIANT_CLASS])"
+    soft_filter: "False"
+  low_confidence:
+    description: "Hard filter low confidence variants"
+    expression: "(FORMAT:GQ < 20 or QUAL < 10)"
+    soft_filter: "False"

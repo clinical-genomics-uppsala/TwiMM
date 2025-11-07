@@ -15,13 +15,77 @@ reference:
   # this one is ok for coverage analysis
   targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
-haplotagged_bam: false
-haplotagging: "whatshap"
+aligner: "pbmm2"
+# this is used by get_input_haplotagged_bam function in workflow/Snakefile
+# to get the path to haplotagged bams
+haplotag_path: "snv_indels/whatshap_haplotag"
+haplotag_suffix: "haplotagged"
+
+annotate_cnv:
+  tag: "germline"
+  germline: "ref_data/panel_full_genes.bed"
+
+bcftools_filter_include_region:
+  default_container: "docker://hydragenetics/common:3.1.1.1"
+  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+
+bcftools_view:
+  # extra: "-i 'FILTER=\"PASS\"'"
+  extra: ""
+
+caller: "cnvkit"
+
+clairs_to_call:
+  container: "docker://hkubal/clairs-to:latest"
+  extra: ""
+  platform: "hifi_revio"
+
+cnv_html_report:
+  show_table: true
+  cytobands: false
 
 cnvkit_batch:
-  container: "docker://hydragenetics/cnvkit:0.9.9"
-  normal_reference: "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
+  container: "docker://hydragenetics/cnvkit:0.9.11"
+  normal_reference: "ref_data/cnvkit.PoN.cnn"
   method: "hybrid"
+
+cnvkit_call:
+  container: "docker://hydragenetics/cnvkit:0.9.11"
+  extra: ""
+  purity: 0.9
+
+cnvkit_vcf:
+  container: "docker://hydragenetics/cnvkit:0.9.9"
+  extra: ""
+
+deepsomatic_t_only:
+  container: "docker://google/deepsomatic:1.9.0"
+  model: "PACBIO"
+  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  extra: ""
+
+filter_vcf:
+  germline: "config/filters/config_hard_filter_germline_vep.yaml"
+
+general_report: "config/report.yaml"
+
+hificnv:
+  container: "docker://hydragenetics/hificnv:1.0.1"
+  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
+  extra: ""
+  
+merge_cnv_json:
+  germline_vcf: "snv_indels/clairs_to/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+  unfiltered_cnv_vcfs: 
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
+  filtered_cnv_vcfs: 
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
+  annotations: 
+    - "ref_data/Myelom_expected_coverage_annotated_Oct2024_genes_only.bed"
+
+mosdepth_bed:
+  container: "docker://hydragenetics/mosdepth:0.3.6"
+  extra: ""
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
@@ -40,12 +104,6 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
-deepsomatic_t_only:
-  container: "docker://google/deepsomatic:1.8.0"
-  model: "PACBIO"
-  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
-  extra: ""
-
 pbsv_call:
   container: "docker://hydragenetics/pbsv:2.9.0"
   extra: ""
@@ -55,34 +113,9 @@ pbsv_discover:
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
-hificnv:
-  container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
-  extra: ""
-
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
-
-whatshap_phase:
-  container: "docker://hydragenetics/whatshap:2.2"
-  extra: ""
-
-whatshap_haplotag:
-  container: "docker://hydragenetics/whatshap:2.2"
-  extra: " --ignore-read-groups"
-
-bcftools_filter_include_region:
-  default_container: "docker://hydragenetics/common:3.1.1.1"
-  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
-
-mosdepth_bed:
-  container: "docker://hydragenetics/mosdepth:0.3.6"
-  extra: ""
-
-trimmer_software: "None"
-
-general_report: "config/report.yaml"
 
 svdb_merge:
   tc_method:
@@ -90,9 +123,21 @@ svdb_merge:
       cnv_caller:
         - cnvkit
 
-cnv_html_report:
-  show_table: true
-  cytobands: false
+trimmer_software: "None"
+
+vep:
+  container: "docker://hydragenetics/vep:113.0"
+  vep_cache: "/data/ref_genomes/VEP"
+  mode: "--offline --cache "
+  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD --af_gnomad --af --variant_class"
+
+whatshap_phase:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: ""
+
+whatshap_haplotag:
+  container: "docker://hydragenetics/whatshap:2.2"
+  extra: " --ignore-read-groups --skip-missing-contigs" # --skip-missing-contigs
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
