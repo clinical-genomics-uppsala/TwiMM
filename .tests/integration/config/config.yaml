@@ -27,3 +27,7 @@ vep:
 
 filter_vcf:
   germline: "../../config/filters/config_hard_filter_germline_vep.yaml"
+
+merge_cnv_json:
+  annotations:
+   - "ref_data/myeloma_annotated_genes_only.bed"
