@@ -128,6 +128,8 @@ use rule pbmm2_align from alignment as alignment_pbmm2_align with:
 
 
 use rule pbmm2_merge from alignment as alignment_pbmm2_merge
+
+
 # output: bam=temp("alignment/pbmm2_align/{sample}_{type}.bam")
 
 
@@ -137,7 +139,7 @@ use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
 
 
 # SNV & INDELS
-use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call 
+use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call
 
 
 use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat with:
@@ -184,6 +186,8 @@ use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
         fai=config.get("reference", {}).get("fai", ""),
         vcf="snv_indels/clairs_to/{sample}_{type}.phased.vcf.gz",
         tbi="snv_indels/clairs_to/{sample}_{type}.phased.vcf.gz.tbi",
+
+
 # output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
 
 
@@ -317,14 +321,8 @@ rule cnvkit_batch:
     message:
         "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
     script:
-        "scripts/cnvkit_batch_script.py"
+        "scripts/cnvkit_batch_wrapper.py"
 
-
-# to create 'germline' vcf from gnomAD
-# it annotates your vcf with gnomad frequencies
-# which you can then use to filter out (or  keep!) some variants
-# use svn_indels VCF as input to VEP
-# cause that's how it is in the original cnvkit_call rule
 
 # index phased.inlcude.panel.vcf
 use rule tabix from cnv_sv as cnv_sv_tabix_include_panel with:
@@ -356,6 +354,8 @@ use rule tabix from cnv_sv as tabix_vep_vcf with:
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
         file="snv_indels/clairs_to/.+\.phased\.include\.panel\.vep_annotated",
+
+
 # output: vcf=temp("{file}.filter.{tag}.vcf"), tag='germline'
 
 
@@ -389,6 +389,7 @@ use rule fix_af from snv_indels as snv_indels_fix_af with:
             config.get("fix_af", {}).get("benchmark_repeats", 1),
         )
 
+
 # calls cnvs with loh into cns file
 # outputs loh.cns file
 use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
@@ -397,7 +398,7 @@ use rule cnvkit_call from cnv_sv as cnv_sv_cnvkit_call with:
     input:
         segment="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns",
         vcf="snv_indels/clairs_to/{sample}_{type}.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz",
-         tc_file=get_tc_file,
+        tc_file=get_tc_file,
     params:
         extra=config.get("cnvkit_call", {}).get("extra", ""),
         purity=config.get("cnvkit_call", {}).get("purity", 0.9),
@@ -453,6 +454,8 @@ use rule cnv_json from reports as reports_cnv_json with:
 # ["reports/cnv_html_report/{sample}_{type}.{caller}.{tc_method}.json".format(caller=c, **wildcards) for c in callers]
 # to see ALL input files, check out config: merge_cnv_json
 use rule merge_cnv_json from reports as reports_merge_cnv_json
+
+
 # output: "reports/cnv_html_report/{sample}_{type}.{tc_method}.merged.json"
 
 
