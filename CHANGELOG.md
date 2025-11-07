@@ -1,5 +1,68 @@
 # Changelog
 
+## [1.0.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v0.1.1...v1.0.0) (2025-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* new input functions from HG v3.3.0 are used
+
+### Features
+
+* add a script for extracting translocatins from sniffles2 files ([8e63cbd](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/8e63cbd49f17f6192965a9ae151c4a4d00e42caa))
+* add bcftools view filtering ([d11ccf0](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/d11ccf096c2eb9c2a5806bbb67d11c67aa6e763c))
+* add claires_to rules ([43f2090](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/43f2090f173481b85724d498df956bede8e65224))
+* add claires-toand connect cnvkit*rules ([42de1f2](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/42de1f2e25991d2e8d14a74b940588faa338ab40))
+* add cnvkit call, vcf + vep ([6a507ef](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/6a507ef8a21a4e371e3d19636b3c95dc350f0bb2))
+* add cnvkit vcf as input to rule compile_xlsx_report ([d575307](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/d575307e393a25ca2d34598de14a6e0df5c32f88))
+* add cnvkit_batch as a local script ([17a2615](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/17a2615fd3acdbc1a4926e26677f75797be52a74))
+* add compile_xlsx_report rule ([d952468](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/d952468c9de342b6dac2a9e09b5934a1c3e3ac2c))
+* add fix_af.py to fix AF field ([cc0d3c7](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/cc0d3c735d35a0788278030f9ca492ec0e0f17b9))
+* add handling of missing BAF values in cnvkit vcf files ([cd16c76](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/cd16c7674e954005e4846c66f0a79c7f593d244b))
+* add local variant of cnvkit_call ([4cca549](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/4cca5496ffa43b34bd8ccdbf2e9e11f141beb0e1))
+* add logging (debugging) and type hints to the functions ([137a1ea](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/137a1eaa4f77e4895f8d63b0eb1a6b8c82a37df7))
+* add more columns to be extracted from SV VCF ([72d1a3e](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/72d1a3e390e7ae6f5bae37854b68b5737c077aac))
+* add phasing of deepsomatic vcfs ([ca71c36](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/ca71c3601d29f7c3f65100884d164eae66baf84a))
+* add script to parse SNV VCF ([b0f93d4](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/b0f93d4a6c0a6a8f0eba0e2a7753a556b41df92e))
+* add tab for CNVkit VCF results ([f9e368d](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/f9e368ddb920ad4788af72f1c53b8993fefecab9))
+* add translocation tabs ([7ba71f6](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/7ba71f64c3a2b5e2101758ef8d42884daf5cf087))
+* make IDID variants tab in xlsx report ([2c67bf6](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/2c67bf69c6540288ab3deb34931299a66d3ecbeb))
+* make the output temporary ([35cd56b](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/35cd56bc689ee445a3de75f4b8995936be8f1e04))
+* make xlsx report with two tabs ([74dc66a](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/74dc66acd6cb72ce6f96799271b1874a402b8e5b))
+* Merge pull request [#18](https://www.github.com/clinical-genomics-uppsala/TwiMM/issues/18) from clinical-genomics-uppsala/develop ([a614bd4](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/a614bd47e44cffb1e30736f2da71708938b69209))
+* remove hificnv ([31ca1c2](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/31ca1c27ee185b7884c840f30bf1a706440f7e99))
+* update cnvkit version in cnvkit call ([8f50721](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/8f507210cb2a8f88a303b849cadc1d2bbd6856f7))
+* whathap_haplotag works again + filtering of sniffles results ([e714f9c](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/e714f9cd97d436a87d72f0d03ada5fa3555596b0))
+
+
+### Bug Fixes
+
+* add entries required by cnvkit/reports rules ([f181fd9](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/f181fd94969869ec0cac8e24a02e916571d89169))
+* add fix_af ([aabbff4](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/aabbff4161382ed5d4c63f0016b9b5ffa1ce9f6d))
+* add functioning logging ([e65b7d0](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/e65b7d06ad0722ac7ac85c9c03843eb909d2ecc0))
+* add imports of the new input functions to common.smk ([b666624](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/b6666243cc1f90fa1deea2279246e2dfd47425e0))
+* cnvkit batch wrapper bug ([216715e](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/216715e2404e1857a5e6a1958a527e93cc0fa5ec))
+* correct clairs yaml entries ([6642fdb](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/6642fdb7fec0ac74e12d51ed5decd5b3e9ad5b03))
+* correct file paths to the output of whatshap rules ([69671eb](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/69671ebf587d426e5680effe5eeafb7f92526ad3))
+* correct output filenames; comment out not needed names ([74633eb](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/74633ebbb4b39d402f78d1424332c26680ff1147))
+* fix  merge_cnv_json and fix_af rules ([b20c7ac](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/b20c7ac9a2324c256c97020f0c4cf5fc85e0e04d))
+* hard-code inputs in cnvkit_batch ([bd76af9](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/bd76af90df2eeb75c03a03c53e68a16923ed638d))
+* update Snakefile ([33eebf6](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/33eebf69498991870b73b910f1d622f42e3ee926))
+* use rule fix_af from HG not the local variant ([0bb6ab5](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/0bb6ab50dcc3084bdc8dcc26fd04db8ea572bdad))
+
+
+### Documentation
+
+* add rulegraph.png with claires and correctly connected cnvkit/report rules ([12940ce](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/12940cebeb3ea1166f9ddee6afa92a6256acc0aa))
+* update rulegraph ([7a892fc](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/7a892fcec38ff36d958eb11a63531200dbc42e84))
+* update rulegraph ([5e80113](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/5e80113b42e55f530d6fa00469309e70cfb1d4d8))
+* update rulegraph ([f998472](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/f998472ac49b4892ec2a04b98119a99b3ce3a395))
+* update rulegraph ([6f2f8a6](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/6f2f8a6bd3ab514c1ef6a07079b7f18bba5d1f80))
+* update rulegraph.svg ([3fdb211](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/3fdb2116befc2cafa805b7175666c21f88427be6))
+* update rulegraph.svg ([8c1a08b](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/8c1a08bad7dce4f8a7f1d6f5add49dfc12656e56))
+* update rulegraph.svg ([9e25595](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/9e25595ae3a90408e719493bc7cfff50e88fe04b))
+* update rulegraph.svg ([b2576df](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/b2576dfc2f75d9472344c264132224ee7352d696))
+
 ### [0.1.1](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v0.1.0...v0.1.1) (2025-08-22)
 
 
