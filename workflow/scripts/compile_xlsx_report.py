@@ -308,25 +308,8 @@ if __name__ == "__main__":
         "PHENO",
     ]
 
-    # IDID - Insertion/Deletion/Inversion/Duplication columns
-    IDID_COLUMNS = [
-        "Sample",
-        "POS",
-        "END",
-        "TYPE",
-        "SVLEN",
-        "FILTER",
-        "COVERAGE",
-        "DEPTH REF",
-        "DEPTH VARIANT",
-        "STRAND",
-        "VAF",
-        "GENOTYPE",
-        "GENOME QUALITY",
-    ]
-
     # these SNVs are of interest
-    SNV_TO_KEEP = [
+    SNVS_TO_KEEP = [
         "intergenic_variant",
         "missense_variant",
         "upstream_gene_variant"
@@ -359,7 +342,7 @@ if __name__ == "__main__":
     snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
     snv_df = vcf_df[
-        (vcf_df["Consequence"].isin(SNV_TO_KEEP)) &
+        (vcf_df["Consequence"].isin(SNVS_TO_KEEP)) &
         (vcf_df["FILTER"] == "PASS")
     ]
     logging.info(f"Total SNVs after filtering: {len(snv_df)}")
