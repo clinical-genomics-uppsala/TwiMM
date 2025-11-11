@@ -218,17 +218,6 @@ def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.D
     return vcf_df[columns_to_keep]
 
 
-def filter_vcf(vcf_df, column, value):
-    """
-    Filter VCF DataFrame based on value in column.
-    param vcf_df: DataFrame with VCF data
-    param column: Column name to filter on
-    param value: Value to filter by
-    return: Filtered DataFrame
-    """
-    return vcf_df[vcf_df[column] == value]
-
-
 if __name__ == "__main__":
     # Columns to keep and their readable names
     COLUMNS_KEEP = [
@@ -336,8 +325,16 @@ if __name__ == "__main__":
         "GENOME QUALITY",
     ]
 
+    # these SNVs are of interest
+    SNV_TO_KEEP = [
+        "intergenic_variant",
+        "missense_variant",
+        "upstream_gene_variant"
+    ]
+
     # FORMAT fields to extract
     FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
+    
     # Set up logging
     logging.basicConfig(
         filename=snakemake.log[0],
@@ -351,7 +348,6 @@ if __name__ == "__main__":
     logging.info(f"Sample name: {snakemake.wildcards.sample}")
 
     # Get input and output paths from snakemake
-
     vcf_snv = snakemake.input.vcf_snv
     vcf_sv = snakemake.input.vcf_sv
     vcf_cnv = snakemake.input.vcf_cnv
@@ -360,23 +356,35 @@ if __name__ == "__main__":
     # read SNV vcf file
     vcf_df = pick_vcf_columns(vcf_to_df(vcf_snv, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
     vcf_df.columns = COLUMNS_READABLE_NAMES
-    snv_tp53 = filter_vcf(vcf_df, "GENE", "TP53")
-    snv_df = filter_vcf(vcf_df, "FILTER", "PASS")
-    logging.info(f"Total SNVs after filtering: {len(snv_df)}")
+    snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
+    snv_df = vcf_df[
+        (vcf_df["Consequence"].isin(SNV_TO_KEEP)) &
+        (vcf_df["FILTER"] == "PASS")
+    ]
+    logging.info(f"Total SNVs after filtering: {len(snv_df)}")
 
     # read SV vcf file
     sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
     logging.info(f"Total SVs read: {len(sv_df)}")
     # filter both chr4 and BND
-    tn_chr4 = filter_vcf(filter_vcf(sv_df, "CHROM", "chr4"), "TYPE", "BND")
+    tn_chr4 = sv_df[
+        (sv_df["CHROM"] == "chr4")
+        & (sv_df["TYPE"] == "BND")
+    ]
     logging.info(f"Translocations from chr4: {len(tn_chr4)}")
     # filter both chr14 and BND
-    tn_chr14 = filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "TYPE", "BND")
+    tn_chr14 = sv_df[
+        (sv_df["CHROM"] == "chr14")
+        & (sv_df["TYPE"] == "BND")
+    ]
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
 
-    # read SV vcf file and extract IDID variants
-    sv_chr14_pass = filter_vcf(filter_vcf(sv_df, "CHROM", "chr14"), "FILTER", "PASS")
+    # read SV vcf file and extract IDID variants on chr14
+    sv_chr14_pass = sv_df[
+        (sv_df["CHROM"] == "chr14")
+        & (sv_df["FILTER"] == "PASS")
+    ]
     # keep TYPE!=BND
     sv_chr14_idid = sv_chr14_pass[~sv_chr14_pass['TYPE'].isin(['BND'])]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
