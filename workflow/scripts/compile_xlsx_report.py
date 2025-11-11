@@ -219,105 +219,6 @@ def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.D
 
 
 if __name__ == "__main__":
-    # Columns to keep and their readable names
-    COLUMNS_KEEP = [
-        "CHROM",
-        "POS",
-        "REF",
-        "ALT",
-        "QUAL",
-        "FILTER",
-        "Consequence",
-        "IMPACT",
-        "SYMBOL",
-        "Feature_type",
-        "BIOTYPE",
-        "EXON",
-        "INTRON",
-        "Existing_variation",
-        "VARIANT_CLASS",
-        "AF",
-        "GT",
-        "GQ",
-        "DP",
-        "AD",
-    ]
-
-    COLUMNS_READABLE_NAMES = [
-        "CHROM",
-        "POS",
-        "REF",
-        "ALT",
-        "QUAL",
-        "FILTER",
-        "Consequence",
-        "IMPACT",
-        "GENE",
-        "FEATURE",
-        "TYPE",
-        "EXON",
-        "INTRON",
-        "KNOWN_VARIATION",
-        "VARIANT_CLASS",
-        "AF",
-        "GT",
-        "GQ",
-        "DP",
-        "AD",
-    ]
-
-    # VEP CSQ field format
-    VEP_FIELDS = [
-        "Allele",
-        "Consequence",
-        "IMPACT",
-        "SYMBOL",
-        "Gene",
-        "Feature_type",
-        "Feature",
-        "BIOTYPE",
-        "EXON",
-        "INTRON",
-        "HGVSc",
-        "HGVSp",
-        "cDNA_position",
-        "CDS_position",
-        "Protein_position",
-        "Amino_acids",
-        "Codons",
-        "Existing_variation",
-        "DISTANCE",
-        "STRAND",
-        "FLAGS",
-        "VARIANT_CLASS",
-        "SYMBOL_SOURCE",
-        "HGNC_ID",
-        "AF",
-        "gnomADe_AF",
-        "gnomADe_AFR_AF",
-        "gnomADe_AMR_AF",
-        "gnomADe_ASJ_AF",
-        "gnomADe_EAS_AF",
-        "gnomADe_FIN_AF",
-        "gnomADe_MID_AF",
-        "gnomADe_NFE_AF",
-        "gnomADe_REMAINING_AF",
-        "gnomADe_SAS_AF",
-        "CLIN_SIG",
-        "SOMATIC",
-        "PHENO",
-    ]
-
-    # these SNVs are of interest
-    SNVS_TO_KEEP = [
-        "intergenic_variant",
-        "missense_variant",
-        "upstream_gene_variant"
-    ]
-
-    # FORMAT fields to extract
-    FORMAT_FIELDS = ["GT", "GQ", "DP", "AD", "VAF", "PL"]
-    
     # Set up logging
     logging.basicConfig(
         filename=snakemake.log[0],
@@ -335,14 +236,25 @@ if __name__ == "__main__":
     vcf_sv = snakemake.input.vcf_sv
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
+    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
+    # get params as lists
+    format_fields = snakemake.params.get("format_fields", None)
+    vep_fields = snakemake.params.get("vep_fields", None)
+    columns_keep = snakemake.params.get("columns_keep", None)
+    readable_names = snakemake.params.get("columns_readable_names", None)
+    snvs_keep = snakemake.params.get("snvs_keep", None)
+    if any(x is None for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep]):
+        logging.error("Missing parameters")
+        raise ValueError("Some required parameters are missing")
 
     # read SNV vcf file
-    vcf_df = pick_vcf_columns(vcf_to_df(vcf_snv, VEP_FIELDS, FORMAT_FIELDS), COLUMNS_KEEP)
-    vcf_df.columns = COLUMNS_READABLE_NAMES
+    logging.info("Reading provided VCF files")
+    vcf_df = pick_vcf_columns(vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep)
+    vcf_df.columns = readable_names
     snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
     snv_df = vcf_df[
-        (vcf_df["Consequence"].isin(SNVS_TO_KEEP)) &
+        (vcf_df["Consequence"].isin(snvs_keep)) &
         (vcf_df["FILTER"] == "PASS")
     ]
     logging.info(f"Total SNVs after filtering: {len(snv_df)}")
