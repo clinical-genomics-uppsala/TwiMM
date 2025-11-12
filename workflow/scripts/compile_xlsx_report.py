@@ -245,7 +245,7 @@ if __name__ == "__main__":
     snvs_keep = snakemake.params.get("snvs_keep", None)
     if any(x is None for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep]):
         logging.error("Missing parameters")
-        raise ValueError("Some required parameters are missing")
+        raise ValueError("Some required parameters are missing. Check your config file.")
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
