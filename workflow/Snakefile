@@ -43,7 +43,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="fix_input_functions",
+            branch="develop",
         )
     config:
         config
@@ -92,7 +92,7 @@ module snv_indels:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            branch="fix_input_functions",
+            branch="develop",
         )
     config:
         config
