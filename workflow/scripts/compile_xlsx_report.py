@@ -142,9 +142,7 @@ def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
     try:
         baf = float(info_dict.get("BAF", "nan"))
     except ValueError:
-        logging.info(
-            f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is"
-        )
+        logging.info(f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is")
         baf = info_dict.get("BAF", "nan")
 
     # Parse FORMAT and sample fields
@@ -218,9 +216,7 @@ def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def pick_vcf_columns(
-    vcf_df: pd.DataFrame, columns_to_keep: list = None
-) -> pd.DataFrame:
+def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.DataFrame:
     """
     Pick relevant columns from the VCF DataFrame
     param vcf_df: DataFrame with VCF data
@@ -247,37 +243,29 @@ if __name__ == "__main__":
     vcf_sv = snakemake.input.vcf_sv
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
-    logging.info(
-        f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
-    )
+
+    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
+
     # get params as lists
-    format_fields = snakemake.config.get("reports", {}).get("format_fields", None)
-    vep_fields = snakemake.config.get("reports", {}).get("vep_fields", None)
-    columns_keep = snakemake.config.get("reports", {}).get("columns_keep", None)
-    readable_names = snakemake.config.get("reports", {}).get(
-        "columns_readable_names", None
-    )
-    snvs_keep = snakemake.config.get("reports", {}).get("snvs_keep", None)
-    if any(
-        x is None
-        for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep]
-    ):
+    format_fields = snakemake.params.format_fields
+    vep_fields = snakemake.params.vep_info_fields
+    columns_keep = snakemake.params.columns_keep
+    readable_names = snakemake.params.columns_readable_names
+    snvs_keep = snakemake.params.snvs_keep
+    idid_min_len = snakemake.params.idid_min_len
+
+    if any(x is None for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep, idid_min_len]):
         logging.error("Missing parameters")
-        raise ValueError(
-            "Some required parameters are missing. Check your config file."
-        )
+        raise ValueError("Some required parameters are missing. Check your config file.")
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    vcf_df = pick_vcf_columns(
-        vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep
-    )
+    vcf_df = pick_vcf_columns(vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep)
     vcf_df.columns = readable_names
     snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
-    snv_df = vcf_df[
-        (vcf_df["Consequence"].isin(snvs_keep)) & (vcf_df["FILTER"] == "PASS")
-    ]
+
+    snv_df = vcf_df[(vcf_df["Consequence"].isin(snvs_keep)) & (vcf_df["FILTER"] == "PASS")]
     logging.info(f"Total SNVs after filtering: {len(snv_df)}")
 
     # read SV vcf file
@@ -292,8 +280,10 @@ if __name__ == "__main__":
 
     # read SV vcf file and extract IDID variants on chr14
     sv_chr14_pass = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["FILTER"] == "PASS")]
+    # convert SVLEN to numeric and turn empty strings to NaN
+    sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[~sv_chr14_pass["TYPE"].isin(["BND"])]
+    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
