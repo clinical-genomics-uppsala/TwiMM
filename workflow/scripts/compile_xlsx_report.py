@@ -247,9 +247,11 @@ if __name__ == "__main__":
     vcf_sv = snakemake.input.vcf_sv
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
+    
     logging.info(
         f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
     )
+    
     # get params as lists
     format_fields = snakemake.config.get("reports", {}).get("format_fields", None)
     vep_fields = snakemake.config.get("reports", {}).get("vep_fields", None)
@@ -258,14 +260,17 @@ if __name__ == "__main__":
         "columns_readable_names", None
     )
     snvs_keep = snakemake.config.get("reports", {}).get("snvs_keep", None)
+    min_idid_len = snakemake.config.get("reports", {}).get("idid_min_len", 100)
+    
     if any(
         x is None
-        for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep]
+        for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep, min_idid_len]
     ):
         logging.error("Missing parameters")
         raise ValueError(
             "Some required parameters are missing. Check your config file."
         )
+    
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
@@ -275,6 +280,7 @@ if __name__ == "__main__":
     vcf_df.columns = readable_names
     snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
+    
     snv_df = vcf_df[
         (vcf_df["Consequence"].isin(snvs_keep)) & (vcf_df["FILTER"] == "PASS")
     ]
@@ -292,8 +298,10 @@ if __name__ == "__main__":
 
     # read SV vcf file and extract IDID variants on chr14
     sv_chr14_pass = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["FILTER"] == "PASS")]
+    # convert SVLEN to numeric and turn empty strings to NaN
+    sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[~sv_chr14_pass["TYPE"].isin(["BND"])]
+    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"]) ) & (sv_chr14_pass["SVLEN"].abs() >= min_idid_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
