@@ -492,6 +492,13 @@ rule reports_compile_xlsx_report:
         vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf",
     output:
         xlsx=temp("reports/xlsx_reports/{sample}_combined_variants.xlsx"),
+    params:
+        idid_min_len=config.get("compile_xlsx_report", {}).get("idid_min_len", 1000),
+        snvs_keep=config.get("compile_xlsx_report", {}).get("snvs_keep", []),
+        format_fields=config.get("compile_xlsx_report", {}).get("format_fields", []),
+        columns_keep=config.get("compile_xlsx_report", {}).get("columns_keep", []),
+        columns_readable_names=config.get("compile_xlsx_report", {}).get("columns_readable_names", []),
+        vep_info_fields=config.get("compile_xlsx_report", {}).get("vep_info_fields", []),
     log:
         "reports/xlsx_reports/{sample}_combined_variants.xlsx.log",
     benchmark:
