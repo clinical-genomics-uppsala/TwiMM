@@ -253,18 +253,16 @@ if __name__ == "__main__":
     )
     
     # get params as lists
-    format_fields = snakemake.config.get("reports", {}).get("format_fields", None)
-    vep_fields = snakemake.config.get("reports", {}).get("vep_fields", None)
-    columns_keep = snakemake.config.get("reports", {}).get("columns_keep", None)
-    readable_names = snakemake.config.get("reports", {}).get(
-        "columns_readable_names", None
-    )
-    snvs_keep = snakemake.config.get("reports", {}).get("snvs_keep", None)
-    min_idid_len = snakemake.config.get("reports", {}).get("idid_min_len", 100)
+    format_fields = snakemake.params.format_fields
+    vep_fields = snakemake.params.vep_info_fields
+    columns_keep = snakemake.params.columns_keep
+    readable_names = snakemake.params.columns_readable_names
+    snvs_keep = snakemake.params.snvs_keep
+    idid_min_len = snakemake.params.idid_min_len
     
     if any(
         x is None
-        for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep, min_idid_len]
+        for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep, idid_min_len]
     ):
         logging.error("Missing parameters")
         raise ValueError(
@@ -301,7 +299,7 @@ if __name__ == "__main__":
     # convert SVLEN to numeric and turn empty strings to NaN
     sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"]) ) & (sv_chr14_pass["SVLEN"].abs() >= min_idid_len)]
+    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"]) ) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
