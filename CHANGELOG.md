@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.0.0...v1.1.0) (2025-11-17)
+
+
+### Features
+
+* add vcf fileds to use by reports script ([ba891d9](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/ba891d949bdeb53113be4758d3d7c732736c8d80))
+* read constants from snakemake.params ([c455146](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/c45514675226e62d173bdde4c299146a69da4521))
+
+
+### Bug Fixes
+
+* add safe conversion of empty strings to NaN ([cba8fd8](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/cba8fd837da2a14d5f81e11739560457cfdce103))
+* use snakemake.config.get not snakemake.params.get ini reports script ([a133986](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/a13398699568b713b4bec61aa39da7ee5c85a5d0))
+
 ## [1.0.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v0.1.1...v1.0.0) (2025-11-07)
 
 
