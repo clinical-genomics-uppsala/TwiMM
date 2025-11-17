@@ -187,7 +187,6 @@ use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
         tbi="snv_indels/clairs_to/{sample}_{type}.phased.vcf.gz.tbi",
 
 
-
 use rule samtools_index from alignment as alignment_samtools_index_haplotagged_bam with:
     wildcard_constraints:
         file="^snv_indels/whatshap_haplotag/.+\.haplotagged",
