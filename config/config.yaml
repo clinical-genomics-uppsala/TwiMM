@@ -113,7 +113,8 @@ pbsv_discover:
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
   extra: ""
 
-reports:
+compile_xlsx_report:
+  idid_min_len: 1000
   snvs_keep:
     - "intergenic_variant"
     - "missense_variant"
@@ -123,7 +124,7 @@ reports:
     - "GQ"
     - "DP"
     - "AD"
-    - "VAF"
+    - "AF"
     - "PL"
   columns_keep:
     - "CHROM"
@@ -167,7 +168,7 @@ reports:
     - "GQ"
     - "DP"
     - "AD"
-  vep_fields:
+  vep_info_fields:
     - "Allele"
     - "Consequence"
     - "IMPACT"
