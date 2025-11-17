@@ -127,10 +127,8 @@ use rule pbmm2_align from alignment as alignment_pbmm2_align with:
         ),
 
 
-use rule pbmm2_merge from alignment as alignment_pbmm2_merge
-
-
 # output: bam=temp("alignment/pbmm2_align/{sample}_{type}.bam")
+use rule pbmm2_merge from alignment as alignment_pbmm2_merge
 
 
 use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
@@ -178,6 +176,7 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
         file="^snv_indels/clairs_to/.+\.phased",
 
 
+# output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
 use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
     input:
         aln="alignment/pbmm2_align/{sample}_{type}.bam",
@@ -187,8 +186,6 @@ use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
         vcf="snv_indels/clairs_to/{sample}_{type}.phased.vcf.gz",
         tbi="snv_indels/clairs_to/{sample}_{type}.phased.vcf.gz.tbi",
 
-
-# output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
 
 
 use rule samtools_index from alignment as alignment_samtools_index_haplotagged_bam with:
@@ -202,9 +199,6 @@ use rule samtools_index from alignment as alignment_samtools_index_haplotagged_b
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
     wildcard_constraints:
         type="T",
-
-
-# output snv_indels/deepsomatic_t_only/{sample}_{type}.vcf.gz
 
 
 # Phase DeepSomatic-TO output
@@ -351,12 +345,10 @@ use rule tabix from cnv_sv as tabix_vep_vcf with:
 
 
 # now you can filter it (keep the populational variants)
+# output: vcf=temp("{file}.filter.{tag}.vcf"), tag='germline'
 use rule filter_vcf from filtering as filtering_filter_vep_annotated_vcf with:
     wildcard_constraints:
         file="snv_indels/clairs_to/.+\.phased\.include\.panel\.vep_annotated",
-
-
-# output: vcf=temp("{file}.filter.{tag}.vcf"), tag='germline'
 
 
 # gzip this file
@@ -453,10 +445,8 @@ use rule cnv_json from reports as reports_cnv_json with:
 # this one has filtered_cnv_vcfs, cnv_vcfs, germline_vcf as input
 # ["reports/cnv_html_report/{sample}_{type}.{caller}.{tc_method}.json".format(caller=c, **wildcards) for c in callers]
 # to see ALL input files, check out config: merge_cnv_json
-use rule merge_cnv_json from reports as reports_merge_cnv_json
-
-
 # output: "reports/cnv_html_report/{sample}_{type}.{tc_method}.merged.json"
+use rule merge_cnv_json from reports as reports_merge_cnv_json
 
 
 use rule cnv_html_report from reports as reports_cnv_html_report with:
