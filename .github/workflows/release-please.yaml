@@ -12,5 +12,5 @@ jobs:
         id: release
         with:
           release-type: python
-          package-name: hydra-genetics
+          package-name: TwiMM
           default-branch: main

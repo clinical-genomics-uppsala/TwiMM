@@ -27,3 +27,4 @@ test_dataset/
 modules/
 data/
 config/test_config.yaml
+*.bam
