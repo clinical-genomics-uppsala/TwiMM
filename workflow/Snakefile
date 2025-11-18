@@ -286,16 +286,12 @@ rule cnvkit_batch:
         bai=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[1],
         reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
     output:
-        antitarget_coverage=temp(
-            "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.antitargetcoverage.cnn"
-        ),
+        antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.antitargetcoverage.cnn"),
         bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.bintest.cns"),
         regions=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cnr"),
         segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns"),
         segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns"),
-        target_coverage=temp(
-            "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.targetcoverage.cnn"
-        ),
+        target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.targetcoverage.cnn"),
     params:
         extra=config.get("cnvkit_batch", {}).get("extra", ""),
         method=config.get("cnvkit_batch", {}).get("method", "hybrid"),
@@ -308,21 +304,11 @@ rule cnvkit_batch:
         )
     threads: config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"])
     resources:
-        mem_mb=config.get("cnvkit_batch", {}).get(
-            "mem_mb", config["default_resources"]["mem_mb"]
-        ),
-        mem_per_cpu=config.get("cnvkit_batch", {}).get(
-            "mem_per_cpu", config["default_resources"]["mem_per_cpu"]
-        ),
-        partition=config.get("cnvkit_batch", {}).get(
-            "partition", config["default_resources"]["partition"]
-        ),
-        threads=config.get("cnvkit_batch", {}).get(
-            "threads", config["default_resources"]["threads"]
-        ),
-        time=config.get("cnvkit_batch", {}).get(
-            "time", config["default_resources"]["time"]
-        ),
+        mem_mb=config.get("cnvkit_batch", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("cnvkit_batch", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("cnvkit_batch", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("cnvkit_batch", {}).get("time", config["default_resources"]["time"]),
     container:
         config.get("cnvkit_batch", {}).get("container", config["default_container"])
     message:
@@ -479,10 +465,7 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
             "workflow/templates/cnv_html_report/style.css",
         ],
         tc_file=get_tc_file,
-        extra_table_files=[
-            t["path"]
-            for t in config.get("cnv_html_report", {}).get("extra_tables", [])
-        ],
+        extra_table_files=[t["path"] for t in config.get("cnv_html_report", {}).get("extra_tables", [])],
 
 
 # depth of coverage
@@ -502,7 +485,7 @@ rule reports_compile_xlsx_report:
     output:
         xlsx=temp("reports/xlsx_reports/{sample}_combined_variants.xlsx"),
     params:
-        filter_config=config.get("compile_xlsx_report", {}).get("clairs_vcf"),
+        filter_config=config.get("compile_xlsx_report", {}).get("clairs_vcf", []),
     log:
         "reports/xlsx_reports/{sample}_combined_variants.xlsx.log",
     benchmark:
@@ -510,29 +493,15 @@ rule reports_compile_xlsx_report:
             "reports/xlsx_reports/{sample}_combined_variants.xlsx.benchmark.tsv",
             config.get("compile_xlsx_report", {}).get("benchmark_repeats", 1),
         )
-    threads: config.get("compile_xlsx_report", {}).get(
-    "threads", config["default_resources"]["threads"]
-)
+    threads: config.get("compile_xlsx_report", {}).get("threads", config["default_resources"]["threads"])
     resources:
-        mem_mb=config.get("compile_xlsx_report", {}).get(
-            "mem_mb", config["default_resources"]["mem_mb"]
-        ),
-        mem_per_cpu=config.get("compile_xlsx_report", {}).get(
-            "mem_per_cpu", config["default_resources"]["mem_per_cpu"]
-        ),
-        partition=config.get("compile_xlsx_report", {}).get(
-            "partition", config["default_resources"]["partition"]
-        ),
-        threads=config.get("compile_xlsx_report", {}).get(
-            "threads", config["default_resources"]["threads"]
-        ),
-        time=config.get("compile_xlsx_report", {}).get(
-            "time", config["default_resources"]["time"]
-        ),
+        mem_mb=config.get("compile_xlsx_report", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("compile_xlsx_report", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("compile_xlsx_report", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("compile_xlsx_report", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("compile_xlsx_report", {}).get("time", config["default_resources"]["time"]),
     container:
-        config.get("compile_xlsx_report", {}).get(
-            "container", config["default_container"]
-        )
+        config.get("compile_xlsx_report", {}).get("container", config["default_container"])
     message:
         "{rule}: compile SNV and SV VCFs into Excel report for {wildcards.sample}"
     script:
