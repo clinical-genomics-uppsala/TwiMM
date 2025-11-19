@@ -1,6 +1,6 @@
 idid_min_len: 1000
 snvs_keep:
-  - "intergenic_variant"
+  - "stop_gained"
   - "missense_variant"
   - "upstream_gene_variant"
 format_fields:
@@ -18,10 +18,7 @@ columns_keep:
   - "QUAL"
   - "FILTER"
   - "Consequence"
-  - "IMPACT"
   - "SYMBOL"
-  - "Feature_type"
-  - "BIOTYPE"
   - "EXON"
   - "INTRON"
   - "cDNA_position"
