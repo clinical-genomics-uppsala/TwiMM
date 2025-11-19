@@ -283,7 +283,10 @@ if __name__ == "__main__":
     vcf_df = pick_vcf_columns(
         vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep
     )
-
+    
+    # rename SYMBOL to GENE for clarity
+    vcf_df = vcf_df.rename(columns={"SYMBOL": "GENE"})
+    
     snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
 
