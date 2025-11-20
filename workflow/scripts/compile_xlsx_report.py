@@ -260,13 +260,13 @@ if __name__ == "__main__":
     format_fields = filters.get("format_fields", [])
     vep_fields = filters.get("vep_info_fields", [])
     columns_keep = filters.get("columns_keep", [])
-    snvs_keep = filters.get("snvs_keep", [])
+    snvs_remove = filters.get("snvs_remove", [])
     idid_min_len = filters.get("idid_min_len", 1000)
 
     if any(
         x is None
         for x in [
-            snvs_keep,
+            snvs_remove,
             format_fields,
             vep_fields,
             columns_keep,
@@ -291,7 +291,7 @@ if __name__ == "__main__":
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
 
     snv_df = vcf_df[
-        (vcf_df["Consequence"].isin(snvs_keep)) & (vcf_df["FILTER"] == "PASS")
+        (~vcf_df["Consequence"].isin(snvs_remove)) & (vcf_df["FILTER"] == "PASS")
     ]
     logging.info(f"Total SNVs after filtering: {len(snv_df)}")
 
