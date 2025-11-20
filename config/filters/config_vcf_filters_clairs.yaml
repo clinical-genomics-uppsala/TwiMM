@@ -11,6 +11,7 @@ snvs_remove:
   - "regulatory_region_ablation"
   - "regulatory_region_amplification"
   - "regulatory_region_variant"
+  - "intron_variant"
 format_fields:
   - "GT"
   - "GQ"
