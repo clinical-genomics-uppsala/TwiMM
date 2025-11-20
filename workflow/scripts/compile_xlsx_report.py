@@ -280,20 +280,24 @@ if __name__ == "__main__":
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    vcf_df = pick_vcf_columns(
+    snv_all_df = pick_vcf_columns(
         vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep
     )
     
     # rename SYMBOL to GENE for clarity
-    vcf_df = vcf_df.rename(columns={"SYMBOL": "GENE"})
+    snv_all_df = snv_all_df.rename(columns={"SYMBOL": "GENE"})
+    # remove not important SNVs and those not passing default filter
+    snv_all_df = snv_all_df[
+        (~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")
+    ]
     
-    snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
+    # Collect TP53 SNV to a separate dataframe
+    snv_tp53 = snv_all_df[snv_all_df["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
 
-    snv_df = vcf_df[
-        (~vcf_df["Consequence"].isin(snvs_remove)) & (vcf_df["FILTER"] == "PASS")
-    ]
-    logging.info(f"Total SNVs after filtering: {len(snv_df)}")
+    # Collect the rest of SNVs to a separate dataframe
+    snv_rest = snv_all_df[snv_all_df["GENE"] != "TP53"]
+    logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
 
     # read SV vcf file
     sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
@@ -322,11 +326,11 @@ if __name__ == "__main__":
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         # All the SNVs in one sheet
-        snv_df.to_excel(writer, sheet_name="SNV", index=False)
+        snv_rest.to_excel(writer, sheet_name="SNVs", index=False)
         workbook = writer.book
-        worksheet_snv = writer.sheets["SNV"]
+        worksheet_snv = writer.sheets["SNVs"]
         # Get the dimensions of the dataframe
-        max_row, max_col = snv_df.shape
+        max_row, max_col = snv_rest.shape
         # Set autofilter on the header row
         worksheet_snv.autofilter(0, 0, max_row, max_col - 1)
 
