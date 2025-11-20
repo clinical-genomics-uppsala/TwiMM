@@ -12,6 +12,7 @@ snvs_remove:
   - "regulatory_region_amplification"
   - "regulatory_region_variant"
   - "intron_variant"
+  - "intron_variant&non_coding_transcript_variant"
 format_fields:
   - "GT"
   - "GQ"
