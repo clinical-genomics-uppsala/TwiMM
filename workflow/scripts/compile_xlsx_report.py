@@ -280,31 +280,35 @@ if __name__ == "__main__":
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    snv_all_df = pick_vcf_columns(
-        vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep
-    )
+    snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields)
     
-    # rename SYMBOL to GENE for clarity
-    snv_all_df = snv_all_df.rename(columns={"SYMBOL": "GENE"})
-    # remove not important SNVs and those not passing default filter
+    # remove not important SNV categories and those not passing default filter
     snv_all_df = snv_all_df[
         (~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")
     ]
+
+    # keep only chosen columns
+    snv_picked_columns = pick_vcf_columns(snv_all_df, columns_keep)
+
+    # rename SYMBOL to GENE for clarity
+    snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
     
     # Collect TP53 SNV to a separate dataframe
-    snv_tp53 = snv_all_df[snv_all_df["GENE"] == "TP53"]
+    snv_tp53 = snv_picked_columns[snv_picked_columns["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
 
     # Collect the rest of SNVs to a separate dataframe
-    snv_rest = snv_all_df[snv_all_df["GENE"] != "TP53"]
+    snv_rest = snv_picked_columns[snv_picked_columns["GENE"] != "TP53"]
     logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
 
     # read SV vcf file
     sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
     logging.info(f"Total SVs read: {len(sv_df)}")
+    
     # filter both chr4 and BND
     tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Translocations from chr4: {len(tn_chr4)}")
+    
     # filter both chr14 and BND
     tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
