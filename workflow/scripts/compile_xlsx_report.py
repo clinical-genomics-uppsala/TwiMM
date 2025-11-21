@@ -3,6 +3,7 @@ import pandas as pd
 import gzip
 import re
 import logging
+import yaml
 
 
 # Functions
@@ -247,33 +248,57 @@ if __name__ == "__main__":
     logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
 
     # get params as lists
-    format_fields = snakemake.params.format_fields
-    vep_fields = snakemake.params.vep_info_fields
-    columns_keep = snakemake.params.columns_keep
-    readable_names = snakemake.params.columns_readable_names
-    snvs_keep = snakemake.params.snvs_keep
-    idid_min_len = snakemake.params.idid_min_len
+    filter_yaml_file = snakemake.params.filter_config
+    with open(filter_yaml_file) as file:
+        filters = yaml.load(file, Loader=yaml.FullLoader)
+    format_fields = filters.get("format_fields", [])
+    vep_fields = filters.get("vep_info_fields", [])
+    columns_keep = filters.get("columns_keep", [])
+    snvs_remove = filters.get("snvs_remove", [])
+    idid_min_len = filters.get("idid_min_len", 1000)
 
-    if any(x is None for x in [readable_names, snvs_keep, format_fields, vep_fields, columns_keep, idid_min_len]):
+    if any(
+        x is None
+        for x in [
+            snvs_remove,
+            format_fields,
+            vep_fields,
+            columns_keep,
+            idid_min_len,
+        ]
+    ):
         logging.error("Missing parameters")
         raise ValueError("Some required parameters are missing. Check your config file.")
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    vcf_df = pick_vcf_columns(vcf_to_df(vcf_snv, vep_fields, format_fields), columns_keep)
-    vcf_df.columns = readable_names
-    snv_tp53 = vcf_df[vcf_df["GENE"] == "TP53"]
+    snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields)
+
+    # remove not important SNV categories and those not passing default filter
+    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
+
+    # keep only chosen columns
+    snv_picked_columns = pick_vcf_columns(snv_all_df, columns_keep)
+
+    # rename SYMBOL to GENE for clarity
+    snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
+
+    # Collect TP53 SNV to a separate dataframe
+    snv_tp53 = snv_picked_columns[snv_picked_columns["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
 
-    snv_df = vcf_df[(vcf_df["Consequence"].isin(snvs_keep)) & (vcf_df["FILTER"] == "PASS")]
-    logging.info(f"Total SNVs after filtering: {len(snv_df)}")
+    # Collect the rest of SNVs to a separate dataframe
+    snv_rest = snv_picked_columns[snv_picked_columns["GENE"] != "TP53"]
+    logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
 
     # read SV vcf file
     sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
     logging.info(f"Total SVs read: {len(sv_df)}")
+
     # filter both chr4 and BND
     tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Translocations from chr4: {len(tn_chr4)}")
+
     # filter both chr14 and BND
     tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
@@ -292,11 +317,11 @@ if __name__ == "__main__":
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         # All the SNVs in one sheet
-        snv_df.to_excel(writer, sheet_name="SNV", index=False)
+        snv_rest.to_excel(writer, sheet_name="SNVs", index=False)
         workbook = writer.book
-        worksheet_snv = writer.sheets["SNV"]
+        worksheet_snv = writer.sheets["SNVs"]
         # Get the dimensions of the dataframe
-        max_row, max_col = snv_df.shape
+        max_row, max_col = snv_rest.shape
         # Set autofilter on the header row
         worksheet_snv.autofilter(0, 0, max_row, max_col - 1)
 
