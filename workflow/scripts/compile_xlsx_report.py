@@ -7,11 +7,11 @@ import yaml
 
 
 # Functions
-def parse_info(info_str: str) -> dict:
+def parse_info(info_str: str) -> dict[str, str]:
     """
     Parse the INFO field from a VCF line
-    param info_str: The INFO field from the VCF
-    return: Dictionary mapping INFO keys to values
+    param info_str: The INFO field from the VCF, e.g. FAU=46;FCU=28
+    return: Dictionary mapping INFO keys to values, e.g. {FAU: 46, FCU: 28}
     """
     info_dict = {}
     for entry in info_str.split(";"):
@@ -21,7 +21,7 @@ def parse_info(info_str: str) -> dict:
     return info_dict
 
 
-def parse_format(format_str: str, sample_str: str) -> dict:
+def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     """
     Parse the FORMAT and sample fields from a VCF line
     param format_str: The FORMAT field from the VCF
@@ -33,23 +33,36 @@ def parse_format(format_str: str, sample_str: str) -> dict:
     return dict(zip(keys, values))
 
 
-def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
+def parse_vcf_line(line: str, vep_fields: list[str], format_fields: list[str], ncol=10) -> dict[str, str]:
     """
     Parse a single VCF line into a dictionary
     param line: A line from a VCF file
     param vep_fields: List of VEP annotation fields
     param format_fields: List of FORMAT fields to extract
+    param ncol: number of columns from VCF file to process
     return: Dictionary with parsed fields
     """
-    fields = line.strip().split("\t")
-    chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = fields[:10]
+    columns = line.strip().split("\t")
+    if len(columns) < ncol:
+        raise ValueError(f"Less than 10 columns in VCF line: {line}")
+    chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = columns[:ncol]
 
+    # turn INFO columninto a dict
+    # INFO: FAU=46;FCU=28
+    # dict: {FAU: 46, FCU: 28}
     info_dict = parse_info(info)
+
+    # match values from FORMAT and SAMPLE columns
     format_dict = parse_format(fmt, sample)
 
-    csq_data = info_dict.get("CSQ", "").split(",")[0]  # take first annotation
-    csq_values = csq_data.split("|")
-    csq_dict = dict(zip(vep_fields, csq_values))
+    # no default here to easier check if CSQ exists
+    csq_data = info_dict.get("CSQ")
+    csq_dict = {}
+    if csq_data:
+        # take the first annotation
+        first_annotation = csq_data.split(",")[0]
+        csq_values = first_annotation.split("|")
+        csq_dict = dict(zip(vep_fields, csq_values))
 
     row = {
         "CHROM": chrom,
@@ -61,13 +74,17 @@ def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
     }
 
     row.update(csq_dict)
+
+    # populate row with values from FORMAT column
     for key in format_fields:
-        row[key] = format_dict.get(key, "")
+        if key not in format_dict:
+            raise KeyError(f"Required FORMAT field '{key}' is missing in sample data.")
+        row[key] = format_dict[key]
 
     return row
 
 
-def parse_sv_vcf_line(line: str) -> dict:
+def parse_sv_vcf_line(line: str) -> dict[str, str]:
     """
     Parse a single structural variant VCF line into a dictionary
     param line: A line from a VCF file
@@ -116,7 +133,7 @@ def parse_sv_vcf_line(line: str) -> dict:
     return row
 
 
-def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
+def parse_cnvkit_vcf_line(vcf_line: str) -> dict[str, str]:
     """
     Parse a single CNVkit VCF line into a dictionary
     param vcf_line: A line from a CNVkit VCF file
