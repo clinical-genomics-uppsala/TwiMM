@@ -143,9 +143,7 @@ def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
     try:
         baf = float(info_dict.get("BAF", "nan"))
     except ValueError:
-        logging.info(
-            f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is"
-        )
+        logging.info(f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is")
         baf = info_dict.get("BAF", "nan")
 
     # Parse FORMAT and sample fields
@@ -219,9 +217,7 @@ def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def pick_vcf_columns(
-    vcf_df: pd.DataFrame, columns_to_keep: list = None
-) -> pd.DataFrame:
+def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.DataFrame:
     """
     Pick relevant columns from the VCF DataFrame
     param vcf_df: DataFrame with VCF data
@@ -249,9 +245,7 @@ if __name__ == "__main__":
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
 
-    logging.info(
-        f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
-    )
+    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
 
     # get params as lists
     filter_yaml_file = snakemake.params.filter_config
@@ -274,25 +268,21 @@ if __name__ == "__main__":
         ]
     ):
         logging.error("Missing parameters")
-        raise ValueError(
-            "Some required parameters are missing. Check your config file."
-        )
+        raise ValueError("Some required parameters are missing. Check your config file.")
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
     snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields)
-    
+
     # remove not important SNV categories and those not passing default filter
-    snv_all_df = snv_all_df[
-        (~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")
-    ]
+    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
 
     # keep only chosen columns
     snv_picked_columns = pick_vcf_columns(snv_all_df, columns_keep)
 
     # rename SYMBOL to GENE for clarity
     snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
-    
+
     # Collect TP53 SNV to a separate dataframe
     snv_tp53 = snv_picked_columns[snv_picked_columns["GENE"] == "TP53"]
     logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
@@ -304,11 +294,11 @@ if __name__ == "__main__":
     # read SV vcf file
     sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
     logging.info(f"Total SVs read: {len(sv_df)}")
-    
+
     # filter both chr4 and BND
     tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Translocations from chr4: {len(tn_chr4)}")
-    
+
     # filter both chr14 and BND
     tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Translocations from chr14: {len(tn_chr14)}")
@@ -318,10 +308,7 @@ if __name__ == "__main__":
     # convert SVLEN to numeric and turn empty strings to NaN
     sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[
-        (~sv_chr14_pass["TYPE"].isin(["BND"]))
-        & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
-    ]
+    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
