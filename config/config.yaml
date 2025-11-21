@@ -133,7 +133,7 @@ vep:
   container: "docker://hydragenetics/vep:113.0"
   vep_cache: "/data/ref_genomes/VEP"
   mode: "--offline --cache "
-  extra: " --assembly GRCh38 --check_existing --pick --cache_version 110 --plugin gnomAD --af_gnomad --af --variant_class"
+  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --protein --hgvs --fasta ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
 
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
