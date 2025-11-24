@@ -47,13 +47,15 @@ def parse_vcf_line(
     Parse a single VCF line into a dictionary.
 
     Args:
-        line: A line from a VCF file
-        vep_fields: List of VEP annotation fields
-        format_fields: List of FORMAT fields to extract
-        ncol: number of columns from VCF file to process
+        line: A line from a VCF file.
+        vep_fields: List of VEP annotation fields.
+        format_fields: List of FORMAT fields to extract.
+        parse_info: a function to parse INFO field.
+        parse_format: a function to parse FORAMT field.
+        ncol: number of columns from VCF file to process.
 
     Returns:
-        Dictionary with parsed fields
+        Dictionary with parsed fields.
     """
     columns = line.strip().split("\t")
     if len(columns) < ncol:
@@ -107,8 +109,10 @@ def parse_sv_vcf_line(
     Parse a single structural variant VCF line into a dictionary.
 
     Args:
-        line: A line from a VCF file
-        ncol: number of columns from the VCF file to process
+        line: A line from a VCF file.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        ncol: number of columns from the VCF file to process.
 
     Returns:
         Dictionary with parsed fields
@@ -150,44 +154,61 @@ def parse_sv_vcf_line(
     return row
 
 
-def parse_cnvkit_vcf_line(vcf_line: str) -> dict[str, str]:
+def safe_convert(value: str, target_type: Callable, default=None):
+    """Safely convert a string to a target type, return default on failure."""
+    try:
+        return target_type(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def parse_cnvkit_vcf_line(
+    vcf_line: str,
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str], dict[str, str]],
+    ncol=10
+) -> dict[str, str]:
     """
-    Parse a single CNVkit VCF line into a dictionary
-    param vcf_line: A line from a CNVkit VCF file
-    return: Dictionary with parsed fields
+    Parse a single CNVkit VCF line into a dictionary.
+
+    Args:
+        vcf_line: A line from a CNVkit VCF file.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        ncol: number of columns in the VCF file
+
+    Returns:
+        Dictionary with parsed fields.
     """
     # Split the line into its tab-separated fields
     fields = vcf_line.strip().split("\t")
+    if len(fields) < ncol:
+        raise ValueError(f"Less than {ncol} columns in VCF line: {vcf_line}")
+    
+    # unpack columns
+    chrom, pos, _, _, alt, _, _, info, format_str, sample_str = fields[:ncol]
 
-    # Basic columns
-    chrom = fields[0]
-    pos = int(fields[1])
-    variant_type = fields[4].strip("<>")  # Remove angle brackets from ALT field
+    pos = safe_convert(pos, int, 0)
+    variant_type = alt.strip("<>")  # Remove angle brackets from ALT field
 
     # Parse INFO field
-    info_dict = parse_info(fields[7])
+    info_dict = parse_info(info)
 
-    # Extract desired INFO fields
+    # Extract and convert INFO fields
     genes = info_dict.get("Genes", "")
-    end = int(info_dict.get("END", 0))
-    svlen = int(info_dict.get("SVLEN", 0))
-    log_odds_ratio = float(info_dict.get("LOG_ODDS_RATIO", "nan"))
-    corr_cn = float(info_dict.get("CORR_CN", "nan"))
-    probes = int(info_dict.get("PROBES", 0))
-    try:
-        baf = float(info_dict.get("BAF", "nan"))
-    except ValueError:
-        logging.info(
-            f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is"
-        )
-        baf = info_dict.get("BAF", "nan")
+    end = safe_convert(info_dict.get("END", ""), int, 0)
+    svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
+    log_odds_ratio = safe_convert(info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan"))
+    corr_cn = safe_convert(info_dict.get("CORR_CN", ""), float, float("nan"))
+    probes = safe_convert(info_dict.get("PROBES", ""), int, 0)
+    baf_raw = info_dict.get("BAF", "")
+    baf = safe_convert(baf_raw, float, baf_raw)  # fallback to raw if not numeric
 
     # Parse FORMAT and sample fields
-    format_dict = parse_format(format_str=fields[8], sample_str=fields[9])
-    # extract certain fields
+    format_dict = parse_format(format_str, sample_str)
     gt = format_dict.get("GT", "")
-    cnq = float(format_dict.get("CNQ", ""))
-    dp = float(format_dict.get("DP", ""))
+    cnq = safe_convert(format_dict.get("CNQ", ""), float, float("nan"))
+    dp = safe_convert(format_dict.get("DP", ""), float, float("nan"))
 
     # Build the row dictionary
     row = {
