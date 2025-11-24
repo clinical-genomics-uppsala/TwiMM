@@ -279,17 +279,34 @@ def vcf_to_df(
     return pd.DataFrame(rows, columns=vep_fields + format_fields)
 
 
-def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
+def sv_vcf_to_df(
+    vcf_path: str,
+    parse_sv_vcf_line: Callable[[str], dict],
+    parse_cnvkit_vcf_line: Callable[[str], dict],
+    cnvkit: bool = False,
+) -> pd.DataFrame:
     """
-    Convert a structural variant VCF file to a DataFrame
-    param vcf_path: Path to the VCF file
-    param cnvkit: whether to parse CNVkit-specific fields
-    return: DataFrame with parsed VCF data
+    Convert a structural variant VCF file to a DataFrame.
+
+    Args:
+        vcf_path: Path to the VCF file.
+        cnvkit: whether to parse CNVkit-specific fields.
+
+    Returns:
+        DataFrame with parsed VCF data.
     """
     parse_line = parse_cnvkit_vcf_line if cnvkit else parse_sv_vcf_line
 
+    rows = []
     with open_vcf(vcf_path) as vcf:
-        rows = [parse_line(line) for line in vcf if not line.startswith("#")]
+        for line in vcf:
+            if line.startswith("#"):
+                continue
+            try:
+                rows.append(parse_line(line))
+            except Exception as e:
+                logging.warning(f"Skipping malformed line {e}")
+                continue
 
     return pd.DataFrame(rows)
 
