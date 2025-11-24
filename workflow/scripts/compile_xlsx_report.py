@@ -10,37 +10,42 @@ import yaml
 def parse_info(info_str: str) -> dict[str, str]:
     """
     Parse the INFO field from a VCF line
-    param info_str: The INFO field from the VCF, e.g. FAU=46;FCU=28
-    return: Dictionary mapping INFO keys to values, e.g. {FAU: 46, FCU: 28}
+    
+    Args:
+        info_str: The INFO field from the VCF, e.g. "FAU=46;FCU=28"
+    
+    Returns:
+        Dictionary mapping INFO keys to values, e.g. {"FAU": "46", "FCU": "28"}
     """
-    info_dict = {}
-    for entry in info_str.split(";"):
-        if "=" in entry:
-            key, value = entry.split("=", 1)
-            info_dict[key] = value
-    return info_dict
+    return dict(entry.split("=", 1) for entry in info_str.split(";") if "=" in entry)
 
 
 def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     """
-    Parse the FORMAT and sample fields from a VCF line
-    param format_str: The FORMAT field from the VCF
-    param sample_str: The sample field from the VCF
-    return: Dictionary mapping FORMAT keys to sample values
-    """
-    keys = format_str.split(":")
-    values = sample_str.split(":")
-    return dict(zip(keys, values))
+    Parse the FORMAT and sample fields from a VCF line.	
+
+    Args:
+        format_str: The FORMAT field from the VCF, e.g. "GT:GQ"
+        sample_str: The sample field from the VCF, e.g. "0/1:76"
+    
+    Returns:
+        Dictionary mapping FORMAT keys to sample values, e.g. {"GT": "0/1", "GQ": "76"}
+    """    
+    return dict(zip(format_str.split(":"), sample_str.split(":")))
 
 
 def parse_vcf_line(line: str, vep_fields: list[str], format_fields: list[str], ncol=10) -> dict[str, str]:
     """
-    Parse a single VCF line into a dictionary
-    param line: A line from a VCF file
-    param vep_fields: List of VEP annotation fields
-    param format_fields: List of FORMAT fields to extract
-    param ncol: number of columns from VCF file to process
-    return: Dictionary with parsed fields
+    Parse a single VCF line into a dictionary.
+    
+    Args:
+        line: A line from a VCF file
+        vep_fields: List of VEP annotation fields
+        format_fields: List of FORMAT fields to extract
+        ncol: number of columns from VCF file to process
+    
+    Returns:
+        Dictionary with parsed fields
     """
     columns = line.strip().split("\t")
     if len(columns) < ncol:
