@@ -294,17 +294,6 @@ def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def pick_vcf_columns(
-    vcf_df: pd.DataFrame, columns_to_keep: list = None
-) -> pd.DataFrame:
-    """
-    Pick relevant columns from the VCF DataFrame
-    param vcf_df: DataFrame with VCF data
-    return: DataFrame with selected columns
-    """
-    return vcf_df[columns_to_keep]
-
-
 if __name__ == "__main__":
     # Set up logging
     logging.basicConfig(
@@ -364,7 +353,7 @@ if __name__ == "__main__":
     ]
 
     # keep only chosen columns
-    snv_picked_columns = pick_vcf_columns(snv_all_df, columns_keep)
+    snv_picked_columns = snv_all_df[columns_keep]
 
     # rename SYMBOL to GENE for clarity
     snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
