@@ -305,8 +305,7 @@ def sv_vcf_to_df(
             try:
                 rows.append(parse_line(line))
             except Exception as e:
-                logging.warning(f"Skipping malformed line {e}")
-                continue
+                raise ValueError(f"Malformed VCF line: {line}") from e
 
     return pd.DataFrame(rows)
 
@@ -356,12 +355,12 @@ if __name__ == "__main__":
     ):
         logging.error("Missing parameters")
         raise ValueError(
-            "Some required parameters are missing. Check your config file."
+            "Some required parameters are missing. Check your config file!"
         )
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields)
+    snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields, parse_vcf_line)
 
     # remove not important SNV categories and those not passing default filter
     snv_all_df = snv_all_df[
@@ -384,7 +383,13 @@ if __name__ == "__main__":
     logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
 
     # read SV vcf file
-    sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
+    try:
+        sv_df = sv_vcf_to_df(
+            vcf_sv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=False
+        )
+    except ValueError as e:
+        logging.warning(e)
+
     logging.info(f"Total SVs read: {len(sv_df)}")
 
     # filter both chr4 and BND
@@ -407,7 +412,9 @@ if __name__ == "__main__":
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
-    cnv_df = sv_vcf_to_df(vcf_cnv, cnvkit=True)
+    cnv_df = sv_vcf_to_df(
+        vcf_cnv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=True
+    )
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
