@@ -49,7 +49,7 @@ def parse_vcf_line(line: str, vep_fields: list[str], format_fields: list[str], n
     """
     columns = line.strip().split("\t")
     if len(columns) < ncol:
-        raise ValueError(f"Less than 10 columns in VCF line: {line}")
+        raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
     chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = columns[:ncol]
 
     # turn INFO columninto a dict
@@ -89,47 +89,46 @@ def parse_vcf_line(line: str, vep_fields: list[str], format_fields: list[str], n
     return row
 
 
-def parse_sv_vcf_line(line: str) -> dict[str, str]:
+def parse_sv_vcf_line(line: str, ncol=10) -> dict[str, str]:
     """
-    Parse a single structural variant VCF line into a dictionary
-    param line: A line from a VCF file
-    return: Dictionary with parsed fields
+    Parse a single structural variant VCF line into a dictionary.
+    
+    Args:
+        line: A line from a VCF file
+        ncol: number of columns from the VCF file to process
+    
+    Returns:
+        Dictionary with parsed fields
     """
     parts = line.strip().split("\t")
-    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:10]
+    if len(parts) < ncol:
+        raise ValueError(f"Less than {ncol} columns in VCF line: {line}") 
+    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:ncol]
 
-    # Clean ID field
+    # Parse ID field
     match = re.search(r"\.(.*?)\.", id_)
-    id_clean = match.group(1)
+    id_clean = match.group(1) if match else id_
 
-    # Parse INFO
-    info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
-    coverage = info_dict.get("COVERAGE", "")
-    vaf = info_dict.get("VAF", "")
-    support = info_dict.get("SUPPORT", "")
-    strand = info_dict.get("STRAND", "")
-    # available for INS & DEL only
-    end = info_dict.get("END", "")
-    svlen = info_dict.get("SVLEN", "")
-
+    # Parse INFO field
+    info_dict = parse_info(info)
+    
     # Parse FORMAT and sample data
-    format_keys = format_.split(":")
-    format_values = sample_data.split(":")
-    format_dict = dict(zip(format_keys, format_values))
+    format_dict = parse_format(format_, sample_data)
 
     # this may require subsetting depending on your needs
     row = {
         "CHROM": chrom,
         "POS": pos,
-        "END": end,
+        # available for INS & DEL only
+        "END": info_dict.get("END", ""),
         "TYPE": id_clean,
-        "SVLEN": svlen,
+        "SVLEN": info_dict.get("SVLEN", ""),
         "ALT": alt,
         "FILTER": filter_,
-        "COVERAGE": coverage,
-        "SUPPORT": support,
-        "STRAND": strand,
-        "VAF": vaf,
+        "COVERAGE": info_dict.get("COVERAGE", ""),
+        "SUPPORT": info_dict.get("SUPPORT", ""),
+        "STRAND": info_dict.get("STRAND", ""),
+        "VAF": info_dict.get("VAF", ""),
         "GENOTYPE": format_dict.get("GT", ""),
         "GENOME QUALITY": format_dict.get("GQ", ""),
         "DEPTH REF": format_dict.get("DR", ""),
