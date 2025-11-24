@@ -4,7 +4,9 @@ import gzip
 import re
 import logging
 import yaml
-from typing import Callable
+from typing import Callable, TextIO
+from pathlib import Path
+from contextlib import contextmanager
 
 
 # Functions
@@ -232,33 +234,49 @@ def parse_cnvkit_vcf_line(
     return row
 
 
-def open_vcf(vcf_path: str):
+@contextmanager
+def open_vcf(vcf_path: str) -> TextIO:
     """
-    Open a VCF file, handling gzip if necessary
-    param vcf_path: Path to the VCF file
-    return: File object
+    Open a VCF file, handling gzip if necessary.
+
+    Args:
+        vcf_path: Path to the VCF file.
+
+    Returns:
+        File object in text mode.
     """
-    if vcf_path.endswith(".gz"):
-        return gzip.open(vcf_path, "rt")
-    else:
-        return open(vcf_path, "r")
+    path = Path(vcf_path)
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt")
+    return path.open("r")
 
 
-def vcf_to_df(vcf_path: str, vep: list, fields: list) -> pd.DataFrame:
+def vcf_to_df(
+    vcf_path: str,
+    vep_fields: list,
+    format_fields: list,
+    parse_vcf_line: Callable[[str, list, list], dict],
+) -> pd.DataFrame:
     """
-    Convert a VEP annotated VCF file to a DataFrame
-    param vcf_path: Path to the VCF file
-    return: DataFrame with parsed VCF data
+    Convert a VEP annotated VCF file to a DataFrame.
+
+    Args:
+        vcf_path: Path to the VCF file.
+        vep_fields: List of VEP annotation fields.
+        format_fields: List of FORMAT fields.
+        parse_vcf_line: Function to parse a VCF line.
+
+    Returns:
+        DataFrame with parsed VCF data
     """
     rows = []
     with open_vcf(vcf_path) as vcf:
         for line in vcf:
             if line.startswith("#"):
                 continue
-            row = parse_vcf_line(line, vep, fields)
-            rows.append(row)
-    df = pd.DataFrame(rows)
-    return df
+            parsed_row = parse_vcf_line(line, vep_fields, format_fields)
+            rows.append(parsed_row)
+    return pd.DataFrame(rows, columns=vep_fields + format_fields)
 
 
 def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
