@@ -166,7 +166,7 @@ def parse_cnvkit_vcf_line(
     vcf_line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str], dict[str, str]],
-    ncol=10
+    ncol=10,
 ) -> dict[str, str]:
     """
     Parse a single CNVkit VCF line into a dictionary.
@@ -184,7 +184,7 @@ def parse_cnvkit_vcf_line(
     fields = vcf_line.strip().split("\t")
     if len(fields) < ncol:
         raise ValueError(f"Less than {ncol} columns in VCF line: {vcf_line}")
-    
+
     # unpack columns
     chrom, pos, _, _, alt, _, _, info, format_str, sample_str = fields[:ncol]
 
@@ -198,7 +198,9 @@ def parse_cnvkit_vcf_line(
     genes = info_dict.get("Genes", "")
     end = safe_convert(info_dict.get("END", ""), int, 0)
     svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
-    log_odds_ratio = safe_convert(info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan"))
+    log_odds_ratio = safe_convert(
+        info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan")
+    )
     corr_cn = safe_convert(info_dict.get("CORR_CN", ""), float, float("nan"))
     probes = safe_convert(info_dict.get("PROBES", ""), int, 0)
     baf_raw = info_dict.get("BAF", "")
