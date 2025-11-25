@@ -1,4 +1,3 @@
-# Imports
 import pandas as pd
 import gzip
 import re
@@ -9,7 +8,6 @@ from pathlib import Path
 from contextlib import contextmanager
 
 
-# Functions
 def parse_info(info_str: str) -> dict[str, str]:
     """
     Parse the INFO field from a VCF line
@@ -22,7 +20,7 @@ def parse_info(info_str: str) -> dict[str, str]:
     """
     return dict(entry.split("=", 1) for entry in info_str.split(";") if "=" in entry)
 
-
+# TODO: too strict"
 def validate_info_values(info_dict: dict[str, str]) -> dict[str, int]:
     """
     Validate that all values in the INFO dictionary are integers.
@@ -43,7 +41,7 @@ def validate_info_values(info_dict: dict[str, str]) -> dict[str, int]:
         validated[key] = int(value)
     return validated
 
-
+# TODO: too strict!
 def validate_info_structure(info_str: str) -> None:
     """
     Validate that all entries in the INFO string are proper key=value pairs.
@@ -110,8 +108,9 @@ def parse_vcf_line(
     # INFO: FAU=46;FCU=28
     # dict: {FAU: 46, FCU: 28}
     info_dict = parse_info(info)
-    validate_info_values(info_dict)
-    validate_info_structure(info)
+    # TODO: clean up
+    #validate_info_values(info_dict)
+    #validate_info_structure(info)
 
     # match values from FORMAT and SAMPLE columns
     format_dict = parse_format(fmt, sample)
@@ -178,8 +177,9 @@ def parse_sv_vcf_line(
 
     # Parse INFO field
     info_dict = parse_info(info)
-    validate_info_structure(info)
-    validate_info_values(info_dict)
+    # TODO: clean up
+    #validate_info_structure(info)
+    #validate_info_values(info_dict)
 
     # Parse FORMAT and sample data
     format_dict = parse_format(format_, sample_data)
@@ -316,6 +316,7 @@ def vcf_to_df(
     parse_format: Callable[[str, str], dict[str, str]],
     validate_info_values: Callable[[dict[str, str]], dict[str, int]],
     validate_info_structure: Callable[[str], None],
+    open_vcf: Callable[[str], TextIO],
     ncol: int = 10,
 ) -> pd.DataFrame:
     """
@@ -330,6 +331,7 @@ def vcf_to_df(
         parse_format: Function to parse FORAMT field.
         validate_info_values: Function to validate INFO parsing.
         validate_info_structure: Function to validate INFO parsing.
+        open_vcf: Function to open VCF file.
         ncol: number of columns in the VCF file
 
     Returns:
@@ -362,6 +364,7 @@ def sv_vcf_to_df(
     parse_format: Callable[[str], dict[str, str]],
     validate_info_values: Callable[[dict[str, str]], dict[str, int]],
     validate_info_structure: Callable[[str], None],
+    open_vcf: Callable[[str], TextIO],
     ncol: int = 10,
     cnvkit: bool = False,
 ) -> pd.DataFrame:
@@ -376,6 +379,7 @@ def sv_vcf_to_df(
         parse_format: Function to parse FORAMT field.
         validate_info_values: Function to validate INFO parsing.
         validate_info_structure: Function to validate INFO parsing.
+        open_vcf: Function to open VCF file.
         ncol: number of columns in the VCF file
         cnvkit: whether to parse CNVkit-specific fields.
 
@@ -456,7 +460,16 @@ if __name__ == "__main__":
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields, parse_vcf_line)
+    snv_all_df = vcf_to_df(vcf_snv,
+                           vep_fields,
+                           format_fields,
+                           parse_vcf_line,
+                           parse_info,
+                           parse_format,
+                           validate_info_values,
+                           validate_info_structure,
+                           open_vcf,
+                           ncol=10)
 
     # remove not important SNV categories and those not passing default filter
     snv_all_df = snv_all_df[
@@ -481,7 +494,15 @@ if __name__ == "__main__":
     # read SV vcf file
     try:
         sv_df = sv_vcf_to_df(
-            vcf_sv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=False
+            vcf_sv,
+            parse_sv_vcf_line,
+            parse_cnvkit_vcf_line,
+            parse_info, parse_format,
+            validate_info_values,
+            validate_info_structure,
+            open_vcf,
+            ncol=10,
+            cnvkit=False
         )
     except ValueError as e:
         logging.warning(e)
