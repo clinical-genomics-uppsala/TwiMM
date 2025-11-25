@@ -23,6 +23,44 @@ def parse_info(info_str: str) -> dict[str, str]:
     return dict(entry.split("=", 1) for entry in info_str.split(";") if "=" in entry)
 
 
+def validate_info_values(info_dict: dict[str, str]) -> dict[str, int]:
+    """
+    Validate that all values in the INFO dictionary are integers.
+
+    Args:
+        info_dict: Dictionary from parse_info.
+
+    Returns:
+        Dictionary with integer values.
+
+    Raises:
+        ValueError: If any value is not an integer.
+    """
+    validated = {}
+    for key, value in info_dict.items():
+        if not value.isdigit():
+            raise ValueError(f"Invalid value for {key}: '{value}' (must be integer)")
+        validated[key] = int(value)
+    return validated
+
+
+def validate_info_structure(info_str: str) -> None:
+    """
+    Validate that all entries in the INFO string are proper key=value pairs.
+
+    Args:
+        info_str: Raw INFO string from VCF.
+
+    Raises:
+        ValueError: If any entry is malformed (missing '=' sign).
+    """
+    for entry in info_str.split(";"):
+        if entry and "=" not in entry:
+            raise ValueError(
+                f"Malformed INFO entry: {entry} (expected 'key=value' pair)"
+            )
+
+
 def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     """
     Parse the FORMAT and sample fields from a VCF line.
@@ -43,7 +81,9 @@ def parse_vcf_line(
     format_fields: list[str],
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
-    ncol=10,
+    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
+    validate_info_structure: Callable[[str], None],
+    ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single VCF line into a dictionary.
@@ -54,6 +94,8 @@ def parse_vcf_line(
         format_fields: List of FORMAT fields to extract.
         parse_info: a function to parse INFO field.
         parse_format: a function to parse FORAMT field.
+        validate_info_values: Function to validate INFO parsing.
+        validate_info_structure: Function to validate INFO parsing.
         ncol: number of columns from VCF file to process.
 
     Returns:
@@ -68,6 +110,8 @@ def parse_vcf_line(
     # INFO: FAU=46;FCU=28
     # dict: {FAU: 46, FCU: 28}
     info_dict = parse_info(info)
+    validate_info_values(info_dict)
+    validate_info_structure(info)
 
     # match values from FORMAT and SAMPLE columns
     format_dict = parse_format(fmt, sample)
@@ -105,7 +149,9 @@ def parse_sv_vcf_line(
     line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
-    ncol=10,
+    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
+    validate_info_structure: Callable[[str], None],
+    ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single structural variant VCF line into a dictionary.
@@ -114,6 +160,8 @@ def parse_sv_vcf_line(
         line: A line from a VCF file.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
+        validate_info_values: Function to validate INFO parsing.
+        validate_info_structure: Function to validate INFO parsing.
         ncol: number of columns from the VCF file to process.
 
     Returns:
@@ -130,6 +178,8 @@ def parse_sv_vcf_line(
 
     # Parse INFO field
     info_dict = parse_info(info)
+    validate_info_structure(info)
+    validate_info_values(info_dict)
 
     # Parse FORMAT and sample data
     format_dict = parse_format(format_, sample_data)
@@ -168,7 +218,9 @@ def parse_cnvkit_vcf_line(
     vcf_line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str], dict[str, str]],
-    ncol=10,
+    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
+    validate_info_structure: Callable[[str], None],
+    ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single CNVkit VCF line into a dictionary.
@@ -177,6 +229,8 @@ def parse_cnvkit_vcf_line(
         vcf_line: A line from a CNVkit VCF file.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
+        validate_info_values: Function to validate INFO parsing.
+        validate_info_structure: Function to validate INFO parsing.
         ncol: number of columns in the VCF file
 
     Returns:
@@ -195,6 +249,8 @@ def parse_cnvkit_vcf_line(
 
     # Parse INFO field
     info_dict = parse_info(info)
+    validate_info_structure(info)
+    validate_info_values(info_dict)
 
     # Extract and convert INFO fields
     genes = info_dict.get("Genes", "")
@@ -256,6 +312,11 @@ def vcf_to_df(
     vep_fields: list,
     format_fields: list,
     parse_vcf_line: Callable[[str, list, list], dict],
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str, str], dict[str, str]],
+    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
+    validate_info_structure: Callable[[str], None],
+    ncol: int = 10,
 ) -> pd.DataFrame:
     """
     Convert a VEP annotated VCF file to a DataFrame.
@@ -265,6 +326,11 @@ def vcf_to_df(
         vep_fields: List of VEP annotation fields.
         format_fields: List of FORMAT fields.
         parse_vcf_line: Function to parse a VCF line.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        validate_info_values: Function to validate INFO parsing.
+        validate_info_structure: Function to validate INFO parsing.
+        ncol: number of columns in the VCF file
 
     Returns:
         DataFrame with parsed VCF data
@@ -274,7 +340,16 @@ def vcf_to_df(
         for line in vcf:
             if line.startswith("#"):
                 continue
-            parsed_row = parse_vcf_line(line, vep_fields, format_fields)
+            parsed_row = parse_vcf_line(
+                line,
+                vep_fields,
+                format_fields,
+                parse_info,
+                parse_format,
+                validate_info_values,
+                validate_info_structure,
+                ncol,
+            )
             rows.append(parsed_row)
     return pd.DataFrame(rows, columns=vep_fields + format_fields)
 
@@ -283,6 +358,11 @@ def sv_vcf_to_df(
     vcf_path: str,
     parse_sv_vcf_line: Callable[[str], dict],
     parse_cnvkit_vcf_line: Callable[[str], dict],
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str], dict[str, str]],
+    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
+    validate_info_structure: Callable[[str], None],
+    ncol: int = 10,
     cnvkit: bool = False,
 ) -> pd.DataFrame:
     """
@@ -290,6 +370,13 @@ def sv_vcf_to_df(
 
     Args:
         vcf_path: Path to the VCF file.
+        parse_sv_vcf_line: Function to parse a VCF line with SVs.
+        parse_cnvkit_vcf_line: Function to parse a VCF line with CNVs.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        validate_info_values: Function to validate INFO parsing.
+        validate_info_structure: Function to validate INFO parsing.
+        ncol: number of columns in the VCF file
         cnvkit: whether to parse CNVkit-specific fields.
 
     Returns:
@@ -303,7 +390,16 @@ def sv_vcf_to_df(
             if line.startswith("#"):
                 continue
             try:
-                rows.append(parse_line(line))
+                rows.append(
+                    parse_line(
+                        line,
+                        parse_info,
+                        parse_format,
+                        validate_info_values,
+                        validate_info_structure,
+                        ncol,
+                    )
+                )
             except Exception as e:
                 raise ValueError(f"Malformed VCF line: {line}") from e
 
