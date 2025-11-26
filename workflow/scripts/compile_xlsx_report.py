@@ -111,8 +111,6 @@ def parse_sv_vcf_line(
     line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
-    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
-    validate_info_structure: Callable[[str], None],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
@@ -140,9 +138,6 @@ def parse_sv_vcf_line(
 
     # Parse INFO field
     info_dict = parse_info(info)
-    # TODO: clean up
-    #validate_info_structure(info)
-    #validate_info_values(info_dict)
 
     # Parse FORMAT and sample data
     format_dict = parse_format(format_, sample_data)
@@ -181,8 +176,6 @@ def parse_cnvkit_vcf_line(
     vcf_line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str], dict[str, str]],
-    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
-    validate_info_structure: Callable[[str], None],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
@@ -212,16 +205,12 @@ def parse_cnvkit_vcf_line(
 
     # Parse INFO field
     info_dict = parse_info(info)
-    validate_info_structure(info)
-    validate_info_values(info_dict)
 
     # Extract and convert INFO fields
     genes = info_dict.get("Genes", "")
     end = safe_convert(info_dict.get("END", ""), int, 0)
     svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
-    log_odds_ratio = safe_convert(
-        info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan")
-    )
+    log_odds_ratio = safe_convert(info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan"))
     corr_cn = safe_convert(info_dict.get("CORR_CN", ""), float, float("nan"))
     probes = safe_convert(info_dict.get("PROBES", ""), int, 0)
     baf_raw = info_dict.get("BAF", "")
@@ -277,8 +266,6 @@ def vcf_to_df(
     parse_vcf_line: Callable[[str, list, list], dict],
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
-    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
-    validate_info_structure: Callable[[str], None],
     open_vcf: Callable[[str], TextIO],
     ncol: int = 10,
 ) -> pd.DataFrame:
@@ -292,8 +279,6 @@ def vcf_to_df(
         parse_vcf_line: Function to parse a VCF line.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
-        validate_info_values: Function to validate INFO parsing.
-        validate_info_structure: Function to validate INFO parsing.
         open_vcf: Function to open VCF file.
         ncol: number of columns in the VCF file
 
@@ -311,8 +296,6 @@ def vcf_to_df(
                 format_fields,
                 parse_info,
                 parse_format,
-                validate_info_values,
-                validate_info_structure,
                 ncol,
             )
             rows.append(parsed_row)
@@ -325,8 +308,6 @@ def sv_vcf_to_df(
     parse_cnvkit_vcf_line: Callable[[str], dict],
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str], dict[str, str]],
-    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
-    validate_info_structure: Callable[[str], None],
     open_vcf: Callable[[str], TextIO],
     ncol: int = 10,
     cnvkit: bool = False,
@@ -340,8 +321,6 @@ def sv_vcf_to_df(
         parse_cnvkit_vcf_line: Function to parse a VCF line with CNVs.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
-        validate_info_values: Function to validate INFO parsing.
-        validate_info_structure: Function to validate INFO parsing.
         open_vcf: Function to open VCF file.
         ncol: number of columns in the VCF file
         cnvkit: whether to parse CNVkit-specific fields.
@@ -362,8 +341,6 @@ def sv_vcf_to_df(
                         line,
                         parse_info,
                         parse_format,
-                        validate_info_values,
-                        validate_info_structure,
                         ncol,
                     )
                 )
@@ -392,9 +369,7 @@ if __name__ == "__main__":
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
 
-    logging.info(
-        f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
-    )
+    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
 
     # get params as lists
     filter_yaml_file = snakemake.params.filter_config
@@ -417,28 +392,23 @@ if __name__ == "__main__":
         ]
     ):
         logging.error("Missing parameters")
-        raise ValueError(
-            "Some required parameters are missing. Check your config file!"
-        )
+        raise ValueError("Some required parameters are missing. Check your config file!")
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    snv_all_df = vcf_to_df(vcf_snv,
-                           vep_fields,
-                           format_fields,
-                           parse_vcf_line,
-                           parse_info,
-                           parse_format,
-                           validate_info_values,
-                           validate_info_structure,
-                           open_vcf,
-                           ncol=10)
+    snv_all_df = vcf_to_df(
+        vcf_snv,
+        vep_fields,
+        format_fields,
+        parse_vcf_line,
+        parse_info,
+        parse_format,
+        open_vcf,
+        ncol=10,
+    )
 
     # remove not important SNV categories and those not passing default filter
-    snv_all_df = snv_all_df[
-        (~snv_all_df["Consequence"].isin(snvs_remove))
-        & (snv_all_df["FILTER"] == "PASS")
-    ]
+    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
 
     # keep only chosen columns
     snv_picked_columns = snv_all_df[columns_keep]
@@ -460,12 +430,11 @@ if __name__ == "__main__":
             vcf_sv,
             parse_sv_vcf_line,
             parse_cnvkit_vcf_line,
-            parse_info, parse_format,
-            validate_info_values,
-            validate_info_structure,
+            parse_info,
+            parse_format,
             open_vcf,
             ncol=10,
-            cnvkit=False
+            cnvkit=False,
         )
     except ValueError as e:
         logging.warning(e)
@@ -485,16 +454,11 @@ if __name__ == "__main__":
     # convert SVLEN to numeric and turn empty strings to NaN
     sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[
-        (~sv_chr14_pass["TYPE"].isin(["BND"]))
-        & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
-    ]
+    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
-    cnv_df = sv_vcf_to_df(
-        vcf_cnv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=True
-    )
+    cnv_df = sv_vcf_to_df(vcf_cnv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=True)
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
