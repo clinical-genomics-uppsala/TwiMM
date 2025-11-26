@@ -55,33 +55,29 @@ def test_parse_format_edge_cases(format_str, sample_str, expected):
 
 
 # --- Tests for parse_vcf_line ---
-def test_parse_vcf_line_valid():
-    line = "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35"
-    vep_fields = ["Gene", "Impact"]
-    format_fields = ["GT", "DP"]
-
-    result = parse_vcf_line(
-        line=line,
-        vep_fields=vep_fields,
-        format_fields=format_fields,
-        parse_info=parse_info,
-        parse_format=parse_format,
-    )
-
-    assert result["CHROM"] == "chr1"
-    assert result["POS"] == "12345"
-    assert result["REF"] == "A"
-    assert result["ALT"] == "T"
-    assert result["GT"] == "0/1"
-    assert result["DP"] == "35"
-    assert result["Gene"] == "gene1"
-    assert result["Impact"] == "impact1"
-
-
 @pytest.mark.parametrize(
     "line, vep_fields, format_fields, expected",
     [
-        # Too few columns
+        # Normal case
+        (
+            "chr1\t12345\t.\tA\tT\t33\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35",
+            ["Gene", "Impact"],
+            ["GT", "DP"],
+            {
+                "CHROM": "chr1",
+                "POS": "12345",
+                "REF": "A",
+                "ALT": "T",
+                "QUAL": "33",
+                "FILTER": "PASS",
+                "GT": "0/1",
+                "DP": "35",
+                "Gene": "gene1",
+                "Impact": "impact1",
+            },
+        ),
+
+        # Too few columns in VCF line
         ("chr1\t12345\t.\tA\tT", [], [], pytest.raises(ValueError)),
         # GQ missing in the line
         (
@@ -90,14 +86,14 @@ def test_parse_vcf_line_valid():
             ["GT", "DP", "GQ"],
             pytest.raises(KeyError),
         ),
-        # Substitution is missing in the VCF line
+        # Substitution is missing in VCF line
         (
             "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35",
             ["Gene", "Impact", "Substitution"],
             ["GT", "DP"],
             pytest.raises(ValueError),
         ),
-        # line without CSQ field
+        # CSQ field is missing in VCF line
         (
             "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;\tGT:DP\t0/1:35",
             ["Gene", "Impact"],
@@ -106,9 +102,12 @@ def test_parse_vcf_line_valid():
         ),
     ],
 )
-def test_parse_vcf_line(line, vep_fields, format_fields, expected):
-    with expected:
-        parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
 
+def test_parse_vcf_line(line, vep_fields, format_fields, expected):
+    if isinstance(expected, dict):
+        assert parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format) == expected
+    else:
+        with expected:
+            parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
 # TODO
 # --- Tests for parse_sv_vcf_line ---
