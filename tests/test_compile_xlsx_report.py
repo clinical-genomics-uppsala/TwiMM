@@ -76,7 +76,6 @@ def test_parse_format_edge_cases(format_str, sample_str, expected):
                 "Impact": "impact1",
             },
         ),
-
         # Too few columns in VCF line
         ("chr1\t12345\t.\tA\tT", [], [], pytest.raises(ValueError)),
         # GQ missing in the line
@@ -102,7 +101,6 @@ def test_parse_format_edge_cases(format_str, sample_str, expected):
         ),
     ],
 )
-
 def test_parse_vcf_line(line, vep_fields, format_fields, expected):
     if isinstance(expected, dict):
         assert parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format) == expected
