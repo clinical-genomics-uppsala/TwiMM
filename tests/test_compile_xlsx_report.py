@@ -3,6 +3,7 @@ from workflow.scripts.compile_xlsx_report import (
     parse_info,
     parse_vcf_line,
     parse_format,
+    parse_sv_vcf_line,
 )
 
 
@@ -46,7 +47,7 @@ def test_parse_info(info_str, expected):
         ("GT:GQ:BD", "", pytest.raises(ValueError)),
     ],
 )
-def test_parse_format_edge_cases(format_str, sample_str, expected):
+def test_parse_format(format_str, sample_str, expected):
     if isinstance(expected, dict):
         assert parse_format(format_str, sample_str) == expected
     else:
@@ -103,9 +104,32 @@ def test_parse_format_edge_cases(format_str, sample_str, expected):
 )
 def test_parse_vcf_line(line, vep_fields, format_fields, expected):
     if isinstance(expected, dict):
-        assert parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format) == expected
+        assert (
+            parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
+            == expected
+        )
     else:
         with expected:
             parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
-# TODO
+
+
 # --- Tests for parse_sv_vcf_line ---
+def test_parse_sv_vcf_line_normal():
+    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
+    assert parse_sv_vcf_line(line, parse_info, parse_format, ncol=10) == {
+        "CHROM": "chr1",
+        "POS": "111",
+        "END": "1114",
+        "TYPE": "DEL",
+        "SVLEN": "100",
+        "ALT": "G",
+        "FILTER": "PASS",
+        "COVERAGE": "6,1,8,5,9",
+        "SUPPORT": "20",
+        "STRAND": "+",
+        "VAF": "0.1",
+        "GENOTYPE": "0/1",
+        "GENOME QUALITY": "30",
+        "DEPTH REF": "14",
+        "DEPTH TRANS": "10"
+    }
