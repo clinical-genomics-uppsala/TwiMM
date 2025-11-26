@@ -20,48 +20,10 @@ def parse_info(info_str: str) -> dict[str, str]:
     """
     return dict(entry.split("=", 1) for entry in info_str.split(";") if "=" in entry)
 
-# TODO: too strict"
-def validate_info_values(info_dict: dict[str, str]) -> dict[str, int]:
-    """
-    Validate that all values in the INFO dictionary are integers.
-
-    Args:
-        info_dict: Dictionary from parse_info.
-
-    Returns:
-        Dictionary with integer values.
-
-    Raises:
-        ValueError: If any value is not an integer.
-    """
-    validated = {}
-    for key, value in info_dict.items():
-        if not value.isdigit():
-            raise ValueError(f"Invalid value for {key}: '{value}' (must be integer)")
-        validated[key] = int(value)
-    return validated
-
-# TODO: too strict!
-def validate_info_structure(info_str: str) -> None:
-    """
-    Validate that all entries in the INFO string are proper key=value pairs.
-
-    Args:
-        info_str: Raw INFO string from VCF.
-
-    Raises:
-        ValueError: If any entry is malformed (missing '=' sign).
-    """
-    for entry in info_str.split(";"):
-        if entry and "=" not in entry:
-            raise ValueError(
-                f"Malformed INFO entry: {entry} (expected 'key=value' pair)"
-            )
-
 
 def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     """
-    Parse the FORMAT and sample fields from a VCF line.
+    Parse the FORMAT and SAMPLE fields from a VCF line.
 
     Args:
         format_str: The FORMAT field from the VCF, e.g. "GT:GQ"
@@ -70,7 +32,11 @@ def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     Returns:
         Dictionary mapping FORMAT keys to sample values, e.g. {"GT": "0/1", "GQ": "76"}
     """
-    return dict(zip(format_str.split(":"), sample_str.split(":")))
+    format_list = format_str.split(":")
+    sample_list = sample_str.split(":")
+    if len(format_list) != len(sample_list):
+        raise ValueError("Sample and format fields have different length and cannot be matched!")
+    return dict(zip(format_list, sample_list))
 
 
 def parse_vcf_line(
@@ -79,21 +45,17 @@ def parse_vcf_line(
     format_fields: list[str],
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
-    validate_info_values: Callable[[dict[str, str]], dict[str, int]],
-    validate_info_structure: Callable[[str], None],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single VCF line into a dictionary.
 
     Args:
-        line: A line from a VCF file.
+        line: A line from a VCF file with CSQ field.
         vep_fields: List of VEP annotation fields.
         format_fields: List of FORMAT fields to extract.
         parse_info: a function to parse INFO field.
         parse_format: a function to parse FORAMT field.
-        validate_info_values: Function to validate INFO parsing.
-        validate_info_structure: Function to validate INFO parsing.
         ncol: number of columns from VCF file to process.
 
     Returns:
@@ -104,13 +66,10 @@ def parse_vcf_line(
         raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
     chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = columns[:ncol]
 
-    # turn INFO columninto a dict
+    # turn INFO column into a dict
     # INFO: FAU=46;FCU=28
     # dict: {FAU: 46, FCU: 28}
     info_dict = parse_info(info)
-    # TODO: clean up
-    #validate_info_values(info_dict)
-    #validate_info_structure(info)
 
     # match values from FORMAT and SAMPLE columns
     format_dict = parse_format(fmt, sample)
@@ -122,7 +81,11 @@ def parse_vcf_line(
         # take the first annotation
         first_annotation = csq_data.split(",")[0]
         csq_values = first_annotation.split("|")
+        if len(vep_fields) != len(csq_values):
+            raise ValueError("Provided VEP fields do not match parsed CSQ values!")
         csq_dict = dict(zip(vep_fields, csq_values))
+    else:
+        raise ValueError("Could not parse CSQ field. Does it exist?")
 
     row = {
         "CHROM": chrom,
