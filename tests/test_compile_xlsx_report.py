@@ -29,7 +29,7 @@ def test_parse_info(info_str, expected):
     [
         # Normal case
         ("GT:GQ", "0/1:76", {"GT": "0/1", "GQ": "76"}),
-        # Short input strins (one item in each)
+        # Short input strings (one item in each)
         ("GT", "0/1", {"GT": "0/1"}),
         # Both empty strings
         ("", "", {"": ""}),
@@ -112,7 +112,7 @@ def test_parse_vcf_line(line, vep_fields, format_fields, expected):
         with expected:
             parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
 
-
+# TODO: refactor using parametrize()
 # --- Tests for parse_sv_vcf_line ---
 def test_parse_sv_vcf_line_normal():
     line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
@@ -133,3 +133,32 @@ def test_parse_sv_vcf_line_normal():
         "DEPTH REF": "14",
         "DEPTH TRANS": "10"
     }
+
+def test_parse_sv_vcf_line_few_columns():
+    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS"
+    with pytest.raises(ValueError):
+        parse_sv_vcf_line(line, parse_info, parse_format)
+
+def test_parse_sv_vcf_line_no_info():
+    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE\tGT:GQ:DR:DV\t0/1:30:14:10"
+    with pytest.raises(ValueError):
+        parse_sv_vcf_line(line, parse_info, parse_format)
+
+# TODO:one or more from ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"] can be missing
+# compare messages?
+def test_parse_sv_vcf_line_info_svlen_missing():
+    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
+    with pytest.raises(ValueError):
+        parse_sv_vcf_line(line, parse_info, parse_format)
+
+# TODO: one or more from ["GT", "GQ", "DR", "DV"] is missing
+# compare messages?
+def test_parse_sv_vcf_line_no_format():
+    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\t?\t?"
+    with pytest.raises(ValueError):
+        parse_sv_vcf_line(line, parse_info, parse_format)
+
+def test_parse_sv_vcf_line_id_empty():
+    line = "chr1\t111\t\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
+    with pytest.raises(ValueError):
+        parse_sv_vcf_line(line, parse_info, parse_format)
