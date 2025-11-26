@@ -130,17 +130,31 @@ def parse_sv_vcf_line(
     parts = line.strip().split("\t")
     if len(parts) < ncol:
         raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
-    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:ncol]
+    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_ = parts[:ncol]
 
     # Parse ID field
     match = re.search(r"\.(.*?)\.", id_)
-    id_clean = match.group(1) if match else id_
+    var_type = match.group(1) if match else id_
+    # check that id_ is not empty
+    # TODO: alternatively, check allowed types
+    if not id_:
+        raise ValueError("ID field (type of variant) is empty!")
 
     # Parse INFO field
     info_dict = parse_info(info)
+    # check if it is empty
+    if not info_dict:
+        raise ValueError("Could not parse INFO field. Does it exist?")
+    # check if all keys exist
+    for k in ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"]:
+        if not k in info_dict:
+            raise ValueError(f"{k} not found in the INFO field!")
 
-    # Parse FORMAT and sample data
-    format_dict = parse_format(format_, sample_data)
+    # Parse FORMAT and SAMPLE columns
+    format_dict = parse_format(format_, sample_)
+    for k in ["GT", "GQ", "DR", "DV"]:
+        if not k in format_dict:
+            raise ValueError(f"{k} not found in the FORMAT & SAMPLE fields!")
 
     # this may require subsetting depending on your needs
     row = {
@@ -148,7 +162,7 @@ def parse_sv_vcf_line(
         "POS": pos,
         # available for INS & DEL only
         "END": info_dict.get("END", ""),
-        "TYPE": id_clean,
+        "TYPE": var_type,
         "SVLEN": info_dict.get("SVLEN", ""),
         "ALT": alt,
         "FILTER": filter_,
