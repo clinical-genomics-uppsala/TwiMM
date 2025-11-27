@@ -111,6 +111,7 @@ def parse_sv_vcf_line(
     line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
+    allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP"],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
@@ -136,9 +137,11 @@ def parse_sv_vcf_line(
     match = re.search(r"\.(.*?)\.", id_)
     var_type = match.group(1) if match else id_
     # check that id_ is not empty
-    # TODO: alternatively, check allowed types
     if not id_:
         raise ValueError("ID field (type of variant) is empty!")
+    # check if the extracted variant type is valid
+    if var_type not in allowed_var_types:
+        raise ValueError(f"{var_type} not in allowed variants which are: {allowed_var_types}")
 
     # Parse INFO field
     info_dict = parse_info(info)
