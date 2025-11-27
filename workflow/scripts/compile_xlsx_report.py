@@ -161,7 +161,7 @@ def parse_sv_vcf_line(
     format_dict = parse_format(format_, sample_)
     for k in ["GT", "GQ", "DR", "DV"]:
         if k not in format_dict:
-            raise ValueError(f"{k} not found in the FORMAT & SAMPLE fields!")
+            raise ValueError(f"{k} not found in the FORMAT field!")
 
     # this may require subsetting depending on your needs
     row = {
@@ -206,8 +206,6 @@ def parse_cnvkit_vcf_line(
         vcf_line: A line from a CNVkit VCF file.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
-        validate_info_values: Function to validate INFO parsing.
-        validate_info_structure: Function to validate INFO parsing.
         ncol: number of columns in the VCF file
 
     Returns:
@@ -226,6 +224,11 @@ def parse_cnvkit_vcf_line(
 
     # Parse INFO field
     info_dict = parse_info(info)
+    if not info_dict:
+        raise ValueError("Could not parse INFO field!")
+    for k in ["Genes", "SVLEN", "END", "LOG_ODDS_RATIO", "CORR_CN", "PROBES", "BAF"]:
+        if k not in info_dict:
+            raise ValueError(f"{k} not found in the INFO field!")
 
     # Extract and convert INFO fields
     genes = info_dict.get("Genes", "")
@@ -241,6 +244,11 @@ def parse_cnvkit_vcf_line(
 
     # Parse FORMAT and sample fields
     format_dict = parse_format(format_str, sample_str)
+    for k in ["GT", "CN", "CNQ", "DP"]:
+        if k not in format_dict:
+            raise ValueError(f"{k} not found in the FORMAT field!")
+
+    # Extract and convert FORMAT-SAMPLE values
     gt = format_dict.get("GT", "")
     cnq = safe_convert(format_dict.get("CNQ", ""), float, float("nan"))
     dp = safe_convert(format_dict.get("DP", ""), float, float("nan"))
