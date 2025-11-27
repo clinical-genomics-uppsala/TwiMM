@@ -35,7 +35,9 @@ def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     format_list = format_str.split(":")
     sample_list = sample_str.split(":")
     if len(format_list) != len(sample_list):
-        raise ValueError("Sample and format fields have different length and cannot be matched!")
+        raise ValueError(
+            "Sample and format fields have different length and cannot be matched!"
+        )
     return dict(zip(format_list, sample_list))
 
 
@@ -141,7 +143,9 @@ def parse_sv_vcf_line(
         raise ValueError("ID field (type of variant) is empty!")
     # check if the extracted variant type is valid
     if var_type not in allowed_var_types:
-        raise ValueError(f"{var_type} not in allowed variants which are: {allowed_var_types}")
+        raise ValueError(
+            f"{var_type} not in allowed variants which are: {allowed_var_types}"
+        )
 
     # Parse INFO field
     info_dict = parse_info(info)
@@ -150,13 +154,13 @@ def parse_sv_vcf_line(
         raise ValueError("Could not parse INFO field. Does it exist?")
     # check if all keys exist
     for k in ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"]:
-        if not k in info_dict:
+        if k not in info_dict:
             raise ValueError(f"{k} not found in the INFO field!")
 
     # Parse FORMAT and SAMPLE columns
     format_dict = parse_format(format_, sample_)
     for k in ["GT", "GQ", "DR", "DV"]:
-        if not k in format_dict:
+        if k not in format_dict:
             raise ValueError(f"{k} not found in the FORMAT & SAMPLE fields!")
 
     # this may require subsetting depending on your needs
@@ -227,7 +231,9 @@ def parse_cnvkit_vcf_line(
     genes = info_dict.get("Genes", "")
     end = safe_convert(info_dict.get("END", ""), int, 0)
     svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
-    log_odds_ratio = safe_convert(info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan"))
+    log_odds_ratio = safe_convert(
+        info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan")
+    )
     corr_cn = safe_convert(info_dict.get("CORR_CN", ""), float, float("nan"))
     probes = safe_convert(info_dict.get("PROBES", ""), int, 0)
     baf_raw = info_dict.get("BAF", "")
@@ -386,7 +392,9 @@ if __name__ == "__main__":
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
 
-    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
+    logging.info(
+        f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
+    )
 
     # get params as lists
     filter_yaml_file = snakemake.params.filter_config
@@ -409,7 +417,9 @@ if __name__ == "__main__":
         ]
     ):
         logging.error("Missing parameters")
-        raise ValueError("Some required parameters are missing. Check your config file!")
+        raise ValueError(
+            "Some required parameters are missing. Check your config file!"
+        )
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
@@ -425,7 +435,10 @@ if __name__ == "__main__":
     )
 
     # remove not important SNV categories and those not passing default filter
-    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
+    snv_all_df = snv_all_df[
+        (~snv_all_df["Consequence"].isin(snvs_remove))
+        & (snv_all_df["FILTER"] == "PASS")
+    ]
 
     # keep only chosen columns
     snv_picked_columns = snv_all_df[columns_keep]
@@ -471,11 +484,16 @@ if __name__ == "__main__":
     # convert SVLEN to numeric and turn empty strings to NaN
     sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
+    sv_chr14_idid = sv_chr14_pass[
+        (~sv_chr14_pass["TYPE"].isin(["BND"]))
+        & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
+    ]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
-    cnv_df = sv_vcf_to_df(vcf_cnv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=True)
+    cnv_df = sv_vcf_to_df(
+        vcf_cnv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=True
+    )
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
