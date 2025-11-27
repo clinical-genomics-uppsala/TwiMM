@@ -85,7 +85,9 @@ def parse_vcf_line(
         csq_values = first_annotation.split("|")
         # check if you want to collect more VEP values than actually exist
         if len(vep_fields) > len(csq_values):
-            raise ValueError(f"Too may VEP fields are requested: VCF line doesn't have that many")
+            raise ValueError(
+                f"Too may VEP fields are requested: VCF line doesn't have that many"
+            )
         csq_dict = dict(zip(vep_fields, csq_values))
     else:
         raise ValueError("Could not parse CSQ field. Does it exist?")
@@ -125,8 +127,8 @@ def parse_sv_vcf_line(
         line: A line from a VCF file made by Sniffles2.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
-        validate_info_values: Function to validate INFO parsing.
-        validate_info_structure: Function to validate INFO parsing.
+        allowed_var_types: List of allowed variant types (DEL, INS, etc)
+        info_values: List of expected values in INFO (END, STRAND, VAF, etc)
         ncol: number of columns from the VCF file to process.
 
     Returns:
@@ -157,7 +159,9 @@ def parse_sv_vcf_line(
     # check if all keys exist
     if var_type == "BND":
         # exclude END & SVLEN
-        for k in [value for value in info_values if value != "END" and value != "SVLEN"]:
+        for k in [
+            value for value in info_values if value != "END" and value != "SVLEN"
+        ]:
             if k not in info_dict:
                 raise ValueError(f"{k} not found in the INFO field!")
     else:
@@ -466,20 +470,16 @@ if __name__ == "__main__":
     logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
 
     # read SV vcf file
-    try:
-        sv_df = sv_vcf_to_df(
-            vcf_sv,
-            parse_sv_vcf_line,
-            parse_cnvkit_vcf_line,
-            parse_info,
-            parse_format,
-            open_vcf,
-            ncol=10,
-            cnvkit=False,
-        )
-    except ValueError as e:
-        logging.warning(e)
-
+    sv_df = sv_vcf_to_df(
+        vcf_sv,
+        parse_sv_vcf_line,
+        parse_cnvkit_vcf_line,
+        parse_info,
+        parse_format,
+        open_vcf,
+        ncol=10,
+        cnvkit=False,
+    )
     logging.info(f"Total SVs read: {len(sv_df)}")
 
     # filter both chr4 and BND
@@ -503,7 +503,13 @@ if __name__ == "__main__":
 
     # read CNVkit VCF file
     cnv_df = sv_vcf_to_df(
-        vcf_cnv, parse_sv_vcf_line, parse_cnvkit_vcf_line, cnvkit=True
+        vcf_cnv,
+        parse_sv_vcf_line,
+        parse_cnvkit_vcf_line,
+        parse_info,
+        parse_format,
+        open_vcf,
+        cnvkit=True,
     )
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
