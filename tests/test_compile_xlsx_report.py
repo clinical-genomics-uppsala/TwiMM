@@ -82,21 +82,21 @@ def test_parse_format(format_str, sample_str, expected):
         ("chr1\t12345\t.\tA\tT", [], [], pytest.raises(ValueError)),
         # GQ missing in the line
         (
-            "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35",
+            "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:25",
             ["Gene", "Impact"],
             ["GT", "DP", "GQ"],
             pytest.raises(KeyError),
         ),
-        # Substitution is missing in VCF line
+        # You request too many VEP fields from the VCF file
         (
             "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35",
-            ["Gene", "Impact", "Substitution"],
+            ["Gene", "Impact", "Substitution"], # Substitution is missing
             ["GT", "DP"],
             pytest.raises(ValueError),
         ),
         # CSQ field is missing in VCF line
         (
-            "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;\tGT:DP\t0/1:35",
+            "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;\tGT:DP\t0/1:45",
             ["Gene", "Impact"],
             ["GT", "DP"],
             pytest.raises(ValueError),
