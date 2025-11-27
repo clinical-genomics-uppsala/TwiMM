@@ -90,7 +90,7 @@ def test_parse_format(format_str, sample_str, expected):
         # You request too many VEP fields from the VCF file
         (
             "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35",
-            ["Gene", "Impact", "Substitution"], # Substitution is missing
+            ["Gene", "Impact", "Substitution"],  # Substitution is missing
             ["GT", "DP"],
             pytest.raises(ValueError),
         ),
