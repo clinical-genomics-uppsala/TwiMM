@@ -4,6 +4,7 @@ from workflow.scripts.compile_xlsx_report import (
     parse_vcf_line,
     parse_format,
     parse_sv_vcf_line,
+    parse_cnvkit_vcf_line,
 )
 
 
@@ -176,3 +177,55 @@ def test_parse_sv_vcf_line(line, expected):
     else:
         with expected:
             parse_sv_vcf_line(line, parse_info, parse_format)
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        # Normal case
+        (
+            "chr1\t10\t.\tN\t<COPY_NORMAL>\t.\t.\tGenes=gene1,gene2;SVTYPE=COPY_NORMAL;END=125;SVLEN=124;LOG_ODDS_RATIO=-0.1;CALLER=cnvkit;CN=NA;CORR_CN=2.0;PROBES=2;BAF=0.3\tGT:CN:CNQ:DP:BAF\t0/0:2.0:80:3.5:0.3",
+            {
+                "CHROM": "chr1",
+                "POS": 10,
+                "VARIANT_TYPE": "COPY_NORMAL",
+                "GENE": "gene1,gene2",
+                "END": 125,
+                "SVLEN": 124,
+                "LOG_ODDS_RATIO": -0.1,
+                "CORR_CN": 2.0,
+                "PROBES": 2,
+                "BAF": 0.3,
+                "GT": "0/0",
+                "CNQ": 80,
+                "DP": 3.5,
+            },
+        ),
+        # Line is too short
+        (
+            "chr1\t10\t.\tN\t<COPY_NORMAL>\t.\t0/0:2.0:80:3.5:0.3",
+            pytest.raises(ValueError),
+        ),
+        # NO info field
+        (
+            "chr1\t10\t.\tN\t<COPY_NORMAL>\t.\t.\t?\tGT:CN:CNQ:DP:BAF\t0/0:2.0:80:3.5:0.3",
+            pytest.raises(ValueError),
+        ),
+        # One of the expected values in INFO is missing (SVLEN, SVTYPE etc)
+        (
+            "chr1\t10\t.\tN\t<COPY_NORMAL>\t.\t.\tGenes=gene1,gene2;SVTYPE=COPY_NORMAL;END=125;LOG_ODDS_RATIO=-0.1;CALLER=cnvkit;CN=NA;CORR_CN=2.0;PROBES=2;BAF=0.3\tGT:CN:CNQ:DP:BAF\t0/0:2.0:80:3.5:0.3",
+            pytest.raises(ValueError),
+        ),
+        # One of the expected values in FORMAT is missing (GT, GQ etc)
+        (
+            "chr1\t10\t.\tN\t<COPY_NORMAL>\t.\t.\tGenes=gene1,gene2;SVTYPE=COPY_NORMAL;END=125;SVLEN=124;LOG_ODDS_RATIO=-0.1;CALLER=cnvkit;CN=NA;CORR_CN=2.0;PROBES=2;BAF=0.3\tGT:CNQ\t0/0:2.0",
+            pytest.raises(ValueError),
+        ),
+    ],
+)
+def test_parse_cnvkit_vcf_line(line, expected):
+    if isinstance(expected, dict):
+        assert parse_cnvkit_vcf_line(line, parse_info, parse_format) == expected
+    else:
+        with expected:
+            parse_cnvkit_vcf_line(line, parse_info, parse_format)
