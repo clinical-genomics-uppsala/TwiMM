@@ -112,53 +112,67 @@ def test_parse_vcf_line(line, vep_fields, format_fields, expected):
         with expected:
             parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
 
-# TODO: refactor using parametrize()
+
 # --- Tests for parse_sv_vcf_line ---
-def test_parse_sv_vcf_line_normal():
-    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
-    assert parse_sv_vcf_line(line, parse_info, parse_format, ncol=10) == {
-        "CHROM": "chr1",
-        "POS": "111",
-        "END": "1114",
-        "TYPE": "DEL",
-        "SVLEN": "100",
-        "ALT": "G",
-        "FILTER": "PASS",
-        "COVERAGE": "6,1,8,5,9",
-        "SUPPORT": "20",
-        "STRAND": "+",
-        "VAF": "0.1",
-        "GENOTYPE": "0/1",
-        "GENOME QUALITY": "30",
-        "DEPTH REF": "14",
-        "DEPTH TRANS": "10"
-    }
-
-def test_parse_sv_vcf_line_few_columns():
-    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS"
-    with pytest.raises(ValueError):
-        parse_sv_vcf_line(line, parse_info, parse_format)
-
-def test_parse_sv_vcf_line_no_info():
-    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE\tGT:GQ:DR:DV\t0/1:30:14:10"
-    with pytest.raises(ValueError):
-        parse_sv_vcf_line(line, parse_info, parse_format)
-
-# TODO:one or more from ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"] can be missing
-# compare messages?
-def test_parse_sv_vcf_line_info_svlen_missing():
-    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
-    with pytest.raises(ValueError):
-        parse_sv_vcf_line(line, parse_info, parse_format)
-
-# TODO: one or more from ["GT", "GQ", "DR", "DV"] is missing
-# compare messages?
-def test_parse_sv_vcf_line_no_format():
-    line = "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\t?\t?"
-    with pytest.raises(ValueError):
-        parse_sv_vcf_line(line, parse_info, parse_format)
-
-def test_parse_sv_vcf_line_id_empty():
-    line = "chr1\t111\t\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10"
-    with pytest.raises(ValueError):
-        parse_sv_vcf_line(line, parse_info, parse_format)
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        # Normal case
+        (
+            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
+            {
+                "CHROM": "chr1",
+                "POS": "111",
+                "END": "1114",
+                "TYPE": "DEL",
+                "SVLEN": "100",
+                "ALT": "G",
+                "FILTER": "PASS",
+                "COVERAGE": "6,1,8,5,9",
+                "SUPPORT": "20",
+                "STRAND": "+",
+                "VAF": "0.1",
+                "GENOTYPE": "0/1",
+                "GENOME QUALITY": "30",
+                "DEPTH REF": "14",
+                "DEPTH TRANS": "10",
+            },
+        ),
+        # Not all expected columns are in the line
+        (
+            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS",
+            pytest.raises(ValueError),
+        ),
+        # No info field (no annotation)
+        (
+            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE\tGT:GQ:DR:DV\t0/1:30:14:10",
+            pytest.raises(ValueError),
+        ),
+        # One of the expected values in INFO is missing (SVLEN)
+        (
+            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
+            pytest.raises(ValueError),
+        ),
+        # One of the expected values in FORMAT is missing (GT, GQ etc)
+        (
+            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\t?\t?",
+            pytest.raises(ValueError),
+        ),
+        # The ID (variant type) is empty
+        (
+            "chr1\t111\t\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
+            pytest.raises(ValueError),
+        ),
+        # Not allowed variant type (here it's a "?") in ID value
+        (
+            "chr1\t111\tSniffles2.?.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=?;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
+            pytest.raises(ValueError),
+        ),
+    ],
+)
+def test_parse_sv_vcf_line(line, expected):
+    if isinstance(expected, dict):
+        assert parse_sv_vcf_line(line, parse_info, parse_format) == expected
+    else:
+        with expected:
+            parse_sv_vcf_line(line, parse_info, parse_format)
