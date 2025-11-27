@@ -83,8 +83,9 @@ def parse_vcf_line(
         # take the first annotation
         first_annotation = csq_data.split(",")[0]
         csq_values = first_annotation.split("|")
-        if len(vep_fields) != len(csq_values):
-            raise ValueError("Provided VEP fields do not match parsed CSQ values!")
+        # check if you want to collect more VEP values than actually exist
+        if len(vep_fields) > len(csq_values):
+            raise ValueError(f"Too may VEP fields are requested: VCF line doesn't have that many")
         csq_dict = dict(zip(vep_fields, csq_values))
     else:
         raise ValueError("Could not parse CSQ field. Does it exist?")
@@ -113,14 +114,15 @@ def parse_sv_vcf_line(
     line: str,
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
-    allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP"],
+    allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP", "BND"],
+    info_values: list[str] = ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single structural variant VCF line into a dictionary.
 
     Args:
-        line: A line from a VCF file.
+        line: A line from a VCF file made by Sniffles2.
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
         validate_info_values: Function to validate INFO parsing.
@@ -153,9 +155,15 @@ def parse_sv_vcf_line(
     if not info_dict:
         raise ValueError("Could not parse INFO field. Does it exist?")
     # check if all keys exist
-    for k in ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"]:
-        if k not in info_dict:
-            raise ValueError(f"{k} not found in the INFO field!")
+    if var_type == "BND":
+        # exclude END & SVLEN
+        for k in [value for value in info_values if value != "END" and value != "SVLEN"]:
+            if k not in info_dict:
+                raise ValueError(f"{k} not found in the INFO field!")
+    else:
+        for k in info_values:
+            if k not in info_dict:
+                raise ValueError(f"{k} not found in the INFO field!")
 
     # Parse FORMAT and SAMPLE columns
     format_dict = parse_format(format_, sample_)
@@ -273,7 +281,6 @@ def parse_cnvkit_vcf_line(
     return row
 
 
-@contextmanager
 def open_vcf(vcf_path: str) -> TextIO:
     """
     Open a VCF file, handling gzip if necessary.
@@ -330,7 +337,7 @@ def vcf_to_df(
                 ncol,
             )
             rows.append(parsed_row)
-    return pd.DataFrame(rows, columns=vep_fields + format_fields)
+    return pd.DataFrame(rows)
 
 
 def sv_vcf_to_df(
@@ -366,17 +373,13 @@ def sv_vcf_to_df(
         for line in vcf:
             if line.startswith("#"):
                 continue
-            try:
-                rows.append(
-                    parse_line(
-                        line,
-                        parse_info,
-                        parse_format,
-                        ncol,
-                    )
+            rows.append(
+                parse_line(
+                    line,
+                    parse_info,
+                    parse_format,
                 )
-            except Exception as e:
-                raise ValueError(f"Malformed VCF line: {line}") from e
+            )
 
     return pd.DataFrame(rows)
 
