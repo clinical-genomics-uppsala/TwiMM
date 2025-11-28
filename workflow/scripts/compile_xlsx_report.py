@@ -1,55 +1,96 @@
-# Imports
 import pandas as pd
 import gzip
 import re
 import logging
 import yaml
+from typing import Callable, TextIO
+from pathlib import Path
+from contextlib import contextmanager
 
 
-# Functions
-def parse_info(info_str: str) -> dict:
+def parse_info(info_str: str) -> dict[str, str]:
     """
     Parse the INFO field from a VCF line
-    param info_str: The INFO field from the VCF
-    return: Dictionary mapping INFO keys to values
+
+    Args:
+        info_str: The INFO field from the VCF, e.g. "FAU=46;FCU=28"
+
+    Returns:
+        Dictionary mapping INFO keys to values, e.g. {"FAU": "46", "FCU": "28"}
     """
-    info_dict = {}
-    for entry in info_str.split(";"):
-        if "=" in entry:
-            key, value = entry.split("=", 1)
-            info_dict[key] = value
-    return info_dict
+    return dict(entry.split("=", 1) for entry in info_str.split(";") if "=" in entry)
 
 
-def parse_format(format_str: str, sample_str: str) -> dict:
+def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     """
-    Parse the FORMAT and sample fields from a VCF line
-    param format_str: The FORMAT field from the VCF
-    param sample_str: The sample field from the VCF
-    return: Dictionary mapping FORMAT keys to sample values
+    Parse the FORMAT and SAMPLE fields from a VCF line.
+
+    Args:
+        format_str: The FORMAT field from the VCF, e.g. "GT:GQ"
+        sample_str: The sample field from the VCF, e.g. "0/1:76"
+
+    Returns:
+        Dictionary mapping FORMAT keys to sample values, e.g. {"GT": "0/1", "GQ": "76"}
     """
-    keys = format_str.split(":")
-    values = sample_str.split(":")
-    return dict(zip(keys, values))
+    format_list = format_str.split(":")
+    sample_list = sample_str.split(":")
+    if len(format_list) != len(sample_list):
+        raise ValueError(
+            "Sample and format fields have different length and cannot be matched!"
+        )
+    return dict(zip(format_list, sample_list))
 
 
-def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
+def parse_vcf_line(
+    line: str,
+    vep_fields: list[str],
+    format_fields: list[str],
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str, str], dict[str, str]],
+    ncol: int = 10,
+) -> dict[str, str]:
     """
-    Parse a single VCF line into a dictionary
-    param line: A line from a VCF file
-    param vep_fields: List of VEP annotation fields
-    param format_fields: List of FORMAT fields to extract
-    return: Dictionary with parsed fields
-    """
-    fields = line.strip().split("\t")
-    chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = fields[:10]
+    Parse a single VCF line into a dictionary.
 
+    Args:
+        line: A line from a VCF file with CSQ field.
+        vep_fields: List of VEP annotation fields.
+        format_fields: List of FORMAT fields to extract.
+        parse_info: a function to parse INFO field.
+        parse_format: a function to parse FORAMT field.
+        ncol: number of columns from VCF file to process.
+
+    Returns:
+        Dictionary with parsed fields.
+    """
+    columns = line.strip().split("\t")
+    if len(columns) < ncol:
+        raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
+    chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = columns[:ncol]
+
+    # turn INFO column into a dict
+    # INFO: FAU=46;FCU=28
+    # dict: {FAU: 46, FCU: 28}
     info_dict = parse_info(info)
+
+    # match values from FORMAT and SAMPLE columns
     format_dict = parse_format(fmt, sample)
 
-    csq_data = info_dict.get("CSQ", "").split(",")[0]  # take first annotation
-    csq_values = csq_data.split("|")
-    csq_dict = dict(zip(vep_fields, csq_values))
+    # no default here to easier check if CSQ exists
+    csq_data = info_dict.get("CSQ")
+    csq_dict = {}
+    if csq_data:
+        # take the first annotation
+        first_annotation = csq_data.split(",")[0]
+        csq_values = first_annotation.split("|")
+        # check if you want to collect more VEP values than actually exist
+        if len(vep_fields) > len(csq_values):
+            raise ValueError(
+                f"Too may VEP fields are requested: VCF line doesn't have that many"
+            )
+        csq_dict = dict(zip(vep_fields, csq_values))
+    else:
+        raise ValueError("Could not parse CSQ field. Does it exist?")
 
     row = {
         "CHROM": chrom,
@@ -61,53 +102,93 @@ def parse_vcf_line(line, vep_fields: list, format_fields: list) -> dict:
     }
 
     row.update(csq_dict)
+
+    # populate row with values from FORMAT column
     for key in format_fields:
-        row[key] = format_dict.get(key, "")
+        if key not in format_dict:
+            raise KeyError(f"Required FORMAT field '{key}' is missing in sample data.")
+        row[key] = format_dict[key]
 
     return row
 
 
-def parse_sv_vcf_line(line: str) -> dict:
+def parse_sv_vcf_line(
+    line: str,
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str, str], dict[str, str]],
+    allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP", "BND"],
+    info_values: list[str] = ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"],
+    ncol: int = 10,
+) -> dict[str, str]:
     """
-    Parse a single structural variant VCF line into a dictionary
-    param line: A line from a VCF file
-    return: Dictionary with parsed fields
+    Parse a single structural variant VCF line into a dictionary.
+
+    Args:
+        line: A line from a VCF file made by Sniffles2.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        allowed_var_types: List of allowed variant types (DEL, INS, etc)
+        info_values: List of expected values in INFO (END, STRAND, VAF, etc)
+        ncol: number of columns from the VCF file to process.
+
+    Returns:
+        Dictionary with parsed fields
     """
     parts = line.strip().split("\t")
-    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_data = parts[:10]
+    if len(parts) < ncol:
+        raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
+    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_ = parts[:ncol]
 
-    # Clean ID field
+    # Parse ID field
     match = re.search(r"\.(.*?)\.", id_)
-    id_clean = match.group(1)
+    var_type = match.group(1) if match else id_
+    # check that id_ is not empty
+    if not id_:
+        raise ValueError("ID field (type of variant) is empty!")
+    # check if the extracted variant type is valid
+    if var_type not in allowed_var_types:
+        raise ValueError(
+            f"{var_type} not in allowed variants which are: {allowed_var_types}"
+        )
 
-    # Parse INFO
-    info_dict = dict(item.split("=") for item in info.split(";") if "=" in item)
-    coverage = info_dict.get("COVERAGE", "")
-    vaf = info_dict.get("VAF", "")
-    support = info_dict.get("SUPPORT", "")
-    strand = info_dict.get("STRAND", "")
-    # available for INS & DEL only
-    end = info_dict.get("END", "")
-    svlen = info_dict.get("SVLEN", "")
+    # Parse INFO field
+    info_dict = parse_info(info)
+    # check if it is empty
+    if not info_dict:
+        raise ValueError("Could not parse INFO field. Does it exist?")
+    # check if all keys exist
+    if var_type == "BND":
+        # exclude END & SVLEN
+        for k in [
+            value for value in info_values if value != "END" and value != "SVLEN"
+        ]:
+            if k not in info_dict:
+                raise ValueError(f"{k} not found in the INFO field!")
+    else:
+        for k in info_values:
+            if k not in info_dict:
+                raise ValueError(f"{k} not found in the INFO field!")
 
-    # Parse FORMAT and sample data
-    format_keys = format_.split(":")
-    format_values = sample_data.split(":")
-    format_dict = dict(zip(format_keys, format_values))
+    # Parse FORMAT and SAMPLE columns
+    format_dict = parse_format(format_, sample_)
+    for k in ["GT", "GQ", "DR", "DV"]:
+        if k not in format_dict:
+            raise ValueError(f"{k} not found in the FORMAT field!")
 
     # this may require subsetting depending on your needs
     row = {
         "CHROM": chrom,
         "POS": pos,
-        "END": end,
-        "TYPE": id_clean,
-        "SVLEN": svlen,
+        # available for INS & DEL only
+        "END": info_dict.get("END", ""),
+        "TYPE": var_type,
+        "SVLEN": info_dict.get("SVLEN", ""),
         "ALT": alt,
         "FILTER": filter_,
-        "COVERAGE": coverage,
-        "SUPPORT": support,
-        "STRAND": strand,
-        "VAF": vaf,
+        "COVERAGE": info_dict.get("COVERAGE", ""),
+        "SUPPORT": info_dict.get("SUPPORT", ""),
+        "STRAND": info_dict.get("STRAND", ""),
+        "VAF": info_dict.get("VAF", ""),
         "GENOTYPE": format_dict.get("GT", ""),
         "GENOME QUALITY": format_dict.get("GQ", ""),
         "DEPTH REF": format_dict.get("DR", ""),
@@ -116,42 +197,73 @@ def parse_sv_vcf_line(line: str) -> dict:
     return row
 
 
-def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
+def safe_convert(value: str, target_type: Callable, default=None):
+    """Safely convert a string to a target type, return default on failure."""
+    try:
+        return target_type(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def parse_cnvkit_vcf_line(
+    vcf_line: str,
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str], dict[str, str]],
+    ncol: int = 10,
+) -> dict[str, str]:
     """
-    Parse a single CNVkit VCF line into a dictionary
-    param vcf_line: A line from a CNVkit VCF file
-    return: Dictionary with parsed fields
+    Parse a single CNVkit VCF line into a dictionary.
+
+    Args:
+        vcf_line: A line from a CNVkit VCF file.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        ncol: number of columns in the VCF file
+
+    Returns:
+        Dictionary with parsed fields.
     """
     # Split the line into its tab-separated fields
     fields = vcf_line.strip().split("\t")
+    if len(fields) < ncol:
+        raise ValueError(f"Less than {ncol} columns in VCF line: {vcf_line}")
 
-    # Basic columns
-    chrom = fields[0]
-    pos = int(fields[1])
-    variant_type = fields[4].strip("<>")  # Remove angle brackets from ALT field
+    # unpack columns
+    chrom, pos, _, _, alt, _, _, info, format_str, sample_str = fields[:ncol]
+
+    pos = safe_convert(pos, int, 0)
+    variant_type = alt.strip("<>")  # Remove angle brackets from ALT field
 
     # Parse INFO field
-    info_dict = parse_info(fields[7])
+    info_dict = parse_info(info)
+    if not info_dict:
+        raise ValueError("Could not parse INFO field!")
+    for k in ["Genes", "SVLEN", "END", "LOG_ODDS_RATIO", "CORR_CN", "PROBES", "BAF"]:
+        if k not in info_dict:
+            raise ValueError(f"{k} not found in the INFO field!")
 
-    # Extract desired INFO fields
+    # Extract and convert INFO fields
     genes = info_dict.get("Genes", "")
-    end = int(info_dict.get("END", 0))
-    svlen = int(info_dict.get("SVLEN", 0))
-    log_odds_ratio = float(info_dict.get("LOG_ODDS_RATIO", "nan"))
-    corr_cn = float(info_dict.get("CORR_CN", "nan"))
-    probes = int(info_dict.get("PROBES", 0))
-    try:
-        baf = float(info_dict.get("BAF", "nan"))
-    except ValueError:
-        logging.info(f"Non-numeric BAF value found: {info_dict.get('BAF')}, will use it as-is")
-        baf = info_dict.get("BAF", "nan")
+    end = safe_convert(info_dict.get("END", ""), int, 0)
+    svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
+    log_odds_ratio = safe_convert(
+        info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan")
+    )
+    corr_cn = safe_convert(info_dict.get("CORR_CN", ""), float, float("nan"))
+    probes = safe_convert(info_dict.get("PROBES", ""), int, 0)
+    baf_raw = info_dict.get("BAF", "")
+    baf = safe_convert(baf_raw, float, baf_raw)  # fallback to raw if not numeric
 
     # Parse FORMAT and sample fields
-    format_dict = parse_format(format_str=fields[8], sample_str=fields[9])
-    # extract certain fields
+    format_dict = parse_format(format_str, sample_str)
+    for k in ["GT", "CN", "CNQ", "DP"]:
+        if k not in format_dict:
+            raise ValueError(f"{k} not found in the FORMAT field!")
+
+    # Extract and convert FORMAT-SAMPLE values
     gt = format_dict.get("GT", "")
-    cnq = float(format_dict.get("CNQ", ""))
-    dp = float(format_dict.get("DP", ""))
+    cnq = safe_convert(format_dict.get("CNQ", ""), float, float("nan"))
+    dp = safe_convert(format_dict.get("DP", ""), float, float("nan"))
 
     # Build the row dictionary
     row = {
@@ -173,57 +285,107 @@ def parse_cnvkit_vcf_line(vcf_line: str) -> dict:
     return row
 
 
-def open_vcf(vcf_path: str):
+def open_vcf(vcf_path: str) -> TextIO:
     """
-    Open a VCF file, handling gzip if necessary
-    param vcf_path: Path to the VCF file
-    return: File object
+    Open a VCF file, handling gzip if necessary.
+
+    Args:
+        vcf_path: Path to the VCF file.
+
+    Returns:
+        File object in text mode.
     """
-    if vcf_path.endswith(".gz"):
-        return gzip.open(vcf_path, "rt")
-    else:
-        return open(vcf_path, "r")
+    path = Path(vcf_path)
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt")
+    return path.open("r")
 
 
-def vcf_to_df(vcf_path: str, vep: list, fields: list) -> pd.DataFrame:
+def vcf_to_df(
+    vcf_path: str,
+    vep_fields: list,
+    format_fields: list,
+    parse_vcf_line: Callable[[str, list, list], dict],
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str, str], dict[str, str]],
+    open_vcf: Callable[[str], TextIO],
+    ncol: int = 10,
+) -> pd.DataFrame:
     """
-    Convert a VEP annotated VCF file to a DataFrame
-    param vcf_path: Path to the VCF file
-    return: DataFrame with parsed VCF data
+    Convert a VEP annotated VCF file to a DataFrame.
+
+    Args:
+        vcf_path: Path to the VCF file.
+        vep_fields: List of VEP annotation fields.
+        format_fields: List of FORMAT fields.
+        parse_vcf_line: Function to parse a VCF line.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        open_vcf: Function to open VCF file.
+        ncol: number of columns in the VCF file
+
+    Returns:
+        DataFrame with parsed VCF data
     """
     rows = []
     with open_vcf(vcf_path) as vcf:
         for line in vcf:
             if line.startswith("#"):
                 continue
-            row = parse_vcf_line(line, vep, fields)
-            rows.append(row)
-    df = pd.DataFrame(rows)
-    return df
-
-
-def sv_vcf_to_df(vcf_path: str, cnvkit: bool) -> pd.DataFrame:
-    """
-    Convert a structural variant VCF file to a DataFrame
-    param vcf_path: Path to the VCF file
-    param cnvkit: whether to parse CNVkit-specific fields
-    return: DataFrame with parsed VCF data
-    """
-    parse_line = parse_cnvkit_vcf_line if cnvkit else parse_sv_vcf_line
-
-    with open_vcf(vcf_path) as vcf:
-        rows = [parse_line(line) for line in vcf if not line.startswith("#")]
-
+            parsed_row = parse_vcf_line(
+                line,
+                vep_fields,
+                format_fields,
+                parse_info,
+                parse_format,
+                ncol,
+            )
+            rows.append(parsed_row)
     return pd.DataFrame(rows)
 
 
-def pick_vcf_columns(vcf_df: pd.DataFrame, columns_to_keep: list = None) -> pd.DataFrame:
+def sv_vcf_to_df(
+    vcf_path: str,
+    parse_sv_vcf_line: Callable[[str], dict],
+    parse_cnvkit_vcf_line: Callable[[str], dict],
+    parse_info: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str], dict[str, str]],
+    open_vcf: Callable[[str], TextIO],
+    ncol: int = 10,
+    cnvkit: bool = False,
+) -> pd.DataFrame:
     """
-    Pick relevant columns from the VCF DataFrame
-    param vcf_df: DataFrame with VCF data
-    return: DataFrame with selected columns
+    Convert a structural variant VCF file to a DataFrame.
+
+    Args:
+        vcf_path: Path to the VCF file.
+        parse_sv_vcf_line: Function to parse a VCF line with SVs.
+        parse_cnvkit_vcf_line: Function to parse a VCF line with CNVs.
+        parse_info: Function to parse INFO field.
+        parse_format: Function to parse FORAMT field.
+        open_vcf: Function to open VCF file.
+        ncol: number of columns in the VCF file
+        cnvkit: whether to parse CNVkit-specific fields.
+
+    Returns:
+        DataFrame with parsed VCF data.
     """
-    return vcf_df[columns_to_keep]
+    parse_line = parse_cnvkit_vcf_line if cnvkit else parse_sv_vcf_line
+
+    rows = []
+    with open_vcf(vcf_path) as vcf:
+        for line in vcf:
+            if line.startswith("#"):
+                continue
+            rows.append(
+                parse_line(
+                    line,
+                    parse_info,
+                    parse_format,
+                )
+            )
+
+    return pd.DataFrame(rows)
 
 
 if __name__ == "__main__":
@@ -245,7 +407,9 @@ if __name__ == "__main__":
     vcf_cnv = snakemake.input.vcf_cnv
     output_xlsx = snakemake.output.xlsx
 
-    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
+    logging.info(
+        f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
+    )
 
     # get params as lists
     filter_yaml_file = snakemake.params.filter_config
@@ -268,17 +432,31 @@ if __name__ == "__main__":
         ]
     ):
         logging.error("Missing parameters")
-        raise ValueError("Some required parameters are missing. Check your config file.")
+        raise ValueError(
+            "Some required parameters are missing. Check your config file!"
+        )
 
     # read SNV vcf file
     logging.info("Reading provided VCF files")
-    snv_all_df = vcf_to_df(vcf_snv, vep_fields, format_fields)
+    snv_all_df = vcf_to_df(
+        vcf_snv,
+        vep_fields,
+        format_fields,
+        parse_vcf_line,
+        parse_info,
+        parse_format,
+        open_vcf,
+        ncol=10,
+    )
 
     # remove not important SNV categories and those not passing default filter
-    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
+    snv_all_df = snv_all_df[
+        (~snv_all_df["Consequence"].isin(snvs_remove))
+        & (snv_all_df["FILTER"] == "PASS")
+    ]
 
     # keep only chosen columns
-    snv_picked_columns = pick_vcf_columns(snv_all_df, columns_keep)
+    snv_picked_columns = snv_all_df[columns_keep]
 
     # rename SYMBOL to GENE for clarity
     snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
@@ -292,7 +470,16 @@ if __name__ == "__main__":
     logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
 
     # read SV vcf file
-    sv_df = sv_vcf_to_df(vcf_sv, cnvkit=False)
+    sv_df = sv_vcf_to_df(
+        vcf_sv,
+        parse_sv_vcf_line,
+        parse_cnvkit_vcf_line,
+        parse_info,
+        parse_format,
+        open_vcf,
+        ncol=10,
+        cnvkit=False,
+    )
     logging.info(f"Total SVs read: {len(sv_df)}")
 
     # filter both chr4 and BND
@@ -308,11 +495,22 @@ if __name__ == "__main__":
     # convert SVLEN to numeric and turn empty strings to NaN
     sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
+    sv_chr14_idid = sv_chr14_pass[
+        (~sv_chr14_pass["TYPE"].isin(["BND"]))
+        & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
+    ]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
-    cnv_df = sv_vcf_to_df(vcf_cnv, cnvkit=True)
+    cnv_df = sv_vcf_to_df(
+        vcf_cnv,
+        parse_sv_vcf_line,
+        parse_cnvkit_vcf_line,
+        parse_info,
+        parse_format,
+        open_vcf,
+        cnvkit=True,
+    )
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
