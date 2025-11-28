@@ -1,10 +1,10 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples.tsv"
-units: "config/units.tsv"
+samples: "config/samples_test.tsv"
+units: "config/units_test.tsv"
 
-default_container: "docker://hydragenetics/common:3.1.1.1"
+default_container: "docker://hydragenetics/common:3.3.0"
 
 reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
@@ -16,8 +16,6 @@ reference:
   targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
 aligner: "pbmm2"
-# this is used by get_input_haplotagged_bam function in workflow/Snakefile
-# to get the path to haplotagged bams
 haplotag_path: "snv_indels/whatshap_haplotag"
 haplotag_suffix: "haplotagged"
 
@@ -26,11 +24,10 @@ annotate_cnv:
   germline: "ref_data/panel_full_genes.bed"
 
 bcftools_filter_include_region:
-  default_container: "docker://hydragenetics/common:3.1.1.1"
+  default_container: "docker://hydragenetics/common:3.3.0"
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 bcftools_view:
-  # extra: "-i 'FILTER=\"PASS\"'"
   extra: ""
 
 caller: "cnvkit"
