@@ -1,4 +1,4 @@
-import pytest
+import pytest # type: ignore
 from workflow.scripts.compile_xlsx_report import (
     parse_info,
     parse_vcf_line,
