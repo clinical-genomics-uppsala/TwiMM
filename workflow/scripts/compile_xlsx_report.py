@@ -5,7 +5,6 @@ import logging
 import yaml
 from typing import Callable, TextIO
 from pathlib import Path
-from contextlib import contextmanager
 
 
 def parse_info(info_str: str) -> dict[str, str]:
@@ -35,9 +34,7 @@ def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     format_list = format_str.split(":")
     sample_list = sample_str.split(":")
     if len(format_list) != len(sample_list):
-        raise ValueError(
-            "Sample and format fields have different length and cannot be matched!"
-        )
+        raise ValueError("Sample and format fields have different length and cannot be matched!")
     return dict(zip(format_list, sample_list))
 
 
@@ -85,9 +82,7 @@ def parse_vcf_line(
         csq_values = first_annotation.split("|")
         # check if you want to collect more VEP values than actually exist
         if len(vep_fields) > len(csq_values):
-            raise ValueError(
-                f"Too may VEP fields are requested: VCF line doesn't have that many"
-            )
+            raise ValueError(f"Too may VEP fields are requested: VCF line doesn't have that many")
         csq_dict = dict(zip(vep_fields, csq_values))
     else:
         raise ValueError("Could not parse CSQ field. Does it exist?")
@@ -147,9 +142,7 @@ def parse_sv_vcf_line(
         raise ValueError("ID field (type of variant) is empty!")
     # check if the extracted variant type is valid
     if var_type not in allowed_var_types:
-        raise ValueError(
-            f"{var_type} not in allowed variants which are: {allowed_var_types}"
-        )
+        raise ValueError(f"{var_type} not in allowed variants which are: {allowed_var_types}")
 
     # Parse INFO field
     info_dict = parse_info(info)
@@ -159,9 +152,7 @@ def parse_sv_vcf_line(
     # check if all keys exist
     if var_type == "BND":
         # exclude END & SVLEN
-        for k in [
-            value for value in info_values if value != "END" and value != "SVLEN"
-        ]:
+        for k in [value for value in info_values if value != "END" and value != "SVLEN"]:
             if k not in info_dict:
                 raise ValueError(f"{k} not found in the INFO field!")
     else:
@@ -208,7 +199,7 @@ def safe_convert(value: str, target_type: Callable, default=None):
 def parse_cnvkit_vcf_line(
     vcf_line: str,
     parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str, str], dict[str, str]],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
@@ -246,9 +237,7 @@ def parse_cnvkit_vcf_line(
     genes = info_dict.get("Genes", "")
     end = safe_convert(info_dict.get("END", ""), int, 0)
     svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
-    log_odds_ratio = safe_convert(
-        info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan")
-    )
+    log_odds_ratio = safe_convert(info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan"))
     corr_cn = safe_convert(info_dict.get("CORR_CN", ""), float, float("nan"))
     probes = safe_convert(info_dict.get("PROBES", ""), int, 0)
     baf_raw = info_dict.get("BAF", "")
@@ -305,7 +294,7 @@ def vcf_to_df(
     vcf_path: str,
     vep_fields: list,
     format_fields: list,
-    parse_vcf_line: Callable[[str, list, list], dict],
+    parse_vcf_line: Callable[..., dict],
     parse_info: Callable[[str], dict[str, str]],
     parse_format: Callable[[str, str], dict[str, str]],
     open_vcf: Callable[[str], TextIO],
@@ -318,7 +307,7 @@ def vcf_to_df(
         vcf_path: Path to the VCF file.
         vep_fields: List of VEP annotation fields.
         format_fields: List of FORMAT fields.
-        parse_vcf_line: Function to parse a VCF line.
+        parse_vcf_line: Callable that parses a single VCF line (may accept additional parser helpers).
         parse_info: Function to parse INFO field.
         parse_format: Function to parse FORAMT field.
         open_vcf: Function to open VCF file.
@@ -346,10 +335,10 @@ def vcf_to_df(
 
 def sv_vcf_to_df(
     vcf_path: str,
-    parse_sv_vcf_line: Callable[[str], dict],
-    parse_cnvkit_vcf_line: Callable[[str], dict],
+    parse_sv_vcf_line: Callable[..., dict],
+    parse_cnvkit_vcf_line: Callable[..., dict],
     parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str], dict[str, str]],
+    parse_format: Callable[[str, str], dict[str, str]],
     open_vcf: Callable[[str], TextIO],
     ncol: int = 10,
     cnvkit: bool = False,
@@ -382,6 +371,7 @@ def sv_vcf_to_df(
                     line,
                     parse_info,
                     parse_format,
+                    ncol=ncol,
                 )
             )
 
@@ -391,7 +381,7 @@ def sv_vcf_to_df(
 if __name__ == "__main__":
     # Set up logging
     logging.basicConfig(
-        filename=snakemake.log[0],
+        filename=snakemake.log[0],  # type: ignore
         format="{asctime} - {levelname} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M",
@@ -399,20 +389,18 @@ if __name__ == "__main__":
     )
 
     logging.info("Script started")
-    logging.info(f"Sample name: {snakemake.wildcards.sample}")
+    logging.info(f"Sample name: {snakemake.wildcards.sample}")  # type: ignore
 
     # Get input and output paths from snakemake
-    vcf_snv = snakemake.input.vcf_snv
-    vcf_sv = snakemake.input.vcf_sv
-    vcf_cnv = snakemake.input.vcf_cnv
-    output_xlsx = snakemake.output.xlsx
+    vcf_snv = snakemake.input.vcf_snv  # type: ignore
+    vcf_sv = snakemake.input.vcf_sv  # type: ignore
+    vcf_cnv = snakemake.input.vcf_cnv  # type: ignore
+    output_xlsx = snakemake.output.xlsx  # type: ignore
 
-    logging.info(
-        f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}"
-    )
+    logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
 
     # get params as lists
-    filter_yaml_file = snakemake.params.filter_config
+    filter_yaml_file = snakemake.params.filter_config  # type: ignore
     with open(filter_yaml_file) as file:
         filters = yaml.load(file, Loader=yaml.FullLoader)
     format_fields = filters.get("format_fields", [])
@@ -432,86 +420,96 @@ if __name__ == "__main__":
         ]
     ):
         logging.error("Missing parameters")
-        raise ValueError(
-            "Some required parameters are missing. Check your config file!"
-        )
+        raise ValueError("Some required parameters are missing. Check your config file!")
 
     # read SNV vcf file
-    logging.info("Reading provided VCF files")
-    snv_all_df = vcf_to_df(
-        vcf_snv,
-        vep_fields,
-        format_fields,
-        parse_vcf_line,
-        parse_info,
-        parse_format,
-        open_vcf,
-        ncol=10,
-    )
+    logging.info(f"Parsing file: {vcf_snv}")
+    try:
+        snv_all_df = vcf_to_df(
+            vcf_snv,
+            vep_fields,
+            format_fields,
+            parse_vcf_line,
+            parse_info,
+            parse_format,
+            open_vcf,
+            ncol=10,
+        )
+    except Exception as e:
+        logging.error(f"{e}")
 
-    # remove not important SNV categories and those not passing default filter
-    snv_all_df = snv_all_df[
-        (~snv_all_df["Consequence"].isin(snvs_remove))
-        & (snv_all_df["FILTER"] == "PASS")
-    ]
+    # remove unwanted SNV categories and those not passing default filter
+    logging.info(f"Total number of rows: {len(snv_all_df)}.")
+    logging.info("Filtering out unwanted SNVs and SNVs not passing the tool's default filter.")
+    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
+    logging.info(f"Rows left: {len(snv_all_df)}.")
 
     # keep only chosen columns
+    logging.info("Removing unwanted columns.")
     snv_picked_columns = snv_all_df[columns_keep]
 
     # rename SYMBOL to GENE for clarity
-    snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
+    snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})  # type: ignore
 
     # Collect TP53 SNV to a separate dataframe
     snv_tp53 = snv_picked_columns[snv_picked_columns["GENE"] == "TP53"]
-    logging.info(f"TP53 SNVs after filtering: {len(snv_tp53)}")
+    logging.info(f"Number of SNVs in TP53: {len(snv_tp53)}")
 
     # Collect the rest of SNVs to a separate dataframe
     snv_rest = snv_picked_columns[snv_picked_columns["GENE"] != "TP53"]
-    logging.info(f"Not TP53 SNVs after filtering: {len(snv_rest)}")
+    logging.info(f"Number of SNVs in the other genes: {len(snv_rest)}")
 
     # read SV vcf file
-    sv_df = sv_vcf_to_df(
-        vcf_sv,
-        parse_sv_vcf_line,
-        parse_cnvkit_vcf_line,
-        parse_info,
-        parse_format,
-        open_vcf,
-        ncol=10,
-        cnvkit=False,
-    )
-    logging.info(f"Total SVs read: {len(sv_df)}")
+    logging.info(f"Parsing file: {vcf_sv}")
+    try:
+        sv_df = sv_vcf_to_df(
+            vcf_sv,
+            parse_sv_vcf_line,
+            parse_cnvkit_vcf_line,
+            parse_info,
+            parse_format,
+            open_vcf,
+            ncol=10,
+            cnvkit=False,
+        )
+    except Exception as e:
+        logging.error(f"{e}")
+
+    logging.info(f"Total number of rows: {len(sv_df)}")
 
     # filter both chr4 and BND
     tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
-    logging.info(f"Translocations from chr4: {len(tn_chr4)}")
+    logging.info(f"Number of translocations from chr4: {len(tn_chr4)}")
 
     # filter both chr14 and BND
     tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
-    logging.info(f"Translocations from chr14: {len(tn_chr14)}")
+    logging.info(f"Number of translocations from chr14: {len(tn_chr14)}")
 
     # read SV vcf file and extract IDID variants on chr14
     sv_chr14_pass = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["FILTER"] == "PASS")]
     # convert SVLEN to numeric and turn empty strings to NaN
     sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
     # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[
-        (~sv_chr14_pass["TYPE"].isin(["BND"]))
-        & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
-    ]
+    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # read CNVkit VCF file
-    cnv_df = sv_vcf_to_df(
-        vcf_cnv,
-        parse_sv_vcf_line,
-        parse_cnvkit_vcf_line,
-        parse_info,
-        parse_format,
-        open_vcf,
-        cnvkit=True,
-    )
+    logging.info(f"Parsing file: {vcf_cnv}")
+    try:
+        cnv_df = sv_vcf_to_df(
+            vcf_cnv,
+            parse_sv_vcf_line,
+            parse_cnvkit_vcf_line,
+            parse_info,
+            parse_format,
+            open_vcf,
+            cnvkit=True,
+        )
+    except Exception as e:
+        logging.error(f"{e}")
+
     logging.info(f"Total CNVs read: {len(cnv_df)}")
+    logging.info("Writing XLSX file.")
 
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         # All the SNVs in one sheet
