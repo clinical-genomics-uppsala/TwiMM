@@ -206,3 +206,9 @@ def get_tc_file(wildcards):
         return config["samples"]
     else:
         return f"cnv_sv/{tc_method}_purity_file/{wildcards.sample}_{wildcards.type}.purity.txt"
+
+def get_snv_caller_output(wildcards):
+    if config["use_deepsomatic"]:
+        return f"snv_indels/deepsomatic_t_only/{wildcards.sample}_T.vcf.gz"
+    else:
+        return f"snv_indels/clairs_to/{wildcards.sample}_T.vcf.gz"
