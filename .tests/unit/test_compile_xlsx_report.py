@@ -1,5 +1,12 @@
 import pytest # type: ignore
-from workflow.scripts.compile_xlsx_report import (
+from pathlib import Path
+import sys
+
+TEST_DIR = Path(__file__).parent.resolve()
+SCRIPT_DIR = TEST_DIR / "../../workflow/scripts"
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from compile_xlsx_report import ( # type: ignore
     parse_info,
     parse_vcf_line,
     parse_format,
