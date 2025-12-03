@@ -144,12 +144,14 @@ use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat with:
     output:
         vcf=temp("snv_indels/clairs_to/{sample}_{type}.vcf.gz"),
 
+
 # SNV & INDELS from DeepSomatic-TO
 # use custom PoN from config
 # post-calling filtering by regions BED is not needed here
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
     wildcard_constraints:
         type="T",
+
 
 # Phase SNV output
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase with:
