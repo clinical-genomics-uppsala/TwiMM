@@ -105,15 +105,6 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
-pbsv_call:
-  container: "docker://hydragenetics/pbsv:2.9.0"
-  extra: ""
-
-pbsv_discover:
-  container: "docker://hydragenetics/pbsv:2.9.0"
-  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  extra: ""
-
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
