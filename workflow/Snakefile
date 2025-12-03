@@ -426,14 +426,14 @@ rule reports_compile_xlsx_report:
         vcf_sv="cnv_sv/sniffles2_call/{sample}_T.include.panel.vcf.gz",
         vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf",
     output:
-        xlsx=temp("reports/xlsx_reports/{sample}_combined_variants.xlsx"),
+        xlsx=temp("reports/xlsx_reports/{sample}_combined_report.xlsx"),
     params:
         filter_config=config.get("compile_xlsx_report", {}).get("clairs_vcf", []),
     log:
-        "reports/xlsx_reports/{sample}_combined_variants.xlsx.log",
+        "reports/xlsx_reports/{sample}_combined_report.xlsx.log",
     benchmark:
         repeat(
-            "reports/xlsx_reports/{sample}_combined_variants.xlsx.benchmark.tsv",
+            "reports/xlsx_reports/{sample}_combined_report.xlsx.benchmark.tsv",
             config.get("compile_xlsx_report", {}).get("benchmark_repeats", 1),
         )
     threads: config.get("compile_xlsx_report", {}).get("threads", config["default_resources"]["threads"])
