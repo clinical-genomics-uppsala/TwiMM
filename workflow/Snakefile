@@ -301,10 +301,10 @@ use rule bgzip from cnv_sv as bgzip_filtered_vep_vcf with:
 
 # filter out NonSomatic variants
 # output: vcf=temp("{file}.bcftools_view.{tag}.vcf.gz"),
+# tag="germline",
 use rule bcftools_view from filtering as filtering_bcftools_view_nonsomatic with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.phased\.include\.panel\.vep_annotated\.filter\.germline",
-        # tag="germline",
 
 
 # fix AF entries
