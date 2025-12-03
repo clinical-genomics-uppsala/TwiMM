@@ -152,7 +152,7 @@ use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only wit
         type="T",
 
 # Phase SNV output
-use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase_clairs with:
+use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase with:
     input:
         vcf=get_snv_caller_output,
         bai="alignment/pbmm2_align/{sample}_T.bam.bai",
@@ -199,31 +199,6 @@ use rule samtools_index from alignment as alignment_samtools_index_haplotagged_b
 
 
 # STRUCTURAL VARIANTS
-# run PBSV & HiFiCNV analysis
-use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover
-
-
-use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
-
-
-# bgzip PBSV VCF
-# required for filtering
-use rule bgzip from cnv_sv as cnv_sv_bgzip with:
-    input:
-        vcf="{file}_T.vcf",
-    output:
-        temp("{file}_T.vcf.gz"),
-    wildcard_constraints:
-        file="^cnv_sv/pbsv_call/.+",
-
-
-# index PBSV VCF
-# required for filtering
-use rule tabix from cnv_sv as cnv_sv_tabix_pbsv with:
-    wildcard_constraints:
-        file="^cnv_sv/pbsv_call/.+",
-
-
 # run Sniffles2
 use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
 
@@ -289,7 +264,7 @@ use rule tabix from cnv_sv as cnv_sv_tabix_include_panel with:
         file="^snv_indels/whatshap_phase/.+\.phased\.include\.panel",
 
 
-use rule vep from annotation as annotation_vep_clairs with:
+use rule vep from annotation as annotation_vep with:
     wildcard_constraints:
         file="snv_indels/whatshap_phase/.+\.phased\.include\.panel",
 
