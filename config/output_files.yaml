@@ -1,7 +1,7 @@
 ---
 
  files:
-   - name: "snv_panel_annotated_vcf"
+   - name: "snv_vep_annotated_vcf"
      output: "results/snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.vcf.gz"
      input: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.vcf.gz"
    - name: "sniffles2_vcf"
