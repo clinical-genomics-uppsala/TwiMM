@@ -76,7 +76,7 @@ hificnv:
   extra: ""
 
 merge_cnv_json:
-  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz"
   unfiltered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs:
@@ -131,7 +131,7 @@ whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"
   extra: " --ignore-read-groups --skip-missing-contigs" # --skip-missing-contigs
 
-use_deepsomatic: false
+use_deepsomatic: true
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
