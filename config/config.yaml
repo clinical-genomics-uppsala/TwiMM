@@ -131,7 +131,7 @@ whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"
   extra: " --ignore-read-groups --skip-missing-contigs" # --skip-missing-contigs
 
-use_deepsomatic: true
+use_deepsomatic: false
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"
