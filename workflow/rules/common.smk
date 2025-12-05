@@ -50,8 +50,8 @@ except WorkflowError as we:
         schema_section = ".".join(re.findall(r"\['([^']+)'\]", schema_hiearachy)[1::2])
         sys.exit(f"{error_msg} in {schema_section}")
 
-date_string = datetime.now().strftime('%Y%m%d--%H-%M-%S')
-#date_string = "TwiMM_v1.1.0dev"
+#date_string = datetime.now().strftime('%Y%m%d--%H-%M-%S')
+date_string = "TwiMM_v1.1.0dev"
 pipeline_version = get_pipeline_version(workflow, pipeline_name="TwiMM")
 version_files = touch_pipeline_version_file_name(pipeline_version, date_string=date_string, directory="results/versions/software")
 if use_container(workflow):
