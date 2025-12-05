@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.1.0...v1.2.0) (2025-12-05)
+
+
+### Features
+
+* add a function determining which snv caller to use ([e6fc7e7](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/e6fc7e720ef97375cc854540fc9188f15d053c9d))
+* add conditional executin of clairs or deeps ([6d88433](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/6d88433535bb3ec6aa0cd7ce307beed6beb1df90))
+
+
+### Bug Fixes
+
+* chnage germline_vcf filename ([590fc31](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/590fc311fb229a5de0d58c80bcad764c9abcdcc1))
+* remove f-strings in get_snv_caller_output ([b499374](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/b499374d99b0504f2ac8dfa68b21cf9b76af27be))
+* rename SYMBOL to GENE ([3dee681](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/3dee6815ebf9b54be3d2959766f41bb3b935356f))
+* return PHENO & SOMATIC to vep_fields ([7aaf6e4](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/7aaf6e448a962419a7dbe20fc4e4d1484c56ef27))
+
+
+### Documentation
+
+* add two dags ([c537dce](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/c537dce05f2ac7e95230268475e08b5acd1d9eb0))
+* add two DAGs ([2712b8a](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/2712b8aafd2e13d0a0d58aa03b2bddd2d114926b))
+
 ## [1.1.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.0.0...v1.1.0) (2025-11-17)
 
 
