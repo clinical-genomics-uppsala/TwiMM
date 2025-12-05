@@ -81,4 +81,4 @@ The `samples.tsv` and `units.tsv` are input files that must be generated before 
 | sample | type | platform | machine | processing_unit         | barcode | methylation | bam                 |
 |--------|------|----------|---------|-------------------------|---------|-------------|---------------------|
 | MM0001 | T    | PACBIO   | REVIO   | m84045_031032_151755_s4 | XXX     | No          | /path/to/MM0001.bam |
-| MM0002 | T    | PACBIO   | REVIO   | m84045_031032_151756_s5 | ZZZ     | IDK         | /path/to/MM0002.bam |
+| MM0002 | T    | PACBIO   | REVIO   | m84045_031032_151756_s5 | ZZZ     | No          | /path/to/MM0002.bam |
