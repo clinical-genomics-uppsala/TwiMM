@@ -76,7 +76,7 @@ hificnv:
   extra: ""
 
 merge_cnv_json:
-  germline_vcf: "snv_indels/clairs_to/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.fix_af.vcf"
+  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz"
   unfiltered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs:
@@ -105,15 +105,6 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
-pbsv_call:
-  container: "docker://hydragenetics/pbsv:2.9.0"
-  extra: ""
-
-pbsv_discover:
-  container: "docker://hydragenetics/pbsv:2.9.0"
-  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  extra: ""
-
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: ""
@@ -139,6 +130,8 @@ whatshap_phase:
 whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"
   extra: " --ignore-read-groups --skip-missing-contigs" # --skip-missing-contigs
+
+use_deepsomatic: false
 
 multiqc:
   container: "docker://hydragenetics/multiqc:1.25.1"

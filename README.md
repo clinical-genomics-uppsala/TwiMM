@@ -79,4 +79,10 @@ The following output files should be targeted via another rule:
 
 ## :judge: Rule Graphs
 
-![rule_graph](images/rulegraph.svg)
+With DeepSomatic:
+
+![rule_graph1](images/rulegraph_deeps.svg)
+
+With ClairS-TO:
+
+![rule_graph2](images/rulegraph_clairs.svg)

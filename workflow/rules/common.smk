@@ -51,8 +51,8 @@ except WorkflowError as we:
         sys.exit(f"{error_msg} in {schema_section}")
 
 # date_string = datetime.now().strftime('%Y%m%d--%H-%M-%S')
-date_string = "twist_myelom"
-pipeline_version = get_pipeline_version(workflow, pipeline_name="twist_myelom")
+date_string = "TwiMM_v1.1.0dev"
+pipeline_version = get_pipeline_version(workflow, pipeline_name="TwiMM")
 version_files = touch_pipeline_version_file_name(pipeline_version, date_string=date_string, directory="results/versions/software")
 if use_container(workflow):
     version_files += touch_software_version_file(config, date_string=date_string, directory="results/versions/software")
@@ -206,3 +206,10 @@ def get_tc_file(wildcards):
         return config["samples"]
     else:
         return f"cnv_sv/{tc_method}_purity_file/{wildcards.sample}_{wildcards.type}.purity.txt"
+
+
+def get_snv_caller_output(wildcards):
+    if config["use_deepsomatic"]:
+        return "snv_indels/deepsomatic_t_only/{sample}_{type}.vcf.gz"
+    else:
+        return "snv_indels/clairs_to/{sample}_{type}.vcf.gz"
