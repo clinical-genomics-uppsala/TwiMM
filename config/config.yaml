@@ -125,7 +125,7 @@ vep:
 
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
-  extra: ""
+  extra: " --ignore-read-groups"
 
 whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"
