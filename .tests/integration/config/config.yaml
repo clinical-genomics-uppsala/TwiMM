@@ -14,6 +14,9 @@ reference:
 cnvkit_batch:
   normal_reference: "ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
 
+compile_xlsx_report:
+  clairs_vcf: "../../config/filters/config_vcf_filters_clairs.yaml"
+
 bcftools_filter_include_region:
   panel: "ref_data/test_genes.bed"
 
@@ -24,6 +27,7 @@ general_report: "../../config/report.yaml"
 
 vep:
   vep_cache: "ref_data/VEP"
+  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --protein --hgvs --fasta ref_data/genome.fasta"
 
 filter_vcf:
   germline: "../../config/filters/config_hard_filter_germline_vep.yaml"
