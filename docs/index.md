@@ -2,7 +2,7 @@
 
 **This project is under active development** :smiley:
 
-The TwiMM pipeline is a bioinformatic pipeline designed to analyse targeted long-read (PacBio) sequencing data for the multiple myeloma gene panel.
-It reports small variants, CNVs, SVs and translocations as well as QC metrics and plots.
+TwiMM is a bioinformatic pipeline designed to analyse long-read (PacBio) sequencing data from the targeted multiple myeloma gene panel developed by Twist Biosciences (hence the name - TwiMM).
+It reports small variants, CNVs, SVs including translocations as well as QC metrics and plots.
 It is built using Snakemake and the [hydra-genetics](https://github.com/hydra-genetics/hydra-genetics) framework for efficient data processing and analysis.
 
