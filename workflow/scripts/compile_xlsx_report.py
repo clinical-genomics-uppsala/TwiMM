@@ -239,7 +239,7 @@ def parse_cnvkit_vcf_line(
         genes = ""
     else:
         genes = info_dict.get("Genes", "")
-    
+
     # Ensure all other required keys are present
     for k in required_info_keys:
         if k not in info_dict:
