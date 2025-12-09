@@ -229,12 +229,24 @@ def parse_cnvkit_vcf_line(
     info_dict = parse_info(info)
     if not info_dict:
         raise ValueError("Could not parse INFO field!")
-    for k in ["Genes", "SVLEN", "END", "LOG_ODDS_RATIO", "CORR_CN", "PROBES", "BAF"]:
+    required_info_keys = ["SVLEN", "END", "LOG_ODDS_RATIO", "CORR_CN", "PROBES", "BAF"]
+    if "Genes" not in info_dict:
+        logging.warning(
+            "INFO field missing 'Genes' for CNV entry at %s:%s; continuing with empty GENE field.",
+            chrom,
+            pos
+        )
+        genes = ""
+    else:
+        genes = info_dict.get("Genes", "")
+    
+    # Ensure all other required keys are present
+    for k in required_info_keys:
         if k not in info_dict:
-            raise ValueError(f"{k} not found in the INFO field!")
+            raise ValueError(f"'{k}' not found in the INFO field!")
 
     # Extract and convert INFO fields
-    genes = info_dict.get("Genes", "")
+    # Genes have been extracted above
     end = safe_convert(info_dict.get("END", ""), int, 0)
     svlen = safe_convert(info_dict.get("SVLEN", ""), int, 0)
     log_odds_ratio = safe_convert(info_dict.get("LOG_ODDS_RATIO", ""), float, float("nan"))
@@ -505,7 +517,7 @@ if __name__ == "__main__":
             open_vcf,
             cnvkit=True,
         )
-    except Exception as e:
+    except ValueError as e:
         logging.error(f"{e}")
 
     logging.info(f"Total CNVs read: {len(cnv_df)}")
