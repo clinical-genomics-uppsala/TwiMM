@@ -92,7 +92,7 @@ def test_parse_format(format_str, sample_str, expected):
             "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:25",
             ["Gene", "Impact"],
             ["GT", "DP", "GQ"],
-            pytest.raises(KeyError),
+            pytest.raises(ValueError),
         ),
         # You request too many VEP fields from the VCF file
         (
@@ -113,12 +113,12 @@ def test_parse_format(format_str, sample_str, expected):
 def test_parse_vcf_line(line, vep_fields, format_fields, expected):
     if isinstance(expected, dict):
         assert (
-            parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
+            parse_vcf_line(line, vep_fields, format_fields)
             == expected
         )
     else:
         with expected:
-            parse_vcf_line(line, vep_fields, format_fields, parse_info, parse_format)
+            parse_vcf_line(line, vep_fields, format_fields)
 
 
 # --- Tests for parse_sv_vcf_line ---
@@ -180,10 +180,10 @@ def test_parse_vcf_line(line, vep_fields, format_fields, expected):
 )
 def test_parse_sv_vcf_line(line, expected):
     if isinstance(expected, dict):
-        assert parse_sv_vcf_line(line, parse_info, parse_format) == expected
+        assert parse_sv_vcf_line(line) == expected
     else:
         with expected:
-            parse_sv_vcf_line(line, parse_info, parse_format)
+            parse_sv_vcf_line(line)
 
 
 @pytest.mark.parametrize(
@@ -252,7 +252,7 @@ def test_parse_sv_vcf_line(line, expected):
 )
 def test_parse_cnvkit_vcf_line(line, expected):
     if isinstance(expected, dict):
-        assert parse_cnvkit_vcf_line(line, parse_info, parse_format) == expected
+        assert parse_cnvkit_vcf_line(line) == expected
     else:
         with expected:
-            parse_cnvkit_vcf_line(line, parse_info, parse_format)
+            parse_cnvkit_vcf_line(line)
