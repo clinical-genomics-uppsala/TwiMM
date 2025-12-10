@@ -1,5 +1,16 @@
 # Changelog
 
+### [1.2.1](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.2.0...v1.2.1) (2025-12-10)
+
+
+### Documentation
+
+* fix formatting of the pippeline overview ([deac0d7](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/deac0d752b95333cc815f0a76227c771d53e9ef0))
+* update overview.md ([d13ef14](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/d13ef14224af85da0dc51eac93f17a05c17aa887))
+* update pipeline description ([8af888a](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/8af888a134861287335aab70491ee5e87cdc2835))
+* update site name ([daa7820](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/daa7820d2f8d37b4f05bf93d824b82500c20960b))
+* update the documentation ([90b8000](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/90b8000696b3c1dc5c8eb047c75da3ec34387c7e))
+
 ## [1.2.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.1.0...v1.2.0) (2025-12-05)
 
 
