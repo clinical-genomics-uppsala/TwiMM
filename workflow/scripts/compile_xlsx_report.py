@@ -464,8 +464,8 @@ def run_pipeline(snakemake_obj: Any):
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         write_excel_sheet(writer, snv_rest, "SNVs")
         write_excel_sheet(writer, snv_tp53, "TP53")
-        write_excel_sheet(writer, tn_chr4, "Tn_chr4") # type: ignore
-        write_excel_sheet(writer, tn_chr14, "Tn_chr14") # type: ignore
+        write_excel_sheet(writer, tn_chr4, "Tn_chr4")  # type: ignore
+        write_excel_sheet(writer, tn_chr14, "Tn_chr14")  # type: ignore
         write_excel_sheet(writer, sv_chr14_idid, "IDID_chr14")
         write_excel_sheet(writer, cnv_df, "CNV")
 
