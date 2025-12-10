@@ -27,7 +27,7 @@ def log_execution(func: Callable) -> Callable:
 
 def safe_parser(func: Callable) -> Callable:
     """
-    Decorator for row parsing functions. 
+    Decorator for row parsing functions.
     Wraps the function to catch parsing errors and provide context.
     """
     @functools.wraps(func)
@@ -44,7 +44,7 @@ def safe_parser(func: Callable) -> Callable:
 def parse_info(info_str: str) -> dict[str, str]:
     """
     Parse the INFO field from a VCF line
-    
+
     Args:
         info_str: The INFO field from the VCF, e.g. "FAU=46;FCU=28"
 
@@ -323,12 +323,12 @@ def process_vcf(
 ) -> pd.DataFrame:
     """
     Generic function to process a VCF file into a DataFrame using a specific line parser.
-    
+
     Args:
         vcf_path: Path to the VCF file.
         line_parser: Function to parse each line of the VCF.
         **kwargs: Additional arguments to pass to the line_parser.
-    
+
     Returns:
         DataFrame containing the parsed data.
     """
@@ -371,7 +371,7 @@ def run_pipeline(snakemake_obj: Any):
     filter_yaml_file = snakemake_obj.params.filter_config
     with open(filter_yaml_file) as file:
         filters = yaml.load(file, Loader=yaml.FullLoader)
-    
+
     format_fields = filters.get("format_fields", [])
     vep_fields = filters.get("vep_info_fields", [])
     columns_keep = filters.get("columns_keep", [])
@@ -396,18 +396,18 @@ def run_pipeline(snakemake_obj: Any):
         snv_all_df = pd.DataFrame()
 
     logging.info(f"Total number of rows: {len(snv_all_df)}.")
-    
+
     if not snv_all_df.empty:
         logging.info("Filtering out unwanted SNVs and SNVs not passing the tool's default filter.")
         snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
         logging.info(f"Rows left: {len(snv_all_df)}.")
-        
+
         logging.info("Removing unwanted columns.")
         # Ensure columns exist before selecting
         existing_cols = [c for c in columns_keep if c in snv_all_df.columns]
         snv_picked_columns = snv_all_df[existing_cols]
         snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
-        
+
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
     else:
@@ -431,13 +431,13 @@ def run_pipeline(snakemake_obj: Any):
     if not sv_df.empty:
         tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
         tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
-        
+
         sv_chr14_pass = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["FILTER"] == "PASS")]
         # Use assignment to avoid SettingWithCopyWarning
-        sv_chr14_pass = sv_chr14_pass.copy() 
+        sv_chr14_pass = sv_chr14_pass.copy()
         sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
         sv_chr14_idid = sv_chr14_pass[
-            (~sv_chr14_pass["TYPE"].isin(["BND"])) & 
+            (~sv_chr14_pass["TYPE"].isin(["BND"])) &
             (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
         ]
     else:
@@ -456,7 +456,7 @@ def run_pipeline(snakemake_obj: Any):
     except ValueError as e:
         logging.error(f"{e}")
         cnv_df = pd.DataFrame()
-    
+
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     # --- Write to Excel ---
@@ -464,8 +464,8 @@ def run_pipeline(snakemake_obj: Any):
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         write_excel_sheet(writer, snv_rest, "SNVs")
         write_excel_sheet(writer, snv_tp53, "TP53")
-        write_excel_sheet(writer, tn_chr4, "Tn_chr4")
-        write_excel_sheet(writer, tn_chr14, "Tn_chr14")
+        write_excel_sheet(writer, tn_chr4, "Tn_chr4") # type: ignore
+        write_excel_sheet(writer, tn_chr14, "Tn_chr14") # type: ignore
         write_excel_sheet(writer, sv_chr14_idid, "IDID_chr14")
         write_excel_sheet(writer, cnv_df, "CNV")
 
