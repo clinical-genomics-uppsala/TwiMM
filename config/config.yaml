@@ -70,11 +70,6 @@ filter_vcf:
 
 general_report: "config/report.yaml"
 
-hificnv:
-  container: "docker://hydragenetics/hificnv:1.0.1"
-  exclude: "ref_data/cnv.excluded_regions.common_50.hg38.bed"
-  extra: ""
-
 merge_cnv_json:
   germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz"
   unfiltered_cnv_vcfs:
@@ -125,7 +120,7 @@ vep:
 
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
-  extra: ""
+  extra: " --ignore-read-groups"
 
 whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"

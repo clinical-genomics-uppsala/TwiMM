@@ -30,3 +30,4 @@ data/
 config/test_config.yaml
 *.bam
 *.xlsx
+*.simg

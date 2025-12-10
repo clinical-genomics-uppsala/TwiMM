@@ -208,6 +208,26 @@ def test_parse_sv_vcf_line(line, expected):
                 "DP": 3.5,
             },
         ),
+        # Genes in INFO is missing (it's OK when the variant is DEL)
+        (
+            "chr1\t10\t.\tN\t<DEL>\t.\t.\tSVTYPE=COPY_NORMAL;END=125;SVLEN=124;LOG_ODDS_RATIO=-0.1;CALLER=cnvkit;CN=NA;CORR_CN=2.0;PROBES=2;BAF=0.3\tGT:CN:CNQ:DP:BAF\t0/0:2.0:80:3.5:0.3",
+            {
+                "CHROM": "chr1",
+                "POS": 10,
+                "VARIANT_TYPE": "DEL",
+                # Genes missing → empty string
+                "GENE": "",
+                "END": 125,
+                "SVLEN": 124,
+                "LOG_ODDS_RATIO": -0.1,
+                "CORR_CN": 2.0,
+                "PROBES": 2,
+                "BAF": 0.3,
+                "GT": "0/0",
+                "CNQ": 80,
+                "DP": 3.5,
+            },
+        ),
         # Line is too short
         (
             "chr1\t10\t.\tN\t<COPY_NORMAL>\t.\t0/0:2.0:80:3.5:0.3",
