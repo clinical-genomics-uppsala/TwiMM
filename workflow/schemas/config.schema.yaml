@@ -1,20 +1,375 @@
 $schema: "http://json-schema.org/draft-04/schema#"
-description: snakemake configuration file
+description: snakemake configuration file for the TwiMM pipeline
 type: object
+
 properties:
   samples:
     type: string
+    description: "Path to a samples table (TSV) listing sample names and metadata used by the workflow."
+
   units:
     type: string
+    description: "Path to a units table (TSV) describing sample units and unit types (e.g. N, T)."
+
   output:
     type: string
-    description: output yaml/json file defining expected output from pipeline
+    description: "Path to an output specification YAML/JSON listing pipeline-level result files (e.g. config/output_files.yaml)."
+
   resources:
     type: string
-    description: Path to resources.yaml file
+    description: "Path to resources file (YAML) providing reference data locations and other resources used by the workflow."
+
   default_container:
     type: string
-    description: name or path to a default docker/singularity container
+    description: "Default container image used when an individual rule/container is not specified."
+
+  reference:
+    type: object
+    description: "Reference genome and related files used across rules."
+    properties:
+      fasta:
+        type: string
+        description: "Path to the reference FASTA."
+      fai:
+        type: string
+        description: "Path to the FASTA index (.fai) file."
+      trf:
+        type: string
+        description: "Path to the TRF (tandem repeat) BED file used by some tools."
+      design_bed:
+        type: string
+        description: "BED file used for SNV calling / design regions."
+      targets_bed:
+        type: string
+        description: "BED file used for coverage analyses (targets)."
+    required: ["fasta", "fai", "trf", "design_bed", "targets_bed"]
+
+  aligner:
+    type: string
+    description: "Name of aligner to use (e.g. 'pbmm2')."
+
+  haplotag_path:
+    type: string
+    description: "Relative path template/directory where haplotagging output (whatshap haplotag) is stored (e.g. 'snv_indels/whatshap_haplotag')."
+
+  haplotag_suffix:
+    type: string
+    description: "Suffix appended to haplotagged BAM files (e.g. 'haplotagged')."
+
+  annotate_cnv:
+    type: object
+    description: "Configuration for CNV annotation."
+    properties:
+      tag:
+        type: string
+        description: "Tag name used for this annotation (e.g. 'germline')."
+      germline:
+        type: string
+        description: "Path to BED file describing full gene coordinates to use for CNV annotation."
+    required: ["tag", "germline"]
+
+  bcftools_filter_include_region:
+    type: object
+    description: "Settings for the 'bcftools filter include region' step."
+    properties:
+      panel:
+        type: string
+        description: "Path to BED file used to restrict VCF records to a panel/regions of interest."
+    required: ["panel"]
+
+  bcftools_view:
+    type: object
+    description: "Configuration for bcftools view step."
+    properties:
+      extra:
+        type: string
+        description: "Extra command-line options for bcftools view."
+    required: []
+
+  caller:
+    type: string
+    description: "Primary caller for CNV/SNV workflows (e.g. 'cnvkit')."
+
+  clairs_to_call:
+    type: object
+    description: "Configuration for the ClairS-TO calling step (used for SNV caller integration)."
+    properties:
+      container:
+        type: string
+        description: "Container image to run clairs_to_call step."
+      extra:
+        type: string
+        description: "Extra command-line options passed to the caller."
+      platform:
+        type: string
+        description: "Sequencing platform setting used by the caller (e.g. 'hifi_revio')."
+    required: ["container", "platform"]
+
+  cnv_html_report:
+    type: object
+    description: "Options to control CNV HTML report generation."
+    properties:
+      show_table:
+        type: boolean
+        description: "Whether to include the results table in the HTML report."
+      cytobands:
+        type: boolean
+        description: "Whether to include cytoband tracks in the report."
+    required: ["show_table", "cytobands"]
+
+  cnvkit_batch:
+    type: object
+    description: "Settings for the CNVkit batch calling step."
+    properties:
+      container:
+        type: string
+        description: "Container image to execute CNVkit batch."
+      normal_reference:
+        type: string
+        description: "Path to CNVkit panel of normals (.cnn) to use with cnvkit_batch."
+      method:
+        type: string
+        description: "Calling method for CNVkit (e.g. 'hybrid', 'amplicon', 'wgs')."
+    required: ["container", "normal_reference", "method"]
+
+  cnvkit_call:
+    type: object
+    description: "Settings for CNVkit calling/interpretation step (cnvkit call)."
+    properties:
+      container:
+        type: string
+        description: "Container image to run cnvkit call."
+      extra:
+        type: string
+        description: "Extra command-line options for cnvkit_call."
+      purity:
+        type: number
+        description: "Tumor purity used by cnvkit_call (floating point between 0 and 1)."
+    required: ["container", "purity"]
+
+  cnvkit_vcf:
+    type: object
+    description: "Options controlling CNV-to-VCF generation or annotation."
+    properties:
+      container:
+        type: string
+        description: "Container image used to generate or postprocess cnvkit VCF output."
+      extra:
+        type: string
+        description: "Extra options for the cnvkit_vcf step."
+    required: ["container"]
+
+  compile_xlsx_report:
+    type: object
+    description: "Configuration used by the Excel report generator."
+    properties:
+      filters:
+        type: string
+        description: "Path to a YAML of filters used to parse VCF files for the report."
+    required: ["filters"]
+
+  deepsomatic_t_only:
+    type: object
+    description: "Configuration for DeepSomatic T-only calling (if used)."
+    properties:
+      container:
+        type: string
+        description: "Container image for DeepSomatic."
+      model:
+        type: string
+        description: "Model name used by DeepSomatic (e.g. 'PACBIO')."
+      pon:
+        type: string
+        description: "Path to panel of normals (PoN) used by DeepSomatic, if applicable."
+      extra:
+        type: string
+        description: "Extra command-line flags passed to DeepSomatic."
+    required: ["container", "model"]
+
+  filter_vcf:
+    type: object
+    description: "Configuration for generic VCF filtering steps."
+    properties:
+      germline:
+        type: string
+        description: "Path to filter YAML used for germline filtering of VEP annotated VCFs."
+    required: ["germline"]
+
+  general_report:
+    type: string
+    description: "Path to a general report template or configuration file used by the pipeline."
+
+  merge_cnv_json:
+    type: object
+    description: "Configuration for merging CNV JSON files used by CNV HTML report generation."
+    properties:
+      germline_vcf:
+        type: string
+        description: "Path to the germline VCF (may include {sample} wildcard)."
+      unfiltered_cnv_vcfs:
+        type: array
+        items:
+          type: string
+        description: "List of CNV VCF paths (unfiltered)."
+      filtered_cnv_vcfs:
+        type: array
+        items:
+          type: string
+        description: "List of CNV VCF paths (filtered)."
+      annotations:
+        type: array
+        items:
+          type: string
+        description: "Annotation files (BED) to annotate merge results."
+    required: ["germline_vcf", "unfiltered_cnv_vcfs", "filtered_cnv_vcfs", "annotations"]
+
+  mosdepth_bed:
+    type: object
+    description: "Configuration for mosdepth-based region coverage calculations."
+    properties:
+      container:
+        type: string
+        description: "Container image for mosdepth."
+      extra:
+        type: string
+        description: "Extra options to pass to mosdepth."
+    required: []
+
+  multiqc:
+    type: object
+    description: "Configuration for MultiQC reporting."
+    properties:
+      container:
+        type: string
+        description: "Container image used to run MultiQC."
+      reports:
+        type: object
+        description: "Report-specific configurations (included_unit_types, list of QC file templates etc.)."
+    required: ["container", "reports"]
+
+  pbmarkdup:
+    type: object
+    description: "Configuration for the pbmarkdup prealignment step used to mark/remove duplicates."
+    properties:
+      container:
+        type: string
+        description: "Container image to run pbmarkdup."
+      extra:
+        type: string
+        description: "Extra flags passed to pbmarkdup."
+    required: ["container"]
+
+  pbmm2_index:
+    type: object
+    description: "Configuration for pbmm2 index step (reference indexing)."
+    properties:
+      container:
+        type: string
+        description: "Container image for pbmm2 index."
+      preset:
+        type: string
+        description: "Preset to use for pbmm2 indexing (e.g. 'HIFI')."
+      extra:
+        type: string
+        description: "Extra arguments to pbmm2 indexing step."
+    required: ["container", "preset"]
+
+  pbmm2_align:
+    type: object
+    description: "Configuration for pbmm2 alignment step."
+    properties:
+      container:
+        type: string
+        description: "Container image used to run pbmm2 align."
+      preset:
+        type: string
+        description: "Preset to run pbmm2 align with (e.g. 'HIFI')."
+      extra:
+        type: string
+        description: "Extra pbmm2 command line arguments."
+    required: ["container", "preset"]
+
+  pbmm2_merge:
+    type: object
+    description: "Configuration for merging pbmm2 alignment outputs."
+    properties:
+      container:
+        type: string
+        description: "Container image used for pbmm2 merge (if applicable)."
+    required: []
+
+  sniffles2_call:
+    type: object
+    description: "Configuration for running Sniffles2 for structural variant calling."
+    properties:
+      container:
+        type: string
+        description: "Container image for sniffles2."
+      extra:
+        type: string
+        description: "Extra flags to pass to sniffles2."
+    required: ["container"]
+
+  svdb_merge:
+    type: object
+    description: "Settings used for SV database merging/annotation steps."
+    properties:
+      tc_method:
+        type: array
+        items:
+          type: object
+        description: "List of tumour/clinical methods and per-method settings (e.g. cnv_caller used)."
+    required: []
+
+  trimmer_software:
+    type: string
+    description: "Software used for read trimming (e.g. 'None' if not used)."
+
+  use_deepsomatic:
+    type: boolean
+    description: "Flag to enable/disable DeepSomatic calling in the pipeline. If not used, set to false."
+
+  vep:
+    type: object
+    description: "VEP annotation configuration."
+    properties:
+      container:
+        type: string
+        description: "Container image used to run VEP."
+      vep_cache:
+        type: string
+        description: "Path to the VEP cache directory."
+      mode:
+        type: string
+        description: "Mode flags passed to VEP (e.g. '--offline --cache')."
+      extra:
+        type: string
+        description: "Extra flags for VEP (assembly, pick, cache_version etc)."
+    required: ["container", "vep_cache", "mode"]
+
+  whatshap_phase:
+    type: object
+    description: "Configuration for whatshap phasing step."
+    properties:
+      container:
+        type: string
+        description: "Container image used by whatshap phase."
+      extra:
+        type: string
+        description: "Extra options passed to whatshap phase."
+    required: ["container"]
+
+  whatshap_haplotag:
+    type: object
+    description: "Configuration for whatshap haplotagging."
+    properties:
+      container:
+        type: string
+        description: "Container image used for whatshap haplotag."
+      extra:
+        type: string
+        description: "Extra options passed to whatshap haplotag (e.g. '--skip-missing-contigs')."
+    required: ["container"]
 
 required:
   - samples
@@ -22,4 +377,31 @@ required:
   - output
   - resources
   - default_container
-
+  - reference
+  - aligner
+  - haplotag_path
+  - haplotag_suffix
+  - annotate_cnv
+  - bcftools_filter_include_region
+  - caller
+  - clairs_to_call
+  - cnv_html_report
+  - cnvkit_batch
+  - cnvkit_call
+  - cnvkit_vcf
+  - compile_xlsx_report
+  - deepsomatic_t_only
+  - filter_vcf
+  - general_report
+  - merge_cnv_json
+  - mosdepth_bed
+  - multiqc
+  - pbmarkdup
+  - pbmm2_index
+  - pbmm2_align
+  - pbmm2_merge
+  - sniffles2_call
+  - svdb_merge
+  - vep
+  - whatshap_phase
+  - whatshap_haplotag  
