@@ -10,9 +10,7 @@ reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  # this bed file is ok to use for SNV calling
   design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
-  # this one is ok for coverage analysis
   targets_bed: "ref_data/Target_bases_covered_by_probes_Scilifelab_Myeloma-v1_0p1X_LRTE-97588670_hg38.bed"
 
 aligner: "pbmm2"
@@ -24,7 +22,6 @@ annotate_cnv:
   germline: "ref_data/panel_full_genes.bed"
 
 bcftools_filter_include_region:
-  default_container: "docker://hydragenetics/common:3.3.0"
   panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
 
 bcftools_view:
@@ -56,8 +53,7 @@ cnvkit_vcf:
   extra: ""
 
 compile_xlsx_report:
-  clairs_vcf: "config/filters/config_vcf_filters_clairs.yaml"
-  sniffles2_vcf: "config/filters/config_vcf_filters_sniffles2.yaml"
+  filters: "config/filters/config_vcf_filters_clairs.yaml"
 
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
@@ -83,9 +79,18 @@ mosdepth_bed:
   container: "docker://hydragenetics/mosdepth:0.3.6"
   extra: ""
 
+multiqc:
+  container: "docker://hydragenetics/multiqc:1.25.1"
+  reports:
+    DNA:
+      included_unit_types: ["T"]
+      qc_files:
+        - "qc/sequali/{sample}_T_{processing_unit}_{barcode}.json"
+        - "qc/mosdepth_bed/{sample}_T.per-base.bed.gz"
+
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
-  extra: "--ignore-read-names"
+  extra: " --ignore-read-names"
 
 pbmm2_index:
   container: "docker://hydragenetics/pbmm2:1.16"
@@ -112,6 +117,8 @@ svdb_merge:
 
 trimmer_software: "None"
 
+use_deepsomatic: false
+
 vep:
   container: "docker://hydragenetics/vep:113.0"
   vep_cache: "/data/ref_genomes/VEP"
@@ -124,25 +131,4 @@ whatshap_phase:
 
 whatshap_haplotag:
   container: "docker://hydragenetics/whatshap:2.2"
-  extra: " --ignore-read-groups --skip-missing-contigs" # --skip-missing-contigs
-
-use_deepsomatic: false
-
-multiqc:
-  container: "docker://hydragenetics/multiqc:1.25.1"
-  reports:
-    DNA:
-      included_unit_types: ["N", "T"]
-      qc_files:
-        - "qc/fastqc/{sample}_{type}_{flowcell}_{lane}_{barcode}_{read}_fastqc.zip"
-        - "qc/picard_collect_alignment_summary_metrics/{sample}_{type}.alignment_summary_metrics.txt"
-        - "qc/picard_collect_duplication_metrics/{sample}_{type}.duplication_metrics.txt"
-        - "qc/picard_collect_gc_bias_metrics/{sample}_{type}.gc_bias.summary_metrics"
-        - "qc/picard_collect_hs_metrics/{sample}_{type}.HsMetrics.txt"
-        - "qc/picard_collect_insert_size_metrics/{sample}_{type}.insert_size_metrics.txt"
-        - "qc/picard_collect_multiple_metrics/{sample}_{type}.{ext}"
-        - "qc/picard_collect_wgs_metrics/{sample}_{type}.txt"
-        - "qc/mosdepth/{sample}_{type}.mosdepth.summary.txt"
-        - "qc/mosdepth_bed/{sample}_{type}.per-base.bed.gz"
-        - "qc/samtools_stats/{sample}_{type}.samtools-stats.txt"
-        - "prealignment/fastp_pe/{sample}_{type}_{flowcell}_{lane}_{barcode}_fastp.json"
+  extra: " --ignore-read-groups --skip-missing-contigs"
