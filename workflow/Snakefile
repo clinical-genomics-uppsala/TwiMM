@@ -118,7 +118,7 @@ use rule mosdepth_bed from qc as qc_mosdepth_bed with:
         bed=config.get("reference", {}).get("targets_bed", ""),
 
 
-use rule multiqc_longread from qc as qc_multiqc_longread 
+use rule multiqc_longread from qc as qc_multiqc_longread
 
 
 use rule sequali from qc as qc_sequali
