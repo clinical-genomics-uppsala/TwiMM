@@ -53,7 +53,7 @@ cnvkit_vcf:
   extra: ""
 
 compile_xlsx_report:
-  filters: "config/filters/config_vcf_filters_clairs.yaml"
+  filters: "config/filters/config_vcf_report.yaml"
 
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
