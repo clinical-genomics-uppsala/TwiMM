@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.2.1...v1.3.0) (2025-12-15)
+
+
+### Features
+
+* add sequali and multiqc_long_read ([62c2f14](https://www.github.com/clinical-genomics-uppsala/TwiMM/commit/62c2f14e29cbec013a75ee1e16df4c8e9d6f0cf9))
+
 ### [1.2.1](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.2.0...v1.2.1) (2025-12-10)
 
 
