@@ -98,7 +98,7 @@ module snv_indels:
         config
 
 
-# for depth of coverage
+# for qc stuff
 module qc:
     snakefile:
         github(
@@ -108,6 +108,20 @@ module qc:
         )
     config:
         config
+
+
+# QC stuff
+use rule mosdepth_bed from qc as qc_mosdepth_bed with:
+    input:
+        bam="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam",
+        bai="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam.bai",
+        bed=config.get("reference", {}).get("targets_bed", ""),
+
+
+use rule multiqc_longread from qc as qc_multiqc_longread
+
+
+use rule sequali from qc as qc_sequali
 
 
 # MAPPING
@@ -414,14 +428,6 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
         extra_table_files=[t["path"] for t in config.get("cnv_html_report", {}).get("extra_tables", [])],
 
 
-# depth of coverage
-use rule mosdepth_bed from qc as qc_mosdepth_bed with:
-    input:
-        bam="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam",
-        bai="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam.bai",
-        bed=config.get("reference", {}).get("targets_bed", ""),
-
-
 # Excel report with SNVs and SVs
 rule reports_compile_xlsx_report:
     input:
@@ -431,7 +437,7 @@ rule reports_compile_xlsx_report:
     output:
         xlsx=temp("reports/xlsx_reports/{sample}_combined_report.xlsx"),
     params:
-        filter_config=config.get("compile_xlsx_report", {}).get("clairs_vcf", []),
+        filter_config=config.get("compile_xlsx_report", {}).get("filters", []),
     log:
         "reports/xlsx_reports/{sample}_combined_report.xlsx.log",
     benchmark:

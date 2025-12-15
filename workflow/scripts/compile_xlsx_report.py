@@ -3,9 +3,43 @@ import gzip
 import re
 import logging
 import yaml
-from typing import Callable, TextIO
+import functools
+from typing import Callable, TextIO, Any, Optional
 from pathlib import Path
 
+
+# --- Decorators ---
+
+def log_execution(func: Callable) -> Callable:
+    """Log the start, end, and errors of a function."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        logging.info(f"Started: {func.__name__}")
+        try:
+            result = func(*args, **kwargs)
+            logging.info(f"Finished: {func.__name__}")
+            return result
+        except Exception as e:
+            logging.error(f"Error in {func.__name__}: {e}")
+            raise
+    return wrapper
+
+
+def safe_parser(func: Callable) -> Callable:
+    """
+    Decorator for row parsing functions.
+    Wraps the function to catch parsing errors and provide context.
+    """
+    @functools.wraps(func)
+    def wrapper(line: str, *args, **kwargs):
+        try:
+            return func(line, *args, **kwargs)
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Parsing error in line '{line.strip()}': {e}") from e
+    return wrapper
+
+
+# --- Helper Functions ---
 
 def parse_info(info_str: str) -> dict[str, str]:
     """
@@ -15,7 +49,7 @@ def parse_info(info_str: str) -> dict[str, str]:
         info_str: The INFO field from the VCF, e.g. "FAU=46;FCU=28"
 
     Returns:
-        Dictionary mapping INFO keys to values, e.g. {"FAU": "46", "FCU": "28"}
+        Dictionary mapping INFO keys to values.
     """
     return dict(entry.split("=", 1) for entry in info_str.split(";") if "=" in entry)
 
@@ -29,7 +63,7 @@ def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
         sample_str: The sample field from the VCF, e.g. "0/1:76"
 
     Returns:
-        Dictionary mapping FORMAT keys to sample values, e.g. {"GT": "0/1", "GQ": "76"}
+        Dictionary mapping FORMAT keys to sample values.
     """
     format_list = format_str.split(":")
     sample_list = sample_str.split(":")
@@ -38,27 +72,52 @@ def parse_format(format_str: str, sample_str: str) -> dict[str, str]:
     return dict(zip(format_list, sample_list))
 
 
+def safe_convert(value: str, target_type: Callable, default=None):
+    """Safely convert a string to a target type, return default on failure."""
+    try:
+        return target_type(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def open_vcf(vcf_path: str) -> TextIO:
+    """
+    Open a VCF file, handling gzip if necessary.
+
+    Args:
+        vcf_path: Path to the VCF file.
+
+    Returns:
+        File object in text mode.
+    """
+    path = Path(vcf_path)
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt")
+    return path.open("r")
+
+
+def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
+    """
+    Write a dataframe to an Excel sheet and apply autofilter to the header.
+    """
+    df.to_excel(writer, sheet_name=sheet_name, index=False)
+    worksheet = writer.sheets[sheet_name]
+    max_row, max_col = df.shape
+    if max_row > 0:
+        worksheet.autofilter(0, 0, max_row, max_col - 1)
+
+
+# --- Parsers ---
+
+@safe_parser
 def parse_vcf_line(
     line: str,
     vep_fields: list[str],
     format_fields: list[str],
-    parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str, str], dict[str, str]],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single VCF line into a dictionary.
-
-    Args:
-        line: A line from a VCF file with CSQ field.
-        vep_fields: List of VEP annotation fields.
-        format_fields: List of FORMAT fields to extract.
-        parse_info: a function to parse INFO field.
-        parse_format: a function to parse FORAMT field.
-        ncol: number of columns from VCF file to process.
-
-    Returns:
-        Dictionary with parsed fields.
     """
     columns = line.strip().split("\t")
     if len(columns) < ncol:
@@ -66,8 +125,6 @@ def parse_vcf_line(
     chrom, pos, _, ref, alt, qual, fltr, info, fmt, sample = columns[:ncol]
 
     # turn INFO column into a dict
-    # INFO: FAU=46;FCU=28
-    # dict: {FAU: 46, FCU: 28}
     info_dict = parse_info(info)
 
     # match values from FORMAT and SAMPLE columns
@@ -107,27 +164,15 @@ def parse_vcf_line(
     return row
 
 
+@safe_parser
 def parse_sv_vcf_line(
     line: str,
-    parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str, str], dict[str, str]],
     allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP", "BND"],
     info_values: list[str] = ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single structural variant VCF line into a dictionary.
-
-    Args:
-        line: A line from a VCF file made by Sniffles2.
-        parse_info: Function to parse INFO field.
-        parse_format: Function to parse FORAMT field.
-        allowed_var_types: List of allowed variant types (DEL, INS, etc)
-        info_values: List of expected values in INFO (END, STRAND, VAF, etc)
-        ncol: number of columns from the VCF file to process.
-
-    Returns:
-        Dictionary with parsed fields
     """
     parts = line.strip().split("\t")
     if len(parts) < ncol:
@@ -188,31 +233,13 @@ def parse_sv_vcf_line(
     return row
 
 
-def safe_convert(value: str, target_type: Callable, default=None):
-    """Safely convert a string to a target type, return default on failure."""
-    try:
-        return target_type(value)
-    except (ValueError, TypeError):
-        return default
-
-
+@safe_parser
 def parse_cnvkit_vcf_line(
     vcf_line: str,
-    parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str, str], dict[str, str]],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single CNVkit VCF line into a dictionary.
-
-    Args:
-        vcf_line: A line from a CNVkit VCF file.
-        parse_info: Function to parse INFO field.
-        parse_format: Function to parse FORAMT field.
-        ncol: number of columns in the VCF file
-
-    Returns:
-        Dictionary with parsed fields.
     """
     # Split the line into its tab-separated fields
     fields = vcf_line.strip().split("\t")
@@ -286,284 +313,164 @@ def parse_cnvkit_vcf_line(
     return row
 
 
-def open_vcf(vcf_path: str) -> TextIO:
-    """
-    Open a VCF file, handling gzip if necessary.
+# --- Main Processing Logic ---
 
-    Args:
-        vcf_path: Path to the VCF file.
-
-    Returns:
-        File object in text mode.
-    """
-    path = Path(vcf_path)
-    if path.suffix == ".gz":
-        return gzip.open(path, "rt")
-    return path.open("r")
-
-
-def vcf_to_df(
+@log_execution
+def process_vcf(
     vcf_path: str,
-    vep_fields: list,
-    format_fields: list,
-    parse_vcf_line: Callable[..., dict],
-    parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str, str], dict[str, str]],
-    open_vcf: Callable[[str], TextIO],
-    ncol: int = 10,
+    line_parser: Callable[..., dict],
+    **kwargs
 ) -> pd.DataFrame:
     """
-    Convert a VEP annotated VCF file to a DataFrame.
+    Generic function to process a VCF file into a DataFrame using a specific line parser.
 
     Args:
         vcf_path: Path to the VCF file.
-        vep_fields: List of VEP annotation fields.
-        format_fields: List of FORMAT fields.
-        parse_vcf_line: Callable that parses a single VCF line (may accept additional parser helpers).
-        parse_info: Function to parse INFO field.
-        parse_format: Function to parse FORAMT field.
-        open_vcf: Function to open VCF file.
-        ncol: number of columns in the VCF file
+        line_parser: Function to parse each line of the VCF.
+        **kwargs: Additional arguments to pass to the line_parser.
 
     Returns:
-        DataFrame with parsed VCF data
+        DataFrame containing the parsed data.
     """
     rows = []
     with open_vcf(vcf_path) as vcf:
         for line in vcf:
             if line.startswith("#"):
                 continue
-            parsed_row = parse_vcf_line(
-                line,
-                vep_fields,
-                format_fields,
-                parse_info,
-                parse_format,
-                ncol,
-            )
+            parsed_row = line_parser(line, **kwargs)
             rows.append(parsed_row)
     return pd.DataFrame(rows)
 
 
-def sv_vcf_to_df(
-    vcf_path: str,
-    parse_sv_vcf_line: Callable[..., dict],
-    parse_cnvkit_vcf_line: Callable[..., dict],
-    parse_info: Callable[[str], dict[str, str]],
-    parse_format: Callable[[str, str], dict[str, str]],
-    open_vcf: Callable[[str], TextIO],
-    ncol: int = 10,
-    cnvkit: bool = False,
-) -> pd.DataFrame:
+def run_pipeline(snakemake_obj: Any):
     """
-    Convert a structural variant VCF file to a DataFrame.
-
-    Args:
-        vcf_path: Path to the VCF file.
-        parse_sv_vcf_line: Function to parse a VCF line with SVs.
-        parse_cnvkit_vcf_line: Function to parse a VCF line with CNVs.
-        parse_info: Function to parse INFO field.
-        parse_format: Function to parse FORAMT field.
-        open_vcf: Function to open VCF file.
-        ncol: number of columns in the VCF file
-        cnvkit: whether to parse CNVkit-specific fields.
-
-    Returns:
-        DataFrame with parsed VCF data.
+    Main pipeline execution function using snakemake object.
     """
-    parse_line = parse_cnvkit_vcf_line if cnvkit else parse_sv_vcf_line
-
-    rows = []
-    with open_vcf(vcf_path) as vcf:
-        for line in vcf:
-            if line.startswith("#"):
-                continue
-            rows.append(
-                parse_line(
-                    line,
-                    parse_info,
-                    parse_format,
-                    ncol=ncol,
-                )
-            )
-
-    return pd.DataFrame(rows)
-
-
-if __name__ == "__main__":
     # Set up logging
     logging.basicConfig(
-        filename=snakemake.log[0],  # type: ignore
+        filename=snakemake_obj.log[0],
         format="{asctime} - {levelname} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M",
         level=logging.INFO,
+        filemode="w",
     )
 
     logging.info("Script started")
-    logging.info(f"Sample name: {snakemake.wildcards.sample}")  # type: ignore
+    logging.info(f"Sample name: {snakemake_obj.wildcards.sample}")
 
-    # Get input and output paths from snakemake
-    vcf_snv = snakemake.input.vcf_snv  # type: ignore
-    vcf_sv = snakemake.input.vcf_sv  # type: ignore
-    vcf_cnv = snakemake.input.vcf_cnv  # type: ignore
-    output_xlsx = snakemake.output.xlsx  # type: ignore
+    # Get input and output paths
+    vcf_snv = snakemake_obj.input.vcf_snv
+    vcf_sv = snakemake_obj.input.vcf_sv
+    vcf_cnv = snakemake_obj.input.vcf_cnv
+    output_xlsx = snakemake_obj.output.xlsx
 
     logging.info(f"Input files: SNV VCF: {vcf_snv}, SV VCF: {vcf_sv}, CNV VCF: {vcf_cnv}\nOutput file: {output_xlsx}")
 
-    # get params as lists
-    filter_yaml_file = snakemake.params.filter_config  # type: ignore
+    # Get params
+    filter_yaml_file = snakemake_obj.params.filter_config
     with open(filter_yaml_file) as file:
         filters = yaml.load(file, Loader=yaml.FullLoader)
+
     format_fields = filters.get("format_fields", [])
     vep_fields = filters.get("vep_info_fields", [])
     columns_keep = filters.get("columns_keep", [])
     snvs_remove = filters.get("snvs_remove", [])
     idid_min_len = filters.get("idid_min_len", 1000)
 
-    if any(
-        x is None
-        for x in [
-            snvs_remove,
-            format_fields,
-            vep_fields,
-            columns_keep,
-            idid_min_len,
-        ]
-    ):
+    if any(x is None for x in [snvs_remove, format_fields, vep_fields, columns_keep, idid_min_len]):
         logging.error("Missing parameters")
         raise ValueError("Some required parameters are missing. Check your config file!")
 
-    # read SNV vcf file
+    # --- 1. Process SNV VCF ---
     logging.info(f"Parsing file: {vcf_snv}")
     try:
-        snv_all_df = vcf_to_df(
+        snv_all_df = process_vcf(
             vcf_snv,
-            vep_fields,
-            format_fields,
             parse_vcf_line,
-            parse_info,
-            parse_format,
-            open_vcf,
-            ncol=10,
+            vep_fields=vep_fields,
+            format_fields=format_fields
         )
     except Exception as e:
         logging.error(f"{e}")
+        snv_all_df = pd.DataFrame()
 
-    # remove unwanted SNV categories and those not passing default filter
     logging.info(f"Total number of rows: {len(snv_all_df)}.")
-    logging.info("Filtering out unwanted SNVs and SNVs not passing the tool's default filter.")
-    snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
-    logging.info(f"Rows left: {len(snv_all_df)}.")
 
-    # keep only chosen columns
-    logging.info("Removing unwanted columns.")
-    snv_picked_columns = snv_all_df[columns_keep]
+    if not snv_all_df.empty:
+        logging.info("Filtering out unwanted SNVs and SNVs not passing the tool's default filter.")
+        snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
+        logging.info(f"Rows left: {len(snv_all_df)}.")
 
-    # rename SYMBOL to GENE for clarity
-    snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})  # type: ignore
+        logging.info("Removing unwanted columns.")
+        # Ensure columns exist before selecting
+        existing_cols = [c for c in columns_keep if c in snv_all_df.columns]
+        snv_picked_columns = snv_all_df[existing_cols]
+        snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
 
-    # Collect TP53 SNV to a separate dataframe
-    snv_tp53 = snv_picked_columns[snv_picked_columns["GENE"] == "TP53"]
+        snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
+        snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
+    else:
+        snv_tp53 = pd.DataFrame()
+        snv_rest = pd.DataFrame()
+
     logging.info(f"Number of SNVs in TP53: {len(snv_tp53)}")
-
-    # Collect the rest of SNVs to a separate dataframe
-    snv_rest = snv_picked_columns[snv_picked_columns["GENE"] != "TP53"]
     logging.info(f"Number of SNVs in the other genes: {len(snv_rest)}")
 
-    # read SV vcf file
+    # --- 2. Process SV VCF ---
     logging.info(f"Parsing file: {vcf_sv}")
     try:
-        sv_df = sv_vcf_to_df(
-            vcf_sv,
-            parse_sv_vcf_line,
-            parse_cnvkit_vcf_line,
-            parse_info,
-            parse_format,
-            open_vcf,
-            ncol=10,
-            cnvkit=False,
-        )
+        sv_df = process_vcf(vcf_sv, parse_sv_vcf_line)
     except Exception as e:
         logging.error(f"{e}")
+        sv_df = pd.DataFrame()
 
     logging.info(f"Total number of rows: {len(sv_df)}")
 
-    # filter both chr4 and BND
-    tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
+    # Specific Filter: Translocations from chr4 and chr14
+    if not sv_df.empty:
+        tn_chr4 = sv_df[(sv_df["CHROM"] == "chr4") & (sv_df["TYPE"] == "BND")]
+        tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
+
+        sv_chr14_pass = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["FILTER"] == "PASS")]
+        # Use assignment to avoid SettingWithCopyWarning
+        sv_chr14_pass = sv_chr14_pass.copy()
+        sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
+        sv_chr14_idid = sv_chr14_pass[
+            (~sv_chr14_pass["TYPE"].isin(["BND"])) &
+            (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
+        ]
+    else:
+        tn_chr4 = pd.DataFrame()
+        tn_chr14 = pd.DataFrame()
+        sv_chr14_idid = pd.DataFrame()
+
     logging.info(f"Number of translocations from chr4: {len(tn_chr4)}")
-
-    # filter both chr14 and BND
-    tn_chr14 = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["TYPE"] == "BND")]
     logging.info(f"Number of translocations from chr14: {len(tn_chr14)}")
-
-    # read SV vcf file and extract IDID variants on chr14
-    sv_chr14_pass = sv_df[(sv_df["CHROM"] == "chr14") & (sv_df["FILTER"] == "PASS")]
-    # convert SVLEN to numeric and turn empty strings to NaN
-    sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
-    # keep TYPE!=BND
-    sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
-    # read CNVkit VCF file
+    # --- 3. Process CNV VCF ---
     logging.info(f"Parsing file: {vcf_cnv}")
     try:
-        cnv_df = sv_vcf_to_df(
-            vcf_cnv,
-            parse_sv_vcf_line,
-            parse_cnvkit_vcf_line,
-            parse_info,
-            parse_format,
-            open_vcf,
-            cnvkit=True,
-        )
+        cnv_df = process_vcf(vcf_cnv, parse_cnvkit_vcf_line)
     except ValueError as e:
         logging.error(f"{e}")
+        cnv_df = pd.DataFrame()
 
     logging.info(f"Total CNVs read: {len(cnv_df)}")
+
+    # --- Write to Excel ---
     logging.info("Writing XLSX file.")
-
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
-        # All the SNVs in one sheet
-        snv_rest.to_excel(writer, sheet_name="SNVs", index=False)
-        workbook = writer.book
-        worksheet_snv = writer.sheets["SNVs"]
-        # Get the dimensions of the dataframe
-        max_row, max_col = snv_rest.shape
-        # Set autofilter on the header row
-        worksheet_snv.autofilter(0, 0, max_row, max_col - 1)
-
-        # TP53 SNVs in a separate sheet
-        snv_tp53.to_excel(writer, sheet_name="TP53", index=False)
-        # separate sheet for TP53 variantsß
-        worksheet_tp53 = writer.sheets["TP53"]
-        # its dimensions
-        max_row, max_col = snv_tp53.shape
-        # Set autofilter on the header row
-        worksheet_tp53.autofilter(0, 0, max_row, max_col - 1)
-
-        # Translocations (BND) from chr4
-        tn_chr4.to_excel(writer, sheet_name="Tn_chr4", index=False)
-        worksheet_sv = writer.sheets["Tn_chr4"]
-        max_row, max_col = tn_chr4.shape
-        worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
-
-        # Translocations (BND) from chr14
-        tn_chr14.to_excel(writer, sheet_name="Tn_chr14", index=False)
-        worksheet_sv = writer.sheets["Tn_chr14"]
-        max_row, max_col = tn_chr14.shape
-        worksheet_sv.autofilter(0, 0, max_row, max_col - 1)
-
-        # IDID variants from chr14
-        sv_chr14_idid.to_excel(writer, sheet_name="IDID_chr14", index=False)
-        worksheet_idid = writer.sheets["IDID_chr14"]
-        max_row, max_col = sv_chr14_idid.shape
-        worksheet_idid.autofilter(0, 0, max_row, max_col - 1)
-
-        # CNVs in a separate sheet
-        cnv_df.to_excel(writer, sheet_name="CNV", index=False)
-        worksheet_cnv = writer.sheets["CNV"]
-        max_row, max_col = cnv_df.shape
-        worksheet_cnv.autofilter(0, 0, max_row, max_col - 1)
+        write_excel_sheet(writer, snv_rest, "SNVs")
+        write_excel_sheet(writer, snv_tp53, "TP53")
+        write_excel_sheet(writer, tn_chr4, "Tn_chr4")  # type: ignore
+        write_excel_sheet(writer, tn_chr14, "Tn_chr14")  # type: ignore
+        write_excel_sheet(writer, sv_chr14_idid, "IDID_chr14")
+        write_excel_sheet(writer, cnv_df, "CNV")
 
     logging.info("Script finished successfully")
+
+
+if __name__ == "__main__":
+    run_pipeline(snakemake)  # type: ignore
