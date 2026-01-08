@@ -111,11 +111,10 @@ module qc:
 
 
 # QC stuff
-use rule mosdepth_bed from qc as qc_mosdepth_bed with:
+use rule mosdepth from qc as qc_mosdepth with:
     input:
         bam="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam",
         bai="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam.bai",
-        bed=config.get("reference", {}).get("targets_bed", ""),
 
 
 use rule multiqc_longread from qc as qc_multiqc_longread
