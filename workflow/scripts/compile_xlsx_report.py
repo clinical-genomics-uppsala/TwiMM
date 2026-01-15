@@ -102,6 +102,20 @@ def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str)
     """
     df.to_excel(writer, sheet_name=sheet_name, index=False)
     worksheet = writer.sheets[sheet_name]
+
+    # Calculate column widths based on maximum length of content or header
+    for i, col in enumerate(df.columns):
+        # Find maximum length of data in the column
+        column_data = df[col].astype(str).str.len()
+        column_len = column_data.max()
+        # Handle empty DataFrames or all-NaN columns where max() returns NaN or is not computable
+        if pd.isna(column_len):
+            column_len = 0
+        # Compare with the length of the column header itself
+        max_len = max(float(column_len), float(len(str(col)))) + 2
+        # Set the column width
+        worksheet.set_column(i, i, max_len)
+
     max_row, max_col = df.shape
     if max_row > 0:
         worksheet.autofilter(0, 0, max_row, max_col - 1)
@@ -414,6 +428,11 @@ def create_report(snakemake_obj: Any):
 
         snv_picked_columns = snv_all_df[existing_cols]
         snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
+
+        # Strip transcript prefix from HGVSc and HGVSp
+        for col in ["HGVSc", "HGVSp"]:
+            if col in snv_picked_columns.columns:
+                snv_picked_columns[col] = snv_picked_columns[col].str.replace(r'^.*:', '', regex=True)
 
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
