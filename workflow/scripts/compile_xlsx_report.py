@@ -96,6 +96,25 @@ def open_vcf(vcf_path: str) -> TextIO:
     return path.open("r")
 
 
+def get_genes_from_bed(bed_path: str) -> set[str]:
+    """
+    Extract gene names from the 4th column of a BED file.
+    """
+    genes = set()
+    if not bed_path or not Path(bed_path).exists():
+        logging.warning(f"BED file {bed_path} not found or not specified.")
+        return genes
+    
+    with open(bed_path, "r") as f:
+        for line in f:
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.strip().split("\t")
+            if len(parts) >= 4:
+                genes.add(parts[3])
+    return genes
+
+
 def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
     """
     Write a dataframe to an Excel sheet and apply autofilter to the header.
@@ -392,6 +411,10 @@ def create_report(snakemake_obj: Any):
     snvs_remove = filters.get("snvs_remove", [])
     idid_min_len = filters.get("idid_min_len", 1000)
 
+    genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
+    genes_to_keep = get_genes_from_bed(genes_bed)
+    logging.info(f"Loaded {len(genes_to_keep)} genes from {genes_bed}")
+
     if any(x is None for x in [snvs_remove, format_fields, vep_fields, columns_keep, idid_min_len]):
         logging.error("Missing parameters")
         raise ValueError("Some required parameters are missing. Check your config file!")
@@ -436,6 +459,10 @@ def create_report(snakemake_obj: Any):
 
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
+
+        if genes_to_keep:
+            logging.info(f"Filtering SNV tab to keep only {len(genes_to_keep)} genes.")
+            snv_rest = snv_rest[snv_rest["GENE"].isin(genes_to_keep)]
     else:
         snv_tp53 = pd.DataFrame()
         snv_rest = pd.DataFrame()
