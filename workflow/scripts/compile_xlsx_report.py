@@ -104,7 +104,7 @@ def get_genes_from_bed(bed_path: str) -> set[str]:
     if not bed_path or not Path(bed_path).exists():
         logging.warning(f"BED file {bed_path} not found or not specified.")
         return genes
-    
+
     with open(bed_path, "r") as f:
         for line in f:
             if line.startswith("#") or not line.strip():
