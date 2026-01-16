@@ -53,6 +53,7 @@ cnvkit_vcf:
 
 compile_xlsx_report:
   filters: "config/filters/config_vcf_report.yaml"
+  genes: "ref_data/panel_full_genes.bed"
 
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
@@ -130,7 +131,7 @@ vep:
   container: "docker://hydragenetics/vep:113.0"
   vep_cache: "/data/ref_genomes/VEP"
   mode: "--offline --cache "
-  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --protein --hgvs --fasta ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --refseq --protein --hgvs --fasta ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
 
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
