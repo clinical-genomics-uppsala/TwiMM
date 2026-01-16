@@ -53,6 +53,7 @@ cnvkit_vcf:
 
 compile_xlsx_report:
   filters: "config/filters/config_vcf_report.yaml"
+  genes: "ref_data/panel_full_genes.bed"
 
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
