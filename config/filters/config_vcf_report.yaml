@@ -20,7 +20,7 @@ format_fields:
   - "DP"
   - "AD"
   - "AF"
-columns_keep:
+columns_keep_snv:
   - "CHROM"
   - "POS"
   - "REF"
@@ -35,6 +35,14 @@ columns_keep:
   - "AF"
   - "DP"
   - "AD"
+columns_drop_tn:
+  - "END"
+  - "SVLEN"
+  - "GENOTYPE"
+  - "GENOME QUALITY"
+columns_drop_idid:
+  - "GENOTYPE"
+  - "GENOME QUALITY"
 # must match present VEP annotation fields
 vep_info_fields:
   - "Allele"
