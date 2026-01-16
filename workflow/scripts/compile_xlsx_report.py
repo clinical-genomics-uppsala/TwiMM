@@ -407,15 +407,18 @@ def create_report(snakemake_obj: Any):
 
     format_fields = filters.get("format_fields", [])
     vep_fields = filters.get("vep_info_fields", [])
-    columns_keep = filters.get("columns_keep", [])
+    columns_keep_snv = filters.get("columns_keep_snv", [])
     snvs_remove = filters.get("snvs_remove", [])
     idid_min_len = filters.get("idid_min_len", 1000)
+    columns_drop_tn = filters.get("columns_drop_tn", [])
+    columns_drop_idid = filters.get("columns_drop_idid", [])
+    
 
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
     logging.info(f"Loaded {len(genes_to_keep)} genes from {genes_bed}")
 
-    if any(x is None for x in [snvs_remove, format_fields, vep_fields, columns_keep, idid_min_len]):
+    if any(x is None for x in [snvs_remove, format_fields, vep_fields, columns_keep_snv, idid_min_len, columns_drop_tn, columns_drop_idid]):
         logging.error("Missing parameters")
         raise ValueError("Some required parameters are missing. Check your config file!")
 
@@ -441,7 +444,7 @@ def create_report(snakemake_obj: Any):
 
         logging.info("Removing unwanted columns.")
         # Ensure columns exist before selecting
-        existing_cols = [c for c in columns_keep if c in snv_all_df.columns]
+        existing_cols = [c for c in columns_keep_snv if c in snv_all_df.columns]
 
         # Move ALT after POS
         if "POS" in existing_cols and "ALT" in existing_cols:
@@ -495,12 +498,9 @@ def create_report(snakemake_obj: Any):
         ]
 
         # Drop columns and merge translocations
-        cols_to_drop_tn = ["END", "SVLEN", "GENOTYPE", "GENOME QUALITY"]
-        cols_to_drop_idid = ["GENOTYPE", "GENOME QUALITY"]
-
-        tn_chr4 = tn_chr4.drop(columns=[c for c in cols_to_drop_tn if c in tn_chr4.columns])
-        tn_chr14 = tn_chr14.drop(columns=[c for c in cols_to_drop_tn if c in tn_chr14.columns])
-        sv_chr14_idid = sv_chr14_idid.drop(columns=[c for c in cols_to_drop_idid if c in sv_chr14_idid.columns])
+        tn_chr4 = tn_chr4.drop(columns=[c for c in columns_drop_tn if c in tn_chr4.columns])
+        tn_chr14 = tn_chr14.drop(columns=[c for c in columns_drop_tn if c in tn_chr14.columns])
+        sv_chr14_idid = sv_chr14_idid.drop(columns=[c for c in columns_drop_idid if c in sv_chr14_idid.columns])
 
         translocations_df = pd.concat([tn_chr4, tn_chr14], ignore_index=True)
     else:
@@ -508,7 +508,7 @@ def create_report(snakemake_obj: Any):
         sv_chr14_idid = pd.DataFrame()
 
     logging.info(f"Number of translocations from chr4 and chr14: {len(translocations_df)}")
-    logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
+    logging.info(f"Total SV variants on chr14: {len(sv_chr14_idid)}")
 
     # --- 3. Process CNV VCF ---
     logging.info(f"Parsing file: {vcf_cnv}")
