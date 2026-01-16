@@ -495,9 +495,9 @@ def create_report(snakemake_obj: Any):
             "SVLEN": "SVLEN (Mb)"
         })
         for col in ["POS (Mb)", "END (Mb)", "SVLEN (Mb)"]:
-                if col in cnv_df.columns:
-                    # Convert to numeric and divide by 1e6
-                    cnv_df[col] = pd.to_numeric(cnv_df[col], errors="coerce") / 1e6
+            if col in cnv_df.columns:
+                # Convert to numeric and divide by 1e6
+                cnv_df[col] = pd.to_numeric(cnv_df[col], errors="coerce") / 1e6
     except Exception as e:
         logging.error(f"{e}")
         cnv_df = pd.DataFrame()
