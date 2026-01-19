@@ -10,8 +10,10 @@ from pathlib import Path
 
 # --- Decorators ---
 
+
 def log_execution(func: Callable) -> Callable:
     """Log the start, end, and errors of a function."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         logging.info(f"Started: {func.__name__}")
@@ -22,6 +24,7 @@ def log_execution(func: Callable) -> Callable:
         except Exception as e:
             logging.error(f"Error in {func.__name__}: {e}")
             raise
+
     return wrapper
 
 
@@ -30,16 +33,19 @@ def safe_parser(func: Callable) -> Callable:
     Decorator for row parsing functions.
     Wraps the function to catch parsing errors and provide context.
     """
+
     @functools.wraps(func)
     def wrapper(line: str, *args, **kwargs):
         try:
             return func(line, *args, **kwargs)
         except (ValueError, KeyError) as e:
             raise ValueError(f"Parsing error in line '{line.strip()}': {e}") from e
+
     return wrapper
 
 
 # --- Helper Functions ---
+
 
 def parse_info(info_str: str) -> dict[str, str]:
     """
@@ -141,6 +147,7 @@ def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str)
 
 
 # --- Parsers ---
+
 
 @safe_parser
 def parse_vcf_line(
@@ -291,11 +298,7 @@ def parse_cnvkit_vcf_line(
         raise ValueError("Could not parse INFO field!")
     required_info_keys = ["SVLEN", "END", "LOG_ODDS_RATIO", "CORR_CN", "PROBES", "BAF"]
     if "Genes" not in info_dict:
-        logging.warning(
-            "INFO field missing 'Genes' for CNV entry at %s:%s; continuing with empty GENE field.",
-            chrom,
-            pos
-        )
+        logging.warning("INFO field missing 'Genes' for CNV entry at %s:%s; continuing with empty GENE field.", chrom, pos)
         genes = ""
     else:
         genes = info_dict.get("Genes", "")
@@ -348,12 +351,9 @@ def parse_cnvkit_vcf_line(
 
 # --- Main Processing Logic ---
 
+
 @log_execution
-def process_vcf(
-    vcf_path: str,
-    line_parser: Callable[..., dict],
-    **kwargs
-) -> pd.DataFrame:
+def process_vcf(vcf_path: str, line_parser: Callable[..., dict], **kwargs) -> pd.DataFrame:
     """
     Generic function to process a VCF file into a DataFrame using a specific line parser.
 
@@ -407,27 +407,29 @@ def create_report(snakemake_obj: Any):
 
     format_fields = filters.get("format_fields", [])
     vep_fields = filters.get("vep_info_fields", [])
-    columns_keep = filters.get("columns_keep", [])
+    columns_keep_snv = filters.get("columns_keep_snv", [])
     snvs_remove = filters.get("snvs_remove", [])
-    idid_min_len = filters.get("idid_min_len", 1000)
+    columns_drop_tn = filters.get("columns_drop_tn", [])
+    # keep legacy name idid for clarity
+    # idid stands for Insertion, Deletion, Duplication, Inversion (SV)
+    idid_min_len = filters.get("sv_min_len", 1000)
+    columns_drop_idid = filters.get("columns_drop_sv", [])
 
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
     logging.info(f"Loaded {len(genes_to_keep)} genes from {genes_bed}")
 
-    if any(x is None for x in [snvs_remove, format_fields, vep_fields, columns_keep, idid_min_len]):
+    if any(
+        x is None
+        for x in [snvs_remove, format_fields, vep_fields, columns_keep_snv, idid_min_len, columns_drop_tn, columns_drop_idid]
+    ):
         logging.error("Missing parameters")
         raise ValueError("Some required parameters are missing. Check your config file!")
 
     # --- 1. Process SNV VCF ---
     logging.info(f"Parsing file: {vcf_snv}")
     try:
-        snv_all_df = process_vcf(
-            vcf_snv,
-            parse_vcf_line,
-            vep_fields=vep_fields,
-            format_fields=format_fields
-        )
+        snv_all_df = process_vcf(vcf_snv, parse_vcf_line, vep_fields=vep_fields, format_fields=format_fields)
     except Exception as e:
         logging.error(f"{e}")
         snv_all_df = pd.DataFrame()
@@ -441,7 +443,7 @@ def create_report(snakemake_obj: Any):
 
         logging.info("Removing unwanted columns.")
         # Ensure columns exist before selecting
-        existing_cols = [c for c in columns_keep if c in snv_all_df.columns]
+        existing_cols = [c for c in columns_keep_snv if c in snv_all_df.columns]
 
         # Move ALT after POS
         if "POS" in existing_cols and "ALT" in existing_cols:
@@ -455,7 +457,7 @@ def create_report(snakemake_obj: Any):
         # Strip transcript prefix from HGVSc and HGVSp
         for col in ["HGVSc", "HGVSp"]:
             if col in snv_picked_columns.columns:
-                snv_picked_columns[col] = snv_picked_columns[col].str.replace(r'^.*:', '', regex=True)
+                snv_picked_columns[col] = snv_picked_columns[col].str.replace(r"^.*:", "", regex=True)
 
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
@@ -489,18 +491,12 @@ def create_report(snakemake_obj: Any):
         # Use assignment to avoid SettingWithCopyWarning
         sv_chr14_pass = sv_chr14_pass.copy()
         sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
-        sv_chr14_idid = sv_chr14_pass[
-            (~sv_chr14_pass["TYPE"].isin(["BND"])) &
-            (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
-        ]
+        sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
 
         # Drop columns and merge translocations
-        cols_to_drop_tn = ["END", "SVLEN", "GENOTYPE", "GENOME QUALITY"]
-        cols_to_drop_idid = ["GENOTYPE", "GENOME QUALITY"]
-
-        tn_chr4 = tn_chr4.drop(columns=[c for c in cols_to_drop_tn if c in tn_chr4.columns])
-        tn_chr14 = tn_chr14.drop(columns=[c for c in cols_to_drop_tn if c in tn_chr14.columns])
-        sv_chr14_idid = sv_chr14_idid.drop(columns=[c for c in cols_to_drop_idid if c in sv_chr14_idid.columns])
+        tn_chr4 = tn_chr4.drop(columns=[c for c in columns_drop_tn if c in tn_chr4.columns])
+        tn_chr14 = tn_chr14.drop(columns=[c for c in columns_drop_tn if c in tn_chr14.columns])
+        sv_chr14_idid = sv_chr14_idid.drop(columns=[c for c in columns_drop_idid if c in sv_chr14_idid.columns])
 
         translocations_df = pd.concat([tn_chr4, tn_chr14], ignore_index=True)
     else:
@@ -516,11 +512,7 @@ def create_report(snakemake_obj: Any):
         cnv_df = process_vcf(vcf_cnv, parse_cnvkit_vcf_line)
         logging.info("Formatting POS, END, SVLEN in CNV tab to Megabases.")
         # Rename columns to include (Mb)
-        cnv_df = cnv_df.rename(columns={
-            "POS": "POS (Mb)",
-            "END": "END (Mb)",
-            "SVLEN": "SVLEN (Mb)"
-        })
+        cnv_df = cnv_df.rename(columns={"POS": "POS (Mb)", "END": "END (Mb)", "SVLEN": "SVLEN (Mb)"})
         for col in ["POS (Mb)", "END (Mb)", "SVLEN (Mb)"]:
             if col in cnv_df.columns:
                 # Convert to numeric and divide by 1e6
