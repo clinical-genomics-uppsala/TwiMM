@@ -409,9 +409,11 @@ def create_report(snakemake_obj: Any):
     vep_fields = filters.get("vep_info_fields", [])
     columns_keep_snv = filters.get("columns_keep_snv", [])
     snvs_remove = filters.get("snvs_remove", [])
-    idid_min_len = filters.get("idid_min_len", 1000)
     columns_drop_tn = filters.get("columns_drop_tn", [])
-    columns_drop_idid = filters.get("columns_drop_idid", [])
+    # keep legacy name idid for clarity
+    # idid stands for Insertion, Deletion, Duplication, Inversion (SV)
+    idid_min_len = filters.get("sv_min_len", 1000)
+    columns_drop_idid = filters.get("columns_drop_sv", [])
 
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
@@ -502,7 +504,7 @@ def create_report(snakemake_obj: Any):
         sv_chr14_idid = pd.DataFrame()
 
     logging.info(f"Number of translocations from chr4 and chr14: {len(translocations_df)}")
-    logging.info(f"Total SV variants on chr14: {len(sv_chr14_idid)}")
+    logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # --- 3. Process CNV VCF ---
     logging.info(f"Parsing file: {vcf_cnv}")

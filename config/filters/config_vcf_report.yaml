@@ -1,4 +1,4 @@
-idid_min_len: 1000
+sv_min_len: 1000
 snvs_remove:
   - "intergenic_variant"
   - "NMD_transcript_variant"
@@ -40,7 +40,7 @@ columns_drop_tn:
   - "SVLEN"
   - "GENOTYPE"
   - "GENOME QUALITY"
-columns_drop_idid:
+columns_drop_sv:
   - "GENOTYPE"
   - "GENOME QUALITY"
 # must match present VEP annotation fields
