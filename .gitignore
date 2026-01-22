@@ -31,3 +31,13 @@ config/test_config.yaml
 *.bam
 *.xlsx
 *.simg
+
+# tmp files and scripts
+*.vcf
+*.log
+*.tsv
+test_report_script.py
+count_reads.py
+build_conda.sh
+run_vep_simg.sh
+copilot-instructions.md

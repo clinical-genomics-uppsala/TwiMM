@@ -38,11 +38,8 @@ properties:
         description: "Path to the TRF (tandem repeat) BED file used by some tools."
       design_bed:
         type: string
-        description: "BED file used for SNV calling / design regions."
-      targets_bed:
-        type: string
-        description: "BED file used for coverage analyses (targets)."
-    required: ["fasta", "fai", "trf", "design_bed", "targets_bed"]
+        description: "BED file with regions included in design."
+    required: ["fasta", "fai", "trf", "design_bed"]
 
   aligner:
     type: string
@@ -223,13 +220,16 @@ properties:
         description: "Annotation files (BED) to annotate merge results."
     required: ["germline_vcf", "unfiltered_cnv_vcfs", "filtered_cnv_vcfs", "annotations"]
 
-  mosdepth_bed:
+  mosdepth:
     type: object
     description: "Configuration for mosdepth-based region coverage calculations."
     properties:
       container:
         type: string
         description: "Container image for mosdepth."
+      by:
+        type: string
+        description: "Path to BED file used for region-based coverage calculation."
       extra:
         type: string
         description: "Extra options to pass to mosdepth."
@@ -394,7 +394,7 @@ required:
   - filter_vcf
   - general_report
   - merge_cnv_json
-  - mosdepth_bed
+  - mosdepth
   - multiqc
   - pbmarkdup
   - pbmm2_index

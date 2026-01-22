@@ -10,8 +10,10 @@ from pathlib import Path
 
 # --- Decorators ---
 
+
 def log_execution(func: Callable) -> Callable:
     """Log the start, end, and errors of a function."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         logging.info(f"Started: {func.__name__}")
@@ -22,6 +24,7 @@ def log_execution(func: Callable) -> Callable:
         except Exception as e:
             logging.error(f"Error in {func.__name__}: {e}")
             raise
+
     return wrapper
 
 
@@ -30,16 +33,19 @@ def safe_parser(func: Callable) -> Callable:
     Decorator for row parsing functions.
     Wraps the function to catch parsing errors and provide context.
     """
+
     @functools.wraps(func)
     def wrapper(line: str, *args, **kwargs):
         try:
             return func(line, *args, **kwargs)
         except (ValueError, KeyError) as e:
             raise ValueError(f"Parsing error in line '{line.strip()}': {e}") from e
+
     return wrapper
 
 
 # --- Helper Functions ---
+
 
 def parse_info(info_str: str) -> dict[str, str]:
     """
@@ -96,18 +102,52 @@ def open_vcf(vcf_path: str) -> TextIO:
     return path.open("r")
 
 
+def get_genes_from_bed(bed_path: str) -> set[str]:
+    """
+    Extract gene names from the 4th column of a BED file.
+    """
+    genes = set()
+    if not bed_path or not Path(bed_path).exists():
+        logging.warning(f"BED file {bed_path} not found or not specified.")
+        return genes
+
+    with open(bed_path, "r") as f:
+        for line in f:
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.strip().split("\t")
+            if len(parts) >= 4:
+                genes.add(parts[3])
+    return genes
+
+
 def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
     """
     Write a dataframe to an Excel sheet and apply autofilter to the header.
     """
     df.to_excel(writer, sheet_name=sheet_name, index=False)
     worksheet = writer.sheets[sheet_name]
+
+    # Calculate column widths based on maximum length of content or header
+    for i, col in enumerate(df.columns):
+        # Find maximum length of data in the column
+        column_data = df[col].astype(str).str.len()
+        column_len = column_data.max()
+        # Handle empty DataFrames or all-NaN columns where max() returns NaN or is not computable
+        if pd.isna(column_len):
+            column_len = 0
+        # Compare with the length of the column header itself
+        max_len = max(float(column_len), float(len(str(col)))) + 2
+        # Set the column width
+        worksheet.set_column(i, i, max_len)
+
     max_row, max_col = df.shape
     if max_row > 0:
         worksheet.autofilter(0, 0, max_row, max_col - 1)
 
 
 # --- Parsers ---
+
 
 @safe_parser
 def parse_vcf_line(
@@ -258,11 +298,7 @@ def parse_cnvkit_vcf_line(
         raise ValueError("Could not parse INFO field!")
     required_info_keys = ["SVLEN", "END", "LOG_ODDS_RATIO", "CORR_CN", "PROBES", "BAF"]
     if "Genes" not in info_dict:
-        logging.warning(
-            "INFO field missing 'Genes' for CNV entry at %s:%s; continuing with empty GENE field.",
-            chrom,
-            pos
-        )
+        logging.warning("INFO field missing 'Genes' for CNV entry at %s:%s; continuing with empty GENE field.", chrom, pos)
         genes = ""
     else:
         genes = info_dict.get("Genes", "")
@@ -315,12 +351,9 @@ def parse_cnvkit_vcf_line(
 
 # --- Main Processing Logic ---
 
+
 @log_execution
-def process_vcf(
-    vcf_path: str,
-    line_parser: Callable[..., dict],
-    **kwargs
-) -> pd.DataFrame:
+def process_vcf(vcf_path: str, line_parser: Callable[..., dict], **kwargs) -> pd.DataFrame:
     """
     Generic function to process a VCF file into a DataFrame using a specific line parser.
 
@@ -342,7 +375,7 @@ def process_vcf(
     return pd.DataFrame(rows)
 
 
-def run_pipeline(snakemake_obj: Any):
+def create_report(snakemake_obj: Any):
     """
     Main pipeline execution function using snakemake object.
     """
@@ -374,23 +407,29 @@ def run_pipeline(snakemake_obj: Any):
 
     format_fields = filters.get("format_fields", [])
     vep_fields = filters.get("vep_info_fields", [])
-    columns_keep = filters.get("columns_keep", [])
+    columns_keep_snv = filters.get("columns_keep_snv", [])
     snvs_remove = filters.get("snvs_remove", [])
-    idid_min_len = filters.get("idid_min_len", 1000)
+    columns_drop_tn = filters.get("columns_drop_tn", [])
+    # keep legacy name idid for clarity
+    # idid stands for Insertion, Deletion, Duplication, Inversion (SV)
+    idid_min_len = filters.get("sv_min_len", 1000)
+    columns_drop_idid = filters.get("columns_drop_sv", [])
 
-    if any(x is None for x in [snvs_remove, format_fields, vep_fields, columns_keep, idid_min_len]):
+    genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
+    genes_to_keep = get_genes_from_bed(genes_bed)
+    logging.info(f"Loaded {len(genes_to_keep)} genes from {genes_bed}")
+
+    if any(
+        x is None
+        for x in [snvs_remove, format_fields, vep_fields, columns_keep_snv, idid_min_len, columns_drop_tn, columns_drop_idid]
+    ):
         logging.error("Missing parameters")
         raise ValueError("Some required parameters are missing. Check your config file!")
 
     # --- 1. Process SNV VCF ---
     logging.info(f"Parsing file: {vcf_snv}")
     try:
-        snv_all_df = process_vcf(
-            vcf_snv,
-            parse_vcf_line,
-            vep_fields=vep_fields,
-            format_fields=format_fields
-        )
+        snv_all_df = process_vcf(vcf_snv, parse_vcf_line, vep_fields=vep_fields, format_fields=format_fields)
     except Exception as e:
         logging.error(f"{e}")
         snv_all_df = pd.DataFrame()
@@ -404,12 +443,28 @@ def run_pipeline(snakemake_obj: Any):
 
         logging.info("Removing unwanted columns.")
         # Ensure columns exist before selecting
-        existing_cols = [c for c in columns_keep if c in snv_all_df.columns]
+        existing_cols = [c for c in columns_keep_snv if c in snv_all_df.columns]
+
+        # Move ALT after POS
+        if "POS" in existing_cols and "ALT" in existing_cols:
+            existing_cols.remove("ALT")
+            pos_idx = existing_cols.index("POS")
+            existing_cols.insert(pos_idx + 1, "ALT")
+
         snv_picked_columns = snv_all_df[existing_cols]
         snv_picked_columns = snv_picked_columns.rename(columns={"SYMBOL": "GENE"})
 
+        # Strip transcript prefix from HGVSc and HGVSp
+        for col in ["HGVSc", "HGVSp"]:
+            if col in snv_picked_columns.columns:
+                snv_picked_columns[col] = snv_picked_columns[col].str.replace(r"^.*:", "", regex=True)
+
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
+
+        if genes_to_keep:
+            logging.info(f"Filtering SNV tab to keep only {len(genes_to_keep)} genes.")
+            snv_rest = snv_rest[snv_rest["GENE"].isin(genes_to_keep)]
     else:
         snv_tp53 = pd.DataFrame()
         snv_rest = pd.DataFrame()
@@ -436,24 +491,33 @@ def run_pipeline(snakemake_obj: Any):
         # Use assignment to avoid SettingWithCopyWarning
         sv_chr14_pass = sv_chr14_pass.copy()
         sv_chr14_pass["SVLEN"] = pd.to_numeric(sv_chr14_pass["SVLEN"], errors="coerce")
-        sv_chr14_idid = sv_chr14_pass[
-            (~sv_chr14_pass["TYPE"].isin(["BND"])) &
-            (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)
-        ]
+        sv_chr14_idid = sv_chr14_pass[(~sv_chr14_pass["TYPE"].isin(["BND"])) & (sv_chr14_pass["SVLEN"].abs() >= idid_min_len)]
+
+        # Drop columns and merge translocations
+        tn_chr4 = tn_chr4.drop(columns=[c for c in columns_drop_tn if c in tn_chr4.columns])
+        tn_chr14 = tn_chr14.drop(columns=[c for c in columns_drop_tn if c in tn_chr14.columns])
+        sv_chr14_idid = sv_chr14_idid.drop(columns=[c for c in columns_drop_idid if c in sv_chr14_idid.columns])
+
+        translocations_df = pd.concat([tn_chr4, tn_chr14], ignore_index=True)
     else:
-        tn_chr4 = pd.DataFrame()
-        tn_chr14 = pd.DataFrame()
+        translocations_df = pd.DataFrame()
         sv_chr14_idid = pd.DataFrame()
 
-    logging.info(f"Number of translocations from chr4: {len(tn_chr4)}")
-    logging.info(f"Number of translocations from chr14: {len(tn_chr14)}")
+    logging.info(f"Number of translocations from chr4 and chr14: {len(translocations_df)}")
     logging.info(f"Total IDID variants on chr14: {len(sv_chr14_idid)}")
 
     # --- 3. Process CNV VCF ---
     logging.info(f"Parsing file: {vcf_cnv}")
     try:
         cnv_df = process_vcf(vcf_cnv, parse_cnvkit_vcf_line)
-    except ValueError as e:
+        logging.info("Formatting POS, END, SVLEN in CNV tab to Megabases.")
+        # Rename columns to include (Mb)
+        cnv_df = cnv_df.rename(columns={"POS": "POS (Mb)", "END": "END (Mb)", "SVLEN": "SVLEN (Mb)"})
+        for col in ["POS (Mb)", "END (Mb)", "SVLEN (Mb)"]:
+            if col in cnv_df.columns:
+                # Convert to numeric and divide by 1e6
+                cnv_df[col] = pd.to_numeric(cnv_df[col], errors="coerce") / 1e6
+    except Exception as e:
         logging.error(f"{e}")
         cnv_df = pd.DataFrame()
 
@@ -462,15 +526,14 @@ def run_pipeline(snakemake_obj: Any):
     # --- Write to Excel ---
     logging.info("Writing XLSX file.")
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
-        write_excel_sheet(writer, snv_rest, "SNVs")
+        write_excel_sheet(writer, snv_rest, "SNV")
         write_excel_sheet(writer, snv_tp53, "TP53")
-        write_excel_sheet(writer, tn_chr4, "Tn_chr4")  # type: ignore
-        write_excel_sheet(writer, tn_chr14, "Tn_chr14")  # type: ignore
-        write_excel_sheet(writer, sv_chr14_idid, "IDID_chr14")
+        write_excel_sheet(writer, translocations_df, "Translocations")
+        write_excel_sheet(writer, sv_chr14_idid, "SV")
         write_excel_sheet(writer, cnv_df, "CNV")
 
     logging.info("Script finished successfully")
 
 
 if __name__ == "__main__":
-    run_pipeline(snakemake)  # type: ignore
+    create_report(snakemake)  # type: ignore

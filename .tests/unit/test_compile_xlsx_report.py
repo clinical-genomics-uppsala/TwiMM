@@ -12,6 +12,7 @@ from compile_xlsx_report import ( # type: ignore
     parse_format,
     parse_sv_vcf_line,
     parse_cnvkit_vcf_line,
+    get_genes_from_bed,
 )
 
 
@@ -256,3 +257,32 @@ def test_parse_cnvkit_vcf_line(line, expected):
     else:
         with expected:
             parse_cnvkit_vcf_line(line)
+
+
+# --- Tests for get_genes_from_bed ---
+def test_get_genes_from_bed(tmp_path):
+    # Test valid BED file
+    bed_content = (
+        "chr1\t100\t200\tGENE1\n"
+        "chr2\t300\t400\tGENE2\tignore\n"
+        "#comment line\n"
+        "\n"
+        "chr3\t500\t600\tGENE3\n"
+    )
+    bed_file = tmp_path / "test.bed"
+    bed_file.write_text(bed_content)
+    
+    genes = get_genes_from_bed(str(bed_file))
+    assert genes == {"GENE1", "GENE2", "GENE3"}
+
+    # Test missing file
+    assert get_genes_from_bed("non_existent.bed") == set()
+
+    # Test empty path
+    assert get_genes_from_bed("") == set()
+
+    # Test malformed line (fewer than 4 columns)
+    malformed_content = "chr1\t100\t200\n"
+    malformed_file = tmp_path / "malformed.bed"
+    malformed_file.write_text(malformed_content)
+    assert get_genes_from_bed(str(malformed_file)) == set()
