@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0](https://github.com/clinical-genomics-uppsala/TwiMM/compare/v1.3.0...v1.4.0) (2026-01-22)
+
+
+### Features
+
+* add filtering of genes with SNVs ([6166c06](https://github.com/clinical-genomics-uppsala/TwiMM/commit/6166c063d5d22533e6d2d79014286a4128a19188))
+* add genes for filtering as param ([292603f](https://github.com/clinical-genomics-uppsala/TwiMM/commit/292603fb31dad8ffa09289fea42868e4b0a16c15))
+* add matching column width ([d837221](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d83722131ab05a7571b2c9a33d5edf3d7b8427e2))
+* add MB to the column header in CNV tab ([ea48652](https://github.com/clinical-genomics-uppsala/TwiMM/commit/ea48652b018780e4faea2e3b282fa10b48a56777))
+* use rule mosdepth instead of mosdepth_bed ([fc4c568](https://github.com/clinical-genomics-uppsala/TwiMM/commit/fc4c568be8f53091bce2d67ed7c7216e425cde73))
+
+
+### Bug Fixes
+
+* update version_files array ([fcf8d44](https://github.com/clinical-genomics-uppsala/TwiMM/commit/fcf8d449a02d44933e2845596003ee8d1e3ad527))
+
 ## [1.3.0](https://www.github.com/clinical-genomics-uppsala/TwiMM/compare/v1.2.1...v1.3.0) (2025-12-15)
 
 
