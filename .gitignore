@@ -34,7 +34,7 @@ test_dataset/
 modules/
 data/
 config/test_config.yaml
-scripts/
+scripts_/
 *.bam
 *.xlsx
 *.simg
