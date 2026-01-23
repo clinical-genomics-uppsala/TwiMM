@@ -5,7 +5,6 @@ import re
 from pathlib import Path
 from typing import Any
 from typing import Callable
-from typing import Optional
 from typing import TextIO
 
 import pandas as pd
