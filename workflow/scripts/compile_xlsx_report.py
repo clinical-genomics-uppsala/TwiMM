@@ -1,11 +1,15 @@
-import pandas as pd
-import gzip
-import re
-import logging
-import yaml
 import functools
-from typing import Callable, TextIO, Any, Optional
+import gzip
+import logging
+import re
 from pathlib import Path
+from typing import Any
+from typing import Callable
+from typing import Optional
+from typing import TextIO
+
+import pandas as pd
+import yaml
 
 
 # --- Decorators ---
