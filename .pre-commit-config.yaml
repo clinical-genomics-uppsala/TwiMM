@@ -16,7 +16,8 @@ repos:
     rev: v0.11.0
     hooks:
       - id: snakefmt
-        args: ["--check", "-l", "130", "workflow/Snakefile"]
+        args: ["--check", "-l", "130"]
+        files: ^workflow/Snakefile$
 
   - repo: local
     hooks:
