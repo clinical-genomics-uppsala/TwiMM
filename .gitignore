@@ -1,16 +1,21 @@
+# IDE stuff
 .eggs
 __pycache__
 .pytest_cache/
 .snakemake/
 .idea/
+.config
 .cache/
 .keras/
 .parallel/
 .vscode/
+.coverage
 ._.DS_Store
 .DS_Store
 describe_workflow.rst
 describe_jupyter_notebook.txt
+
+# data directories and files
 twist_myelom
 results/
 vep_cache/
@@ -28,16 +33,17 @@ test_dataset/
 modules/
 data/
 config/test_config.yaml
+scripts_/
 *.bam
 *.xlsx
 *.simg
 
-# tmp files and scripts
+# tmp files in project root
 *.vcf
 *.log
 *.tsv
-test_report_script.py
-count_reads.py
-build_conda.sh
-run_vep_simg.sh
 copilot-instructions.md
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
