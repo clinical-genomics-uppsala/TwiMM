@@ -11,7 +11,7 @@ tests = "PYTHONPATH=. pytest .tests/unit/"
 sfmt = "pre-commit run snakefmt"
 
 [dependencies]
-python = "==3.9"
+python = "==3.10"
 pycodestyle = ">=2.14.0,<3"
 pytest = ">=8.4.1,<9"
 snakefmt = ">=0.11.0,<0.12"
