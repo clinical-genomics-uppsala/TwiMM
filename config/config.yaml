@@ -1,10 +1,11 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples_test.tsv"
-units: "config/units_test.tsv"
+samples: "config/samples.tsv"
+units: "config/units.tsv"
 
 default_container: "docker://hydragenetics/common:3.3.0"
+pipeline_version: "v1.4.0"
 
 reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
@@ -131,7 +132,7 @@ vep:
   container: "docker://hydragenetics/vep:113.0"
   vep_cache: "/data/ref_genomes/VEP"
   mode: "--offline --cache "
-  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --refseq --protein --hgvs --fasta ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --refseq --protein --hgvs --fasta {fasta}"
 
 whatshap_phase:
   container: "docker://hydragenetics/whatshap:2.2"
