@@ -21,7 +21,7 @@ module alignment:
         github(
             "hydra-genetics/alignment",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v0.7.0",
         )
     config:
         config
@@ -32,7 +32,7 @@ module annotation:
         github(
             "hydra-genetics/annotation",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v1.2.0",
         )
     config:
         config
@@ -43,7 +43,7 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v2.0.0",
         )
     config:
         config
@@ -55,7 +55,7 @@ module filtering:
         github(
             "hydra-genetics/filtering",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v1.1.0",
         )
     config:
         config
@@ -67,7 +67,7 @@ module prealignment:
         github(
             "hydra-genetics/prealignment",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v1.4.0",
         )
     config:
         config
@@ -79,7 +79,7 @@ module reports:
         github(
             "hydra-genetics/reports",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v0.11.0",
         )
     config:
         config
@@ -92,7 +92,7 @@ module snv_indels:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v2.0.0",
         )
     config:
         config
@@ -104,7 +104,7 @@ module qc:
         github(
             "hydra-genetics/qc",
             path="workflow/Snakefile",
-            branch="develop",
+            tag="v0.6.0",
         )
     config:
         config
@@ -397,6 +397,7 @@ use rule cnv_json from reports as reports_cnv_json with:
     input:
         ratios="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cnr",
         segments="cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns",
+        annotations=config.get("merge_cnv_json", {}).get("annotations", []),
 
 
 # this one has filtered_cnv_vcfs, cnv_vcfs, germline_vcf as input
