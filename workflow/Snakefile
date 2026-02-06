@@ -85,8 +85,6 @@ module reports:
         config
 
 
-# use branch with my function
-# for flexible BAM input
 module snv_indels:
     snakefile:
         github(
