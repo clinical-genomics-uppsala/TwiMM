@@ -218,10 +218,7 @@ properties:
         items:
           type: string
         description: "Annotation files (BED) to annotate merge results."
-      ref_genes:
-        type: string
-        description: "Path to whitespace-separated text file with full gene coordinates used for CNV annotation."
-    required: ["germline_vcf", "unfiltered_cnv_vcfs", "filtered_cnv_vcfs", "annotations", "ref_genes"]
+    required: ["germline_vcf", "unfiltered_cnv_vcfs", "filtered_cnv_vcfs", "annotations"]
 
   mosdepth:
     type: object
