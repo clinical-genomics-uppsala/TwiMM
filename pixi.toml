@@ -10,6 +10,7 @@ pre-commit = "PYTHONPATH=. pre-commit run pytest-check --all-files"
 tests = "PYTHONPATH=. pytest .tests/unit/"
 sfmt = "pre-commit run snakefmt"
 dry = "snakemake --configfile config/config.yaml -n --cores 1"
+full = "snakemake --configfile config/config.yaml --profile profiles/marvin_cpu"
 
 [dependencies]
 python = "==3.10"
