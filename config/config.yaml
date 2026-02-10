@@ -75,7 +75,6 @@ merge_cnv_json:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   annotations:
     - "ref_data/Myelom_expected_coverage_annotated_Oct2024_genes_only.bed"
-  ref_genes: "ref_data/refGene_hg38.txt"
 
 mosdepth:
   container: "docker://hydragenetics/mosdepth:0.3.6"
