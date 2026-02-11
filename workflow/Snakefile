@@ -15,13 +15,12 @@ rule all:
         compile_output_file_list,
 
 
-# map and index BAM files
 module alignment:
     snakefile:
         github(
             "hydra-genetics/alignment",
             path="workflow/Snakefile",
-            tag="v0.7.0",
+            tag=config.get("module_versions", {}).get("alignment", "v0.7.0"),
         )
     config:
         config
@@ -32,7 +31,7 @@ module annotation:
         github(
             "hydra-genetics/annotation",
             path="workflow/Snakefile",
-            tag="v1.2.0",
+            tag=config.get("module_versions", {}).get("annotation", "v1.2.0"),
         )
     config:
         config
@@ -43,19 +42,18 @@ module cnv_sv:
         github(
             "hydra-genetics/cnv_sv",
             path="workflow/Snakefile",
-            tag="v2.0.0",
+            tag=config.get("module_versions", {}).get("cnv_sv", "v2.0.0"),
         )
     config:
         config
 
 
-# filter VCF files
 module filtering:
     snakefile:
         github(
             "hydra-genetics/filtering",
             path="workflow/Snakefile",
-            tag="v1.1.0",
+            tag=config.get("module_versions", {}).get("filtering", "v1.1.0"),
         )
     config:
         config
@@ -67,19 +65,18 @@ module prealignment:
         github(
             "hydra-genetics/prealignment",
             path="workflow/Snakefile",
-            tag="v1.4.0",
+            tag=config.get("module_versions", {}).get("prealignment", "v1.4.0"),
         )
     config:
         config
 
 
-# CNVkit reports
 module reports:
     snakefile:
         github(
             "hydra-genetics/reports",
             path="workflow/Snakefile",
-            commit="f5ff8bde067a4d10c81eb021c685fa75ef34d541",
+            commit=config.get("module_versions", {}).get("reports", "f5ff8bd"),
         )
     config:
         config
@@ -90,19 +87,18 @@ module snv_indels:
         github(
             "hydra-genetics/snv_indels",
             path="workflow/Snakefile",
-            tag="v2.0.0",
+            tag=config.get("module_versions", {}).get("snv_indels", "v2.0.0"),
         )
     config:
         config
 
 
-# for qc stuff
 module qc:
     snakefile:
         github(
             "hydra-genetics/qc",
             path="workflow/Snakefile",
-            tag="v0.6.0",
+            tag=config.get("module_versions", {}).get("qc", "v0.6.0"),
         )
     config:
         config
@@ -119,6 +115,22 @@ use rule multiqc_longread from qc as qc_multiqc_longread
 
 
 use rule sequali from qc as qc_sequali
+
+
+use rule picard_collect_alignment_summary_metrics from qc as qc_picard_collect_alignment_summary_metrics with:
+    input:
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
+        ref=config.get("reference", {}).get("fasta", ""),
+
+
+use rule picard_collect_hs_metrics from qc as qc_picard_collect_hs_metrics with:
+    input:
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
+        bait_intervals=config.get("reference", {}).get("design_intervals", ""),
+        reference=config.get("reference", {}).get("fasta", ""),
+        target_intervals=config.get("reference", {}).get("design_intervals", ""),
 
 
 # MAPPING
