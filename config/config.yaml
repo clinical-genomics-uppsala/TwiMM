@@ -123,6 +123,14 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
+picard_collect_alignment_summary_metrics:
+  container: "docker://hydragenetics/picard:2.25.4"
+  extra: ""
+
+picard_collect_hs_metrics:
+  container: "docker://hydragenetics/picard:2.25.4"
+  extra: ""
+
 sequali:
   container: "docker://hydragenetics/sequali:0.12.0"
   extra: ""
