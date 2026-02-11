@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.5.0](https://github.com/clinical-genomics-uppsala/TwiMM/compare/v1.4.0...v1.5.0) (2026-02-11)
+
+
+### Features
+
+* add function to dyna,ically append ref genome to VEP extra in the config; fix datestring as pipeline version ([07a9393](https://github.com/clinical-genomics-uppsala/TwiMM/commit/07a9393a425d67abb7f0a4f50747f8690fab2978))
+* add picard rules ([7d739be](https://github.com/clinical-genomics-uppsala/TwiMM/commit/7d739be89e7a4df5f8b468bd3579a964725544dc))
+* Introduce configurable pipeline version and dynamic VEP FASTA path ([dcf12fd](https://github.com/clinical-genomics-uppsala/TwiMM/commit/dcf12fd9512b54e6dc8a29b8f521976209570a41))
+
+
+### Bug Fixes
+
+* pin reports version to a commit before v0.11.0 ([63f7a1a](https://github.com/clinical-genomics-uppsala/TwiMM/commit/63f7a1a9ad425c5ed2daa64c70ba1940444922aa))
+* use ref_genes in merge_cnv_json ([00e9004](https://github.com/clinical-genomics-uppsala/TwiMM/commit/00e9004c482a0bc1d55fd533a0cc7cb53689e6f7))
+
+
+### Reverts
+
+* remove ref_genes from merge_cnv_json config and schema ([47075c1](https://github.com/clinical-genomics-uppsala/TwiMM/commit/47075c18ad51de9988777f4568634d81a6d4b468))
+
+
+### Documentation
+
+* rm old rulegraph ([d8440eb](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d8440ebd812e77757a3918b7fa0548b348701059))
+* upd rulegraphs and README.md ([e214d87](https://github.com/clinical-genomics-uppsala/TwiMM/commit/e214d87a8e3c9fb5f3a615b7c4356fdc3b89cbf1))
+* update rulegraphs ([7e65f87](https://github.com/clinical-genomics-uppsala/TwiMM/commit/7e65f87057b246ffbab6e1fd941b7962aa612aae))
+
 ## [1.4.0](https://github.com/clinical-genomics-uppsala/TwiMM/compare/v1.3.0...v1.4.0) (2026-01-22)
 
 
