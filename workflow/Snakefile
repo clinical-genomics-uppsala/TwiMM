@@ -76,7 +76,7 @@ module reports:
         github(
             "hydra-genetics/reports",
             path="workflow/Snakefile",
-            commit=config.get("module_versions", {}).get("reports", "f5ff8bd"),
+            tag=config.get("module_versions", {}).get("reports", "f5ff8bd"),
         )
     config:
         config
