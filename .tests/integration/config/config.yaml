@@ -10,6 +10,7 @@ reference:
   trf: "ref_data/human_trf.bed"
   design_bed: "ref_data/test_genes.bed"
   targets_bed: "ref_data/test_genes.bed"
+  design_intervals: "ref_data/probes.interval_list"
 
 cnvkit_batch:
   normal_reference: "ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
