@@ -8,9 +8,12 @@ version = "1.4.0"
 [tasks]
 pre-commit = "PYTHONPATH=. pre-commit run pytest-check --all-files"
 tests = "PYTHONPATH=. pytest .tests/unit/"
-sfmt = "pre-commit run snakefmt"
+pc-snakefmt = "pre-commit run snakefmt"
+snakefmt = "snakefmt -l 130 workflow/Snakefile"
 dry = "snakemake --configfile config/config.yaml -n --cores 1"
 full = "snakemake --configfile config/config.yaml --profile profiles/marvin_cpu"
+rulegraph_cl = "snakemake --configfile config/config.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
+rulegraph_ds = "snakemake --configfile config/config.yaml --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
 
 [dependencies]
 python = "==3.10"

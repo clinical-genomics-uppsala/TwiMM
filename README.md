@@ -81,7 +81,7 @@ The following output files should be targeted via another rule:
 
 With DeepSomatic:
 
-![rule_graph1](images/rulegraph_deeps.svg)
+![rule_graph1](images/rulegraph_deepsomatic.svg)
 
 With ClairS-TO:
 
