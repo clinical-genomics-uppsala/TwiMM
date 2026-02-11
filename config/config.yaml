@@ -7,11 +7,22 @@ units: "config/units.tsv"
 default_container: "docker://hydragenetics/common:3.3.0"
 pipeline_version: "v1.4.0"
 
+module_versions:
+  alignment: "v0.7.0"
+  annotation: "v1.2.0"
+  cnv_sv: "v2.0.0"
+  filtering: "v1.1.0"
+  prealignment: "v1.4.0"
+  reports: "f5ff8bde067a4d10c81eb021c685fa75ef34d541"
+  snv_indels: "v2.0.0"
+  qc: "v0.6.0"
+
 reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
   design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  design_intervals: "ref_data/twist_probes_v1.interval_list"
 
 aligner: "pbmm2"
 haplotag_path: "snv_indels/whatshap_haplotag"
@@ -92,6 +103,8 @@ multiqc:
         - "qc/mosdepth/{sample}_{type}.mosdepth.global.dist.txt"
         - "qc/mosdepth/{sample}_{type}.mosdepth.region.dist.txt"
         - "qc/mosdepth/{sample}_{type}.mosdepth.summary.txt"
+        - "qc/picard_collect_alignment_summary_metrics/{sample}_{type}.alignment_summary_metrics.txt"
+        - "qc/picard_collect_hs_metrics/{sample}_{type}.HsMetrics.txt"
 
 pbmarkdup:
   container: "docker://hydragenetics/pbmarkdup:1.1.0"
