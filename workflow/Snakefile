@@ -107,8 +107,8 @@ module qc:
 # QC stuff
 use rule mosdepth from qc as qc_mosdepth with:
     input:
-        bam="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam",
-        bai="snv_indels/whatshap_haplotag/{sample}_T.haplotagged.bam.bai",
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
 
 
 use rule multiqc_longread from qc as qc_multiqc_longread
@@ -194,19 +194,19 @@ use rule fix_af from snv_indels as snv_indels_fix_af with:
 # Phase SNV output with fixed AF
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase with:
     input:
-        vcf="snv_indels/fix_af/{sample}_T.vcf",
-        bai="alignment/pbmm2_align/{sample}_T.bam.bai",
-        bam="alignment/pbmm2_align/{sample}_T.bam",
+        vcf="snv_indels/fix_af/{sample}_{type}.vcf",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
         fasta=config.get("reference", {}).get("fasta", ""),
     output:
-        vcf=temp("snv_indels/whatshap_phase/{sample}_T.phased.vcf.gz"),
+        vcf=temp("snv_indels/whatshap_phase/{sample}_{type}.phased.vcf.gz"),
     params:
         extra=config.get("whatshap_phase", {}).get("extra", ""),
     log:
-        "snv_indels/whatshap_phase/{sample}_T.phased.vcf.gz.log",
+        "snv_indels/whatshap_phase/{sample}_{type}.phased.vcf.gz.log",
     benchmark:
         repeat(
-            "snv_indels/whatshap_phase/{sample}_T.phased.vcf.gz.benchmark.tsv",
+            "snv_indels/whatshap_phase/{sample}_{type}.phased.vcf.gz.benchmark.tsv",
             config.get("whatshap_phase", {}).get("benchmark_repeats", 1),
         )
 
@@ -298,8 +298,7 @@ rule cnvkit_batch:
         config.get("cnvkit_batch", {}).get("container", config["default_container"])
     message:
         "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
-    script:
-        "scripts/cnvkit_batch_wrapper.py"
+    wrapper: "aae4476/bio/cnvkit/batch"
 
 
 # index phased.inlcude.panel.vcf
@@ -316,16 +315,16 @@ use rule vep from annotation as annotation_vep with:
 # vep output has to be bgzipped and indexed
 use rule bgzip from cnv_sv as bgzip_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+",
+        file="snv_indels/whatshap_phase/.+_[TN]\.phased\.include\.panel\.vep_annotated",
     input:
-        vcf="{file}_T.phased.include.panel.vep_annotated.vcf",
+        vcf="{file}.vcf",
     output:
-        gz=temp("{file}_T.phased.include.panel.vep_annotated.vcf.gz"),
+        gz=temp("{file}.vcf.gz"),
 
 
 use rule tabix from cnv_sv as tabix_vep_vcf with:
     wildcard_constraints:
-        file="snv_indels/whatshap_phase/.+_T\.phased\.include\.panel\.vep_annotated",
+        file="snv_indels/whatshap_phase/.+_[TN]\.phased\.include\.panel\.vep_annotated",
 
 
 # now you can filter it (keep the populational variants)
@@ -371,16 +370,16 @@ use rule cnvkit_vcf from cnv_sv as cnv_sv_cnvkit_vcf with:
 
 use rule annotate_cnv from annotation as annotation_annotate_cnvkit_vcf with:
     input:
-        vcf="cnv_sv/cnvkit_vcf/{sample}_T.pathology.vcf",
+        vcf="cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.vcf",
     output:
-        vcf=temp("cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf"),
+        vcf=temp("cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.{tag}.vcf"),
     params:
         bed=lambda wildcards: config.get("annotate_cnv", {}).get(wildcards.tag, ""),
     log:
-        "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf.log",
+        "cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.{tag}.vcf.log",
     benchmark:
         repeat(
-            "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.{tag}.vcf.benchmark.tsv",
+            "cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.{tag}.vcf.benchmark.tsv",
             config.get("annotate_cnv", {}).get("benchmark_repeats", 1),
         )
 
@@ -441,19 +440,19 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
 # Excel report with SNVs and SVs
 rule reports_compile_xlsx_report:
     input:
-        vcf_snv="snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.vcf.gz",
-        vcf_sv="cnv_sv/sniffles2_call/{sample}_T.include.panel.vcf.gz",
-        vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf",
+        vcf_snv="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.vcf.gz",
+        vcf_sv="cnv_sv/sniffles2_call/{sample}_{type}.include.panel.vcf.gz",
+        vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf",
     output:
-        xlsx=temp("reports/xlsx_reports/{sample}_combined_report.xlsx"),
+        xlsx=temp("reports/xlsx_reports/{sample}_{type}_combined_report.xlsx"),
     params:
         filter_config=config.get("compile_xlsx_report", {}).get("filters", []),
         genes_bed=config.get("compile_xlsx_report", {}).get("genes", ""),
     log:
-        "reports/xlsx_reports/{sample}_combined_report.xlsx.log",
+        "reports/xlsx_reports/{sample}_{type}_combined_report.xlsx.log",
     benchmark:
         repeat(
-            "reports/xlsx_reports/{sample}_combined_report.xlsx.benchmark.tsv",
+            "reports/xlsx_reports/{sample}_{type}_combined_report.xlsx.benchmark.tsv",
             config.get("compile_xlsx_report", {}).get("benchmark_repeats", 1),
         )
     threads: config.get("compile_xlsx_report", {}).get("threads", config["default_resources"]["threads"])
