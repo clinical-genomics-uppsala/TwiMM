@@ -465,6 +465,6 @@ rule reports_compile_xlsx_report:
     container:
         config.get("compile_xlsx_report", {}).get("container", config["default_container"])
     message:
-        "{rule}: compile SNV and SV VCFs into Excel report for {wildcards.sample}"
+        "{rule}: compile SNV and SV VCFs into Excel report for {wildcards.sample}_{wildcards.type}"
     script:
         "scripts/compile_xlsx_report.py"
