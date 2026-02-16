@@ -1,0 +1,5 @@
+---
+output: "config/output_files.yaml"
+resources: "config/resources_test.yaml"
+samples: "config/samples_test.tsv" # COLO289 subsampled BAM
+units: "config/units_test.tsv"
