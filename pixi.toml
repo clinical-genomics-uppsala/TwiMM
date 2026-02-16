@@ -3,15 +3,19 @@ authors = ["Andrei Guliaev <andrei.guliaev@scilifelab.uu.se>"]
 channels = ["bioconda", "conda-forge"]
 name = "TwiMM"
 platforms = ["linux-64"]
-version = "1.4.0"
+version = "1.6.0"
 
 [tasks]
 pre-commit = "PYTHONPATH=. pre-commit run pytest-check --all-files"
 tests = "PYTHONPATH=. pytest .tests/unit/"
 pc-snakefmt = "pre-commit run snakefmt"
 snakefmt = "snakefmt -l 130 workflow/Snakefile"
-dry = "snakemake --configfile config/config.yaml -n --cores 1"
-full = "snakemake --configfile config/config.yaml --profile profiles/marvin_cpu"
+all-dry-v1 = "snakemake --configfile config/config.yaml -n --cores 1"
+all-full-v1 = "snakemake --configfile config/config.yaml --profile profiles/marvin_cpu"
+test-dry-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml -n --cores 1"
+test-full-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --profile profiles/marvin_cpu"
+all-dry-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml -n --cores 1"
+all-full-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml --profile profiles/marvin_cpu"
 rulegraph_cl = "snakemake --configfile config/config.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
 rulegraph_ds = "snakemake --configfile config/config.yaml --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
 
@@ -26,6 +30,7 @@ pandas = ">=2.3.1,<3"
 pulp = "<2.8"
 drmaa = "==0.7.9"
 tabulate = ">=0.9.0,<0.10"
+snakemake-wrapper-utils = ">=0.8.0,<0.9"
 
 [pypi-dependencies]
 hydra-genetics = ">=3.3.0, <4"

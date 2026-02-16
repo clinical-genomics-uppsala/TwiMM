@@ -83,6 +83,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
       - conda: https://conda.anaconda.org/bioconda/noarch/snakefmt-0.11.0-pyhdfd78af_0.tar.bz2
+      - conda: https://conda.anaconda.org/bioconda/noarch/snakemake-wrapper-utils-0.8.0-pyhdfd78af_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlite-3.46.0-h6d4b2fc_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tabulate-0.9.0-pyhcf101f3_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h4845f30_101.conda
@@ -1519,6 +1520,17 @@ packages:
   - peppy ; extra == 'pep'
   - pygments ; extra == 'reports'
   requires_python: '>=3.7'
+- conda: https://conda.anaconda.org/bioconda/noarch/snakemake-wrapper-utils-0.8.0-pyhdfd78af_0.conda
+  sha256: 1686b80613330897958e0106f6283ee7e4d63612eea87d0f44b7a708e5b39bba
+  md5: 1650e521333852f45468d97b1b2fdcce
+  depends:
+  - python >=3.8
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/snakemake-wrapper-utils?source=hash-mapping
+  size: 14974
+  timestamp: 1757579030160
 - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlite-3.46.0-h6d4b2fc_0.conda
   sha256: e849d576e52bf3e6fc5786f89b7d76978f2e2438587826c95570324cb572e52b
   md5: 77ea8dff5cf8550cc8f5629a6af56323
