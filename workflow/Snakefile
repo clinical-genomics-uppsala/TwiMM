@@ -298,7 +298,8 @@ rule cnvkit_batch:
         config.get("cnvkit_batch", {}).get("container", config["default_container"])
     message:
         "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
-    wrapper: "aae4476/bio/cnvkit/batch"
+    wrapper:
+        "aae4476/bio/cnvkit/batch"
 
 
 # index phased.inlcude.panel.vcf
