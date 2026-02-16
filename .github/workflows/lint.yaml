@@ -21,14 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
+      - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          python-version: 3.9
-      - name: Install requirements.txt
-        run: |
-          pip install -r requirements.txt
+          pixi-version: v0.39.0
+          cache: true
       - name: Linting
         working-directory: .tests/integration
         run: |
-          snakemake --lint -n -s ../../workflow/Snakefile --configfiles ../../config/config.yaml config/config.yaml
+          pixi run snakemake --lint -n -s ../../workflow/Snakefile --configfiles ../../config/config.yaml config/config.yaml

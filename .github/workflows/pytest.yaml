@@ -21,15 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          python-version: 3.9
-      - name: Install requirements.txt
-        run: |
-          pip install -r requirements.txt
-      - name: Install requirements.test.txt
-        run: |
-          pip install -r requirements.test.txt
+          pixi-version: v0.39.0
+          cache: true
       - name: pytest
-        run: pytest .tests/unit
+        run: pixi run pytest .tests/unit
