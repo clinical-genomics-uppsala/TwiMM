@@ -98,6 +98,7 @@ multiqc:
     DNA:
       included_unit_types: 
         - "T"
+        - "N"
       qc_files:
         - "qc/sequali/{sample}_{type}_{processing_unit}_{barcode}.json"
         - "qc/mosdepth/{sample}_{type}.mosdepth.global.dist.txt"

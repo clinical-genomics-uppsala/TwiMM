@@ -37,6 +37,7 @@ scripts_/
 *.bam
 *.xlsx
 *.simg
+site/
 
 # tmp files in project root
 *.vcf
@@ -45,5 +46,5 @@ scripts_/
 copilot-instructions.md
 
 # pixi environments
-.pixi/*
+.pixi/
 !.pixi/config.toml

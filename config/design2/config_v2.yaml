@@ -1,0 +1,40 @@
+---
+output: "config/design2/output_files_v2.yaml"
+resources: "config/resources.yaml"
+samples: "config/design2/samples_v2.tsv"
+units: "config/design2/units_v2.tsv"
+
+reference:
+  fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  design_intervals: "ref_data/expected_capture_targets_covered_v2.interval_list"
+
+bcftools_filter_include_region:
+  panel: "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+
+cnvkit_batch:
+  container: "docker://hydragenetics/cnvkit:0.9.11"
+  normal_reference: "ref_data/cnvkit.PoN.cnn" # this will change
+  method: "hybrid"
+
+deepsomatic_t_only:
+  container: "docker://google/deepsomatic:1.9.0"
+  model: "PACBIO"
+  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz" # this will change
+  extra: ""
+
+merge_cnv_json:
+  germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz"
+  unfiltered_cnv_vcfs:
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
+  filtered_cnv_vcfs:
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
+  annotations:
+    - "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+
+mosdepth:
+  container: "docker://hydragenetics/mosdepth:0.3.6"
+  by: "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  extra: ""
