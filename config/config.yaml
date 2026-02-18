@@ -20,9 +20,10 @@ module_versions:
 reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  trf: &trf "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: &design_bed "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
   design_intervals: "ref_data/twist_probes_v1.interval_list"
+  panel_full_genes: &panel_full_genes "ref_data/panel_full_genes.bed"
 
 aligner: "pbmm2"
 haplotag_path: "snv_indels/whatshap_haplotag"
@@ -30,10 +31,10 @@ haplotag_suffix: "haplotagged"
 
 annotate_cnv:
   tag: "germline"
-  germline: "ref_data/panel_full_genes.bed"
+  germline: *panel_full_genes
 
 bcftools_filter_include_region:
-  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  panel: *design_bed
 
 bcftools_view:
   extra: ""
@@ -65,7 +66,7 @@ cnvkit_vcf:
 
 compile_xlsx_report:
   filters: "config/filters/config_vcf_report.yaml"
-  genes: "ref_data/panel_full_genes.bed"
+  genes: *panel_full_genes
 
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
@@ -89,7 +90,7 @@ merge_cnv_json:
 
 mosdepth:
   container: "docker://hydragenetics/mosdepth:0.3.6"
-  by: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  by: *design_bed
   extra: ""
 
 multiqc:
@@ -126,7 +127,7 @@ pbmm2_merge:
 
 pbsv_discover:
   container: "docker://hydragenetics/pbsv:2.9.0"
-  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  trf: *trf
   extra: ""
 
 pbsv_call:
@@ -159,9 +160,6 @@ svdb_merge:
   container: "docker://hydragenetics/svdb:2.6.0"
 
 svdb_query:
-  # DB 1: /data/ref_data/gnomad/gnomad_sv/gnomad.v4.0.sv.vcf.gz
-  # DB 2: /data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz
-  # DB 2 file name corresponds to the official SVDB docs
   db_string: "--out_occ GNOMAD_AC --out_frq GNOMAD_AF --out_frq AF --in_occ AN --in_frq AF --db /data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
   container: "docker://hydragenetics/svdb:2.6.0"
   extra: ""
