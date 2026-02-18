@@ -263,8 +263,10 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
     wildcard_constraints:
         file="cnv_sv/sniffles2_call/.+",
 
+
 # PBSV
-use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call 
+use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
+
 
 rule cnv_sv_pbsv_vcf:
     input:
@@ -288,9 +290,10 @@ rule cnv_sv_pbsv_vcf:
     container:
         config.get("pbsv_vcf", {}).get("container", config["default_container"])
     message:
-        "{rule}: use cp on pbsv vcf {input.vcf} to create {output.vcf}"   
+        "{rule}: use cp on pbsv vcf {input.vcf} to create {output.vcf}"
     shell:
         "cp {input.vcf} {output.vcf} 2> {log}"
+
 
 use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover
 
@@ -324,6 +327,7 @@ rule cnv_sv_sniffles2_vcf:
 
 # SVDB
 use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge
+
 
 use rule svdb_query from cnv_sv as cnv_sv_svdb_query
 
