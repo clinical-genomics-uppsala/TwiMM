@@ -124,6 +124,15 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
+pbsv_discover:
+  container: "docker://hydragenetics/pbsv:2.9.0"
+  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  extra: ""
+
+pbsv_call:
+  container: "docker://hydragenetics/pbsv:2.9.0"
+  extra: ""
+
 picard_collect_alignment_summary_metrics:
   container: "docker://hydragenetics/picard:2.25.4"
   extra: ""
@@ -144,7 +153,18 @@ svdb_merge:
   tc_method:
     - name: pathology
       cnv_caller:
-        - cnvkit
+        - pbsv
+        - sniffles2
+      priority: sniffles2,pbsv
+  container: "docker://hydragenetics/svdb:2.6.0"
+
+svdb_query:
+  # DB 1: /data/ref_data/gnomad/gnomad_sv/gnomad.v4.0.sv.vcf.gz
+  # DB 2: /data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz
+  # DB 2 file name corresponds to the official SVDB docs
+  db_string: "--out_occ GNOMAD_AC --out_frq GNOMAD_AF --out_frq AF --in_occ AN --in_frq AF --db /data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
+  container: "docker://hydragenetics/svdb:2.6.0"
+  extra: ""
 
 trimmer_software: "None"
 
