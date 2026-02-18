@@ -263,6 +263,71 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
     wildcard_constraints:
         file="cnv_sv/sniffles2_call/.+",
 
+# PBSV
+use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call 
+
+rule cnv_sv_pbsv_vcf:
+    input:
+        vcf="cnv_sv/pbsv_call/{sample}_{type}.vcf",
+    output:
+        vcf=temp("cnv_sv/pbsv_vcf/{sample}_{type}.{tc_method}.vcf"),
+    log:
+        "cnv_sv/pbsv_vcf/{sample}_{type}.{tc_method}.log",
+    benchmark:
+        repeat(
+            "cnv_sv/pbsv_vcf/{sample}_{type}.{tc_method}.benchmark.tsv",
+            config.get("pbsv_vcf", {}).get("benchmark_repeats", 1),
+        )
+    threads: config.get("pbsv_vcf", {}).get("threads", config["default_resources"]["threads"])
+    resources:
+        mem_mb=config.get("pbsv_vcf", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("pbsv_vcf", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("pbsv_vcf", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("pbsv_vcf", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("pbsv_vcf", {}).get("time", config["default_resources"]["time"]),
+    container:
+        config.get("pbsv_vcf", {}).get("container", config["default_container"])
+    message:
+        "{rule}: use cp on pbsv vcf {input.vcf} to create {output.vcf}"   
+    shell:
+        "cp {input.vcf} {output.vcf}"
+
+
+use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover
+
+
+rule cnv_sv_sniffles2_vcf:
+    input:
+        vcf="cnv_sv/sniffles2_call/{sample}_{type}.vcf.gz",
+    output:
+        vcf=temp("cnv_sv/sniffles2_vcf/{sample}_{type}.{tc_method}.vcf"),
+    log:
+        "cnv_sv/sniffles2_vcf/{sample}_{type}.{tc_method}.log",
+    benchmark:
+        repeat(
+            "cnv_sv/sniffles2_vcf/{sample}_{type}.{tc_method}.benchmark.tsv",
+            config.get("sniffles2_vcf", {}).get("benchmark_repeats", 1),
+        )
+    threads: config.get("sniffles2_vcf", {}).get("threads", config["default_resources"]["threads"])
+    resources:
+        mem_mb=config.get("sniffles2_vcf", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("sniffles2_vcf", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("sniffles2_vcf", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("sniffles2_vcf", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("sniffles2_vcf", {}).get("time", config["default_resources"]["time"]),
+    container:
+        config.get("sniffles2_vcf", {}).get("container", config["default_container"])
+    message:
+        "{rule}: use zcat on sniffles2 vcf {input.vcf} to create {output.vcf}"
+    shell:
+        "zcat {input.vcf} > {output.vcf}"
+
+
+# SVDB
+use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge
+
+use rule svdb_query from cnv_sv as cnv_sv_svdb_query
+
 
 # run CNVkits
 rule cnvkit_batch:
