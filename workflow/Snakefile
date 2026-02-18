@@ -290,8 +290,7 @@ rule cnv_sv_pbsv_vcf:
     message:
         "{rule}: use cp on pbsv vcf {input.vcf} to create {output.vcf}"   
     shell:
-        "cp {input.vcf} {output.vcf}"
-
+        "cp {input.vcf} {output.vcf} 2> {log}"
 
 use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover
 
@@ -320,7 +319,7 @@ rule cnv_sv_sniffles2_vcf:
     message:
         "{rule}: use zcat on sniffles2 vcf {input.vcf} to create {output.vcf}"
     shell:
-        "zcat {input.vcf} > {output.vcf}"
+        "zcat {input.vcf} > {output.vcf} 2> {log}"
 
 
 # SVDB
