@@ -1,7 +1,9 @@
+import argparse
 import functools
 import gzip
 import logging
 import re
+import sys
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -383,8 +385,9 @@ def create_report(snakemake_obj: Any):
     Main pipeline execution function using snakemake object.
     """
     # Set up logging
+    log_file = snakemake_obj.log[0] if snakemake_obj.log else None
     logging.basicConfig(
-        filename=snakemake_obj.log[0],
+        filename=log_file,
         format="{asctime} - {levelname} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M",
@@ -539,4 +542,30 @@ def create_report(snakemake_obj: Any):
 
 
 if __name__ == "__main__":
-    create_report(snakemake)  # type: ignore
+    try:
+        # Check if 'snakemake' is defined (provided by Snakemake)
+        create_report(snakemake)  # type: ignore
+    except NameError:
+        # If 'snakemake' is not defined, use argparse
+        parser = argparse.ArgumentParser(description="Compile XLSX report from VCF files.")
+        parser.add_argument("--vcf-snv", required=True, help="Path to SNV VCF file")
+        parser.add_argument("--vcf-sv", required=True, help="Path to SV VCF file")
+        parser.add_argument("--vcf-cnv", required=True, help="Path to CNV VCF file")
+        parser.add_argument("--output-xlsx", "-o", required=True, help="Path to output XLSX file")
+        parser.add_argument("--filter-config", required=True, help="Path to filter config YAML file")
+        parser.add_argument("--genes-bed", help="Path to genes BED file", default="")
+        parser.add_argument("--sample", help="Sample name", default="unknown")
+        parser.add_argument("--log", help="Path to log file", default=None)
+
+        args = parser.parse_args()
+
+        # Create a mock object that behaves like the snakemake object
+        class SnakemakeMock:
+            def __init__(self, args):
+                self.input = argparse.Namespace(vcf_snv=args.vcf_snv, vcf_sv=args.vcf_sv, vcf_cnv=args.vcf_cnv)
+                self.output = argparse.Namespace(xlsx=args.output_xlsx)
+                self.params = argparse.Namespace(filter_config=args.filter_config, genes_bed=args.genes_bed)
+                self.wildcards = argparse.Namespace(sample=args.sample)
+                self.log = [args.log] if args.log else []
+
+        create_report(SnakemakeMock(args))
