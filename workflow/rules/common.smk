@@ -189,6 +189,21 @@ def generate_copy_rules(output_spec):
 generate_copy_rules(output_spec)
 
 
+def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
+    vcf_dict = {}
+    for v in config.get("svdb_merge", {}).get("tc_method", []):
+        tc_method = v["name"]
+        callers = v.get("sv_caller", [])
+        for caller in callers:
+            caller_suffix = f":{caller}" if add_suffix else ""
+            vcf_path = f"cnv_sv/{caller}_vcf/{wildcards.sample}_{wildcards.type}.{tc_method}.vcf{caller_suffix}"
+            if tc_method in vcf_dict:
+                vcf_dict[tc_method].append(vcf_path)
+            else:
+                vcf_dict[tc_method] = [vcf_path]
+    return vcf_dict.get(wildcards.tc_method, [])
+
+
 def get_cnv_ratios(wildcards):
     if wildcards.caller == "cnvkit":
         return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cnr"
