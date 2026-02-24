@@ -16,8 +16,8 @@ test-dry-v2 = "snakemake --configfiles config/config.yaml config/design2/config_
 test-full-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --profile profiles/marvin_cpu"
 all-dry-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml -n --cores 1"
 all-full-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml --profile profiles/marvin_cpu"
-rulegraph_cl = "snakemake --configfile config/config.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
-rulegraph_ds = "snakemake --configfile config/config.yaml --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
+rulegraph-cl = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
+rulegraph-ds = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
 
 [dependencies]
 python = "==3.10"
@@ -32,6 +32,7 @@ drmaa = "==0.7.9"
 tabulate = ">=0.9.0,<0.10"
 snakemake-wrapper-utils = ">=0.8.0,<0.9"
 networkx = ">=3.4.2,<4"
+xlsxwriter = ">=3.2.9,<4"
 
 [pypi-dependencies]
 hydra-genetics = ">=3.3.0, <4"
