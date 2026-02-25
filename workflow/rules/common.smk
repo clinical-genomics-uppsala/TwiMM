@@ -190,6 +190,13 @@ generate_copy_rules(output_spec)
 
 
 def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
+    """Return VCF paths for SVDB merge, grouped by tc_method wildcard.
+    When add_suffix=False (default): returns plain file paths suitable for
+    use as Snakemake input entries.
+    When add_suffix=True: appends ':{caller}' to each path, producing the
+    'file.vcf:CALLER' notation expected by SVDB --vcf; do NOT use these
+    strings as Snakemake input files.
+    """
     vcf_dict = {}
     for v in config.get("svdb_merge", {}).get("tc_method", []):
         tc_method = v["name"]
@@ -202,6 +209,17 @@ def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
             else:
                 vcf_dict[tc_method] = [vcf_path]
     return vcf_dict.get(wildcards.tc_method, [])
+
+
+def get_svdb_merge_priority(wildcards):
+    return next(
+        (
+            v["priority"]
+            for v in config.get("svdb_merge", {}).get("tc_method", [])
+            if v["name"] == wildcards.tc_method
+        ),
+        "",
+    )
 
 
 def get_cnv_ratios(wildcards):
