@@ -213,11 +213,7 @@ def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
 
 def get_svdb_merge_priority(wildcards):
     return next(
-        (
-            v["priority"]
-            for v in config.get("svdb_merge", {}).get("tc_method", [])
-            if v["name"] == wildcards.tc_method
-        ),
+        (v["priority"] for v in config.get("svdb_merge", {}).get("tc_method", []) if v["name"] == wildcards.tc_method),
         "",
     )
 
