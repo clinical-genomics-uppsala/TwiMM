@@ -3,7 +3,7 @@ import functools
 import gzip
 import logging
 import re
-import sys
+
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -230,7 +230,7 @@ def parse_sv_vcf_line(
     # check that id_ is not empty
     if not id_:
         raise ValueError("ID field (type of variant) is empty!")
-    
+
     # Strip potential caller suffixes from var_type if they exist (e.g. from SVDB merge)
     if ":" in var_type:
         var_type = var_type.split(":")[0]
@@ -253,7 +253,7 @@ def parse_sv_vcf_line(
 
     # Parse FORMAT and SAMPLE columns
     format_dict = parse_format(format_, sample_)
-    
+
     # Extract depth with fallback to AD if DR/DV are missing (common in PBSV)
     depth_ref = format_dict.get("DR", "")
     depth_trans = format_dict.get("DV", "")
@@ -549,10 +549,10 @@ def create_report(snakemake_obj: Any):
 
 
 if __name__ == "__main__":
-    try:
-        # Check if 'snakemake' is defined (provided by Snakemake)
+    if "snakemake" in dir():
+        # Running inside Snakemake
         create_report(snakemake)  # type: ignore
-    except NameError:
+    else:
         # If 'snakemake' is not defined, use argparse
         parser = argparse.ArgumentParser(description="Compile XLSX report from VCF files.")
         parser.add_argument("--vcf-snv", required=True, help="Path to SNV VCF file")
