@@ -148,7 +148,7 @@ sequali:
 
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
-  extra: ""
+  extra: "--phase"
 
 svdb_merge:
   tc_method:
