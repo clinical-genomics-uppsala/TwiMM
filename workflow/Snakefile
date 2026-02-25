@@ -333,7 +333,7 @@ use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
         extra=config.get("svdb_merge", {}).get("extra", ""),
         overlap=config.get("svdb_merge", {}).get("overlap", 0.6),
         bnd_distance=config.get("svdb_merge", {}).get("bnd_distance", 10000),
-        priority=lambda wildcards: next((v["priority"] for v in config.get("svdb_merge", {}).get("tc_method", []) if v["name"] == wildcards.tc_method), ""),
+        priority=get_svdb_merge_priority,
         vcfs=lambda wildcards: get_local_vcfs_for_svdb_merge(wildcards, add_suffix=True),
 
 
