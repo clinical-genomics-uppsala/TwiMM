@@ -244,7 +244,11 @@ use rule samtools_index from alignment as alignment_samtools_index_haplotagged_b
 
 # STRUCTURAL VARIANTS
 # run Sniffles2
-use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
+use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2 with:
+    input:
+        bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[0],
+        bai=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[1],
+        ref=config.get("reference", {}).get("fasta", ""),
 
 
 # bgzip & tabix Sniffles2 VCF
