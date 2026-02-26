@@ -6,18 +6,23 @@ platforms = ["linux-64"]
 version = "1.6.0"
 
 [tasks]
-pre-commit = "PYTHONPATH=. pre-commit run pytest-check --all-files"
+precom = "PYTHONPATH=. pre-commit run pytest-check --all-files"
 tests = "PYTHONPATH=. pytest .tests/unit/"
-pc-snakefmt = "pre-commit run snakefmt"
-snakefmt = "snakefmt -l 130 workflow/Snakefile"
+precom-fmt = "pre-commit run snakefmt"
+fmt-wf = "snakefmt -l 130 workflow/"
+fmt-py="snakefmt -l 130 workflow/scripts/"
+fmt-tests="snakefmt -l 130 .tests/unit/"
 all-dry-v1 = "snakemake --configfile config/config.yaml -n --cores 1"
 all-full-v1 = "snakemake --configfile config/config.yaml --profile profiles/marvin_cpu"
 test-dry-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml -n --cores 1"
 test-full-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --profile profiles/marvin_cpu"
 all-dry-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml -n --cores 1"
 all-full-v2 = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml --profile profiles/marvin_cpu"
-rulegraph-cl = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
-rulegraph-ds = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
+ruleg-cl = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
+ruleg-ds = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --config use_deepsomatic=True --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
+dot-cl = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --rulegraph > images/rulegraph_clairs.dot"
+dot-ds = "snakemake --configfiles config/config.yaml config/design2/config_v2.yaml config/design2/config_test_v2.yaml --config use_deepsomatic=True --rulegraph > images/rulegraph_deepsomatic.dot"
+
 
 [dependencies]
 python = "==3.10"
