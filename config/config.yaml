@@ -148,14 +148,16 @@ sequali:
 
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
-  extra: ""
+  extra: "--phase"
 
 svdb_merge:
   tc_method:
     - name: pathology
-      cnv_caller:
+      sv_caller:
         - pbsv
         - sniffles2
+      cnv_caller:
+        - cnvkit
       priority: sniffles2,pbsv
   container: "docker://hydragenetics/svdb:2.6.0"
 

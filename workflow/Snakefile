@@ -244,7 +244,11 @@ use rule samtools_index from alignment as alignment_samtools_index_haplotagged_b
 
 # STRUCTURAL VARIANTS
 # run Sniffles2
-use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2
+use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2 with:
+    input:
+        bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[0],
+        bai=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[1],
+        ref=config.get("reference", {}).get("fasta", ""),
 
 
 # bgzip & tabix Sniffles2 VCF
@@ -326,14 +330,60 @@ rule cnv_sv_sniffles2_vcf:
 
 
 # SVDB
-use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge
+use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
+    input:
+        vcfs=lambda wildcards: get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False),
+    params:
+        extra=config.get("svdb_merge", {}).get("extra", ""),
+        overlap=config.get("svdb_merge", {}).get("overlap", 0.6),
+        bnd_distance=config.get("svdb_merge", {}).get("bnd_distance", 10000),
+        priority=get_svdb_merge_priority,
+        vcfs=lambda wildcards: get_local_vcfs_for_svdb_merge(wildcards, add_suffix=True),
 
 
 use rule svdb_query from cnv_sv as cnv_sv_svdb_query
 
 
 # run CNVkits
-use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch
+rule cnv_sv_cnvkit_batch:
+    input:
+        bam=lambda wildcards: get_input_aligned_bam(wildcards, config)[0],
+        bai=lambda wildcards: get_input_aligned_bam(wildcards, config)[1],
+        reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
+    output:
+        antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.antitargetcoverage.cnn"),
+        bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.bintest.cns"),
+        regions=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cnr"),
+        segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns"),
+        segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns"),
+        target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.targetcoverage.cnn"),
+    params:
+        extra=config.get("cnvkit_batch", {}).get("extra", ""),
+        method=config.get("cnvkit_batch", {}).get("method", "hybrid"),
+    log:
+        "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns.log",
+    benchmark:
+        repeat(
+            "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns.benchmark.tsv",
+            config.get("cnvkit_batch", {}).get("benchmark_repeats", 1),
+        )
+    threads: config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"])
+    resources:
+        mem_mb=config.get("cnvkit_batch", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("cnvkit_batch", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("cnvkit_batch", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("cnvkit_batch", {}).get("time", config["default_resources"]["time"]),
+    container:
+        config.get("cnvkit_batch", {}).get("container", config["default_container"])
+    message:
+        "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
+    shell:
+        "(cnvkit.py batch {input.bam} "
+        "-r {input.reference} "
+        "-m {params.method} "
+        "-d cnv_sv/cnvkit_batch/{wildcards.sample} "
+        "{params.extra}) &> {log}"
 
 
 # index phased.inlcude.panel.vcf
@@ -476,7 +526,8 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
 rule reports_compile_xlsx_report:
     input:
         vcf_snv="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.vcf.gz",
-        vcf_sv="cnv_sv/sniffles2_call/{sample}_{type}.include.panel.vcf.gz",
+        #vcf_sv="cnv_sv/sniffles2_call/{sample}_{type}.include.panel.vcf.gz",
+        vcf_sv="cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf",
         vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf",
     output:
         xlsx=temp("reports/xlsx_reports/{sample}_{type}_combined_report.xlsx"),

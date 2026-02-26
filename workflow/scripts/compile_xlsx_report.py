@@ -1,7 +1,9 @@
+import argparse
 import functools
 import gzip
 import logging
 import re
+
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -228,50 +230,57 @@ def parse_sv_vcf_line(
     # check that id_ is not empty
     if not id_:
         raise ValueError("ID field (type of variant) is empty!")
+
+    # Strip potential caller suffixes from var_type if they exist (e.g. from SVDB merge)
+    if ":" in var_type:
+        var_type = var_type.split(":")[0]
+
     # check if the extracted variant type is valid
     if var_type not in allowed_var_types:
-        raise ValueError(f"{var_type} not in allowed variants which are: {allowed_var_types}")
+        # Fallback for unexpected types
+        logging.warning(f"Unexpected variant type '{var_type}' at {chrom}:{pos}. Expected one of {allowed_var_types}")
 
     # Parse INFO field
     info_dict = parse_info(info)
     # check if it is empty
     if not info_dict:
         raise ValueError("Could not parse INFO field. Does it exist?")
-    # check if all keys exist
-    if var_type == "BND":
-        # exclude END & SVLEN
-        for k in [value for value in info_values if value != "END" and value != "SVLEN"]:
-            if k not in info_dict:
-                raise ValueError(f"{k} not found in the INFO field!")
-    else:
-        for k in info_values:
-            if k not in info_dict:
-                raise ValueError(f"{k} not found in the INFO field!")
+
+    # Extract Caller name
+    caller = info_dict.get("svdb_origin", "unknown")
+    if (caller == "unknown" or not caller) and "." in id_:
+        caller = id_.split(".")[0]
 
     # Parse FORMAT and SAMPLE columns
     format_dict = parse_format(format_, sample_)
-    for k in ["GT", "GQ", "DR", "DV"]:
-        if k not in format_dict:
-            raise ValueError(f"{k} not found in the FORMAT field!")
 
-    # this may require subsetting depending on your needs
+    # Extract depth with fallback to AD if DR/DV are missing (common in PBSV)
+    depth_ref = format_dict.get("DR", "")
+    depth_trans = format_dict.get("DV", "")
+    if (not depth_ref or not depth_trans) and "AD" in format_dict:
+        ad_parts = format_dict["AD"].split(",")
+        if len(ad_parts) >= 2:
+            depth_ref = ad_parts[0]
+            depth_trans = ad_parts[1]
+
+    # build row dictionary
     row = {
         "CHROM": chrom,
         "POS": pos,
-        # available for INS & DEL only
         "END": info_dict.get("END", ""),
         "TYPE": var_type,
         "SVLEN": info_dict.get("SVLEN", ""),
         "ALT": alt,
         "FILTER": filter_,
+        "CALLER": caller,
         "COVERAGE": info_dict.get("COVERAGE", ""),
         "SUPPORT": info_dict.get("SUPPORT", ""),
         "STRAND": info_dict.get("STRAND", ""),
         "VAF": info_dict.get("VAF", ""),
         "GENOTYPE": format_dict.get("GT", ""),
         "GENOME QUALITY": format_dict.get("GQ", ""),
-        "DEPTH REF": format_dict.get("DR", ""),
-        "DEPTH TRANS": format_dict.get("DV", ""),
+        "DEPTH REF": depth_ref,
+        "DEPTH TRANS": depth_trans,
     }
     return row
 
@@ -383,8 +392,9 @@ def create_report(snakemake_obj: Any):
     Main pipeline execution function using snakemake object.
     """
     # Set up logging
+    log_file = snakemake_obj.log[0] if snakemake_obj.log else None
     logging.basicConfig(
-        filename=snakemake_obj.log[0],
+        filename=log_file,
         format="{asctime} - {levelname} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M",
@@ -539,4 +549,30 @@ def create_report(snakemake_obj: Any):
 
 
 if __name__ == "__main__":
-    create_report(snakemake)  # type: ignore
+    if "snakemake" in dir():
+        # Running inside Snakemake
+        create_report(snakemake)  # type: ignore
+    else:
+        # If 'snakemake' is not defined, use argparse
+        parser = argparse.ArgumentParser(description="Compile XLSX report from VCF files.")
+        parser.add_argument("--vcf-snv", required=True, help="Path to SNV VCF file")
+        parser.add_argument("--vcf-sv", required=True, help="Path to SV VCF file")
+        parser.add_argument("--vcf-cnv", required=True, help="Path to CNV VCF file")
+        parser.add_argument("--output-xlsx", "-o", required=True, help="Path to output XLSX file")
+        parser.add_argument("--filter-config", required=True, help="Path to filter config YAML file")
+        parser.add_argument("--genes-bed", help="Path to genes BED file", default="")
+        parser.add_argument("--sample", help="Sample name", default="unknown")
+        parser.add_argument("--log", help="Path to log file", default=None)
+
+        args = parser.parse_args()
+
+        # Create a mock object that behaves like the snakemake object
+        class SnakemakeMock:
+            def __init__(self, args):
+                self.input = argparse.Namespace(vcf_snv=args.vcf_snv, vcf_sv=args.vcf_sv, vcf_cnv=args.vcf_cnv)
+                self.output = argparse.Namespace(xlsx=args.output_xlsx)
+                self.params = argparse.Namespace(filter_config=args.filter_config, genes_bed=args.genes_bed)
+                self.wildcards = argparse.Namespace(sample=args.sample)
+                self.log = [args.log] if args.log else []
+
+        create_report(SnakemakeMock(args))

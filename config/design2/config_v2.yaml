@@ -8,11 +8,11 @@ reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
   trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  design_bed: &design_bed "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
   design_intervals: "ref_data/expected_capture_targets_covered_v2.interval_list"
 
 bcftools_filter_include_region:
-  panel: "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  panel: *design_bed
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.11"
@@ -32,9 +32,9 @@ merge_cnv_json:
   filtered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   annotations:
-    - "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+    - *design_bed
 
 mosdepth:
   container: "docker://hydragenetics/mosdepth:0.3.6"
-  by: "ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  by: *design_bed
   extra: ""

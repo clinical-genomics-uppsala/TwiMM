@@ -189,18 +189,72 @@ def generate_copy_rules(output_spec):
 generate_copy_rules(output_spec)
 
 
-def get_cnv_ratios(wildcards):
-    if wildcards.caller == "cnvkit":
-        return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.cnr"
+def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
+    """Return VCF paths for SVDB merge, grouped by tc_method wildcard.
+    When add_suffix=False (default): returns plain file paths suitable for
+    use as Snakemake input entries.
+    When add_suffix=True: appends ':{caller}' to each path, producing the
+    'file.vcf:CALLER' notation expected by SVDB --vcf; do NOT use these
+    strings as Snakemake input files.
+    """
+    vcf_dict = {}
+    if "svdb_merge" not in config:
+        raise KeyError("Config section 'svdb_merge' is missing.")
+    if "tc_method" not in config["svdb_merge"]:
+        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
 
-    raise NotImplementedError(f"not implemented for caller {wildcards.caller}")
+    for v in config["svdb_merge"]["tc_method"]:
+        if "name" not in v:
+            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
+        tc_method = v["name"]
+
+        if "sv_caller" not in v:
+            raise KeyError(f"tc_method '{tc_method}' is missing the 'sv_caller' key.")
+
+        if "priority" not in v:
+            raise KeyError(f"tc_method '{tc_method}' is missing the 'priority' key.")
+
+        callers = v["sv_caller"]
+        for caller in callers:
+            caller_suffix = f":{caller}" if add_suffix else ""
+            vcf_path = f"cnv_sv/{caller}_vcf/{wildcards.sample}_{wildcards.type}.{tc_method}.vcf{caller_suffix}"
+            if tc_method in vcf_dict:
+                vcf_dict[tc_method].append(vcf_path)
+            else:
+                vcf_dict[tc_method] = [vcf_path]
+
+    if wildcards.tc_method not in vcf_dict:
+        raise KeyError(
+            f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' config. " f"Available: {list(vcf_dict.keys())}"
+        )
+    return vcf_dict[wildcards.tc_method]
 
 
-def get_cnv_segments(wildcards):
-    if wildcards.caller == "cnvkit":
-        return "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.haplotagged.call.cns"
+def get_svdb_merge_priority(wildcards):
+    if "svdb_merge" not in config:
+        raise KeyError("Config section 'svdb_merge' is missing.")
+    if "tc_method" not in config["svdb_merge"]:
+        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
 
-    raise NotImplementedError(f"not implemented for caller {wildcards.caller}")
+    priority = None
+    for v in config["svdb_merge"]["tc_method"]:
+        if "name" not in v:
+            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
+        tc_method_name = v["name"]
+
+        if "sv_caller" not in v:
+            raise KeyError(f"tc_method '{tc_method_name}' is missing the 'sv_caller' key.")
+
+        if "priority" not in v:
+            raise KeyError(f"tc_method '{tc_method_name}' is missing the 'priority' key.")
+
+        if tc_method_name == wildcards.tc_method:
+            priority = v["priority"]
+
+    if priority is not None:
+        return priority
+
+    raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' configuration.")
 
 
 def get_tc_file(wildcards):
