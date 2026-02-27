@@ -310,9 +310,7 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 
 
 # PBSV
-use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call with:
-    input:
-        ref=config.get("reference", {}).get("fasta", ""),
+use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
 
 
 rule cnv_sv_pbsv_vcf:
