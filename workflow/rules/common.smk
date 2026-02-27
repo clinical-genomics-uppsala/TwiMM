@@ -270,3 +270,7 @@ def get_snv_caller_output(wildcards):
         return "snv_indels/deepsomatic_t_only/{sample}_{type}.vcf.gz"
     else:
         return "snv_indels/clairs_to/{sample}_{type}.vcf.gz"
+
+
+def get_ubam_input(wildcards):
+    return units.loc[(wildcards.sample, wildcards.type), "bam"].tolist()
