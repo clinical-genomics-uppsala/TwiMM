@@ -310,7 +310,9 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 
 
 # PBSV
-use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
+use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call with:
+    input:
+        ref=config.get("reference", {}).get("fasta", ""),
 
 
 rule cnv_sv_pbsv_vcf:
@@ -340,7 +342,10 @@ rule cnv_sv_pbsv_vcf:
         "cp {input.vcf} {output.vcf} 2> {log}"
 
 
-use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover
+use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover with:
+    input:
+        bam="alignment/vacmap_align/{sample}_{type}.sorted.bam",
+        bai="alignment/vacmap_align/{sample}_{type}.sorted.bam.bai",
 
 
 rule cnv_sv_sniffles2_vcf:
@@ -386,7 +391,10 @@ use rule svdb_query from cnv_sv as cnv_sv_svdb_query
 
 
 # run CNVkits
-use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch
+use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
+    input:
+        bam="alignment/vacmap_align/{sample}_{type}.sorted.bam",
+        bai="alignment/vacmap_align/{sample}_{type}.sorted.bam.bai",
 
 
 # index phased.inlcude.panel.vcf
