@@ -1,8 +1,8 @@
 ---
 
 default_resources:
-  threads: 2
-  time: "12:00:00"
-  mem_mb: 1024
-  mem_per_cpu: 3072
+  threads: 8
+  time: "10:00:00"
+  mem_mb: 4096
+  mem_per_cpu: 5120
   partition: core
