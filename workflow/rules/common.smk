@@ -189,8 +189,15 @@ def generate_copy_rules(output_spec):
 generate_copy_rules(output_spec)
 
 
+CALLER_VCF_PATHS = {
+    "pbsv": "cnv_sv/pbsv_call/{sample}_{type}.vcf",
+    "sniffles2": "cnv_sv/sniffles2_call/{sample}_{type}.vcf.gz",
+    "severus": "cnv_sv/severus_t_only/{sample}/somatic_sv/{sample}_{type}_sv.vcf.gz",
+}
+
+
 def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
-    """Return VCF paths for SVDB merge, grouped by tc_method wildcard.
+    """Return native SV caller VCF paths for SVDB merge, grouped by tc_method wildcard.
     When add_suffix=False (default): returns plain file paths suitable for
     use as Snakemake input entries.
     When add_suffix=True: appends ':{caller}' to each path, producing the
@@ -216,8 +223,10 @@ def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
 
         callers = v["sv_caller"]
         for caller in callers:
+            if caller not in CALLER_VCF_PATHS:
+                raise KeyError(f"Unknown sv_caller '{caller}'. Add it to CALLER_VCF_PATHS in common.smk.")
             caller_suffix = f":{caller}" if add_suffix else ""
-            vcf_path = f"cnv_sv/{caller}_vcf/{wildcards.sample}_{wildcards.type}.{tc_method}.vcf{caller_suffix}"
+            vcf_path = CALLER_VCF_PATHS[caller].format(sample=wildcards.sample, type=wildcards.type) + caller_suffix
             if tc_method in vcf_dict:
                 vcf_dict[tc_method].append(vcf_path)
             else:
