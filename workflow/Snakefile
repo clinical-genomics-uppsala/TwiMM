@@ -159,6 +159,19 @@ use rule samtools_index from alignment as alignment_samtools_index_pbmm2 with:
         file="^alignment/pbmm2_align/.+",
 
 
+# vacmap
+use rule vacmap_align from alignment as alignment_vacmap_align
+
+
+# output "alignment/vacmap_align/{sample}_{type}.bam"
+use rule vacmap_merge from alignment as alignment_vacmap_merge
+
+
+use rule samtools_index from alignment as alignment_samtools_index_vacmap_merge with:
+    wildcard_constraints:
+        file="^alignment/vacmap_align/.+",
+
+
 # SNV & INDELS
 use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call
 
@@ -194,21 +207,10 @@ use rule fix_af from snv_indels as snv_indels_fix_af with:
 # Phase SNV output with fixed AF
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase with:
     input:
-        vcf="snv_indels/fix_af/{sample}_{type}.vcf",
-        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
-        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bam=lambda wildcards: get_input_aligned_bam(wildcards, config)[0],
+        bai=lambda wildcards: get_input_aligned_bam(wildcards, config)[1],
         fasta=config.get("reference", {}).get("fasta", ""),
-    output:
-        vcf=temp("snv_indels/whatshap_phase/{sample}_{type}.phased.vcf.gz"),
-    params:
-        extra=config.get("whatshap_phase", {}).get("extra", ""),
-    log:
-        "snv_indels/whatshap_phase/{sample}_{type}.phased.vcf.gz.log",
-    benchmark:
-        repeat(
-            "snv_indels/whatshap_phase/{sample}_{type}.phased.vcf.gz.benchmark.tsv",
-            config.get("whatshap_phase", {}).get("benchmark_repeats", 1),
-        )
+        vcf="snv_indels/fix_af/{sample}_{type}.vcf",
 
 
 # index the phased vcf from your SNV caller
@@ -226,15 +228,8 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
         file="^snv_indels/whatshap_phase/.+\.phased",
 
 
-# output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam",
-use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag with:
-    input:
-        aln="alignment/pbmm2_align/{sample}_{type}.bam",
-        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
-        ref=config.get("reference", {}).get("fasta", ""),
-        fai=config.get("reference", {}).get("fai", ""),
-        vcf="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vcf.gz",
-        tbi="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vcf.gz.tbi",
+# output: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"
+use rule whatshap_haplotag from snv_indels as snv_indels_whatshap_haplotag
 
 
 use rule samtools_index from alignment as alignment_samtools_index_haplotagged_bam with:
@@ -243,7 +238,7 @@ use rule samtools_index from alignment as alignment_samtools_index_haplotagged_b
 
 
 # STRUCTURAL VARIANTS
-# run Sniffles2
+# run Sniffles2 on VACmap made and haplotagged BAM
 use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2 with:
     input:
         bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[0],
@@ -299,7 +294,10 @@ rule cnv_sv_pbsv_vcf:
         "cp {input.vcf} {output.vcf} 2> {log}"
 
 
-use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover
+use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover with:
+    input:
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
 
 
 rule cnv_sv_sniffles2_vcf:
@@ -344,11 +342,12 @@ use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
 use rule svdb_query from cnv_sv as cnv_sv_svdb_query
 
 
-# run CNVkits
+# CNVkit by default uses config-defined aligner to construct path to BAM
+# TODO: shold be imported from cnv_sv module
 rule cnv_sv_cnvkit_batch:
     input:
-        bam=lambda wildcards: get_input_aligned_bam(wildcards, config)[0],
-        bai=lambda wildcards: get_input_aligned_bam(wildcards, config)[1],
+        bam="alignment/pbmm2_align/{sample}_{type}.bam",
+        bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
         reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
     output:
         antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.antitargetcoverage.cnn"),
@@ -378,12 +377,8 @@ rule cnv_sv_cnvkit_batch:
         config.get("cnvkit_batch", {}).get("container", config["default_container"])
     message:
         "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
-    shell:
-        "(cnvkit.py batch {input.bam} "
-        "-r {input.reference} "
-        "-m {params.method} "
-        "-d cnv_sv/cnvkit_batch/{wildcards.sample} "
-        "{params.extra}) &> {log}"
+    wrapper:
+        "v9.2.0/bio/cnvkit/batch"
 
 
 # index phased.inlcude.panel.vcf
@@ -526,7 +521,6 @@ use rule cnv_html_report from reports as reports_cnv_html_report with:
 rule reports_compile_xlsx_report:
     input:
         vcf_snv="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.vcf.gz",
-        #vcf_sv="cnv_sv/sniffles2_call/{sample}_{type}.include.panel.vcf.gz",
         vcf_sv="cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf",
         vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf",
     output:
