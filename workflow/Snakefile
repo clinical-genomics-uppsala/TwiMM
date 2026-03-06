@@ -264,7 +264,11 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 
 
 # severus
-use rule severus_t_only from cnv_sv as cnv_sv_severus_t_only
+use rule severus_t_only from cnv_sv as cnv_sv_severus_t_only with:
+    input:
+        bam=lambda wildcards: get_input_haplotagged_bam(wildcards, config)[0],
+        vntr=config.get("severus_t_only", {}).get("vntr", ""),
+        pon=config.get("severus_t_only", {}).get("pon", ""),
 
 # PBSV
 use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
