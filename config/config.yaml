@@ -160,9 +160,12 @@ svdb_merge:
   tc_method:
     - name: pathology
       sv_caller:
-        - severus
-        - pbsv
-        - sniffles2
+        - caller: severus
+          vcf: "cnv_sv/severus_t_only/{sample}_{type}_all_sv.vcf"
+        - caller: pbsv
+          vcf: "cnv_sv/pbsv_call/{sample}_{type}.vcf"
+        - caller: sniffles2
+          vcf: "cnv_sv/sniffles2_call/{sample}_{type}.vcf.gz"
       cnv_caller:
         - cnvkit
       priority: severus,sniffles2,pbsv
