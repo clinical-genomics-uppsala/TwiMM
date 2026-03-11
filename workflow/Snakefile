@@ -292,42 +292,11 @@ use rule svdb_query from cnv_sv as cnv_sv_svdb_query
 
 
 # CNVkit by default uses config-defined aligner to construct path to BAM
-# TODO: shold be imported from cnv_sv module
-rule cnv_sv_cnvkit_batch:
+use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
     input:
         bam="alignment/pbmm2_align/{sample}_{type}.bam",
         bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
         reference=config.get("cnvkit_batch", {}).get("normal_reference", ""),
-    output:
-        antitarget_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.antitargetcoverage.cnn"),
-        bins=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.bintest.cns"),
-        regions=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cnr"),
-        segments=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns"),
-        segments_called=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns"),
-        target_coverage=temp("cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.targetcoverage.cnn"),
-    params:
-        extra=config.get("cnvkit_batch", {}).get("extra", ""),
-        method=config.get("cnvkit_batch", {}).get("method", "hybrid"),
-    log:
-        "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns.log",
-    benchmark:
-        repeat(
-            "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.call.cns.benchmark.tsv",
-            config.get("cnvkit_batch", {}).get("benchmark_repeats", 1),
-        )
-    threads: config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"])
-    resources:
-        mem_mb=config.get("cnvkit_batch", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
-        mem_per_cpu=config.get("cnvkit_batch", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
-        partition=config.get("cnvkit_batch", {}).get("partition", config["default_resources"]["partition"]),
-        threads=config.get("cnvkit_batch", {}).get("threads", config["default_resources"]["threads"]),
-        time=config.get("cnvkit_batch", {}).get("time", config["default_resources"]["time"]),
-    container:
-        config.get("cnvkit_batch", {}).get("container", config["default_container"])
-    message:
-        "{rule}: use cnvkit to call cnvs in {wildcards.sample}/{wildcards.sample}_{wildcards.type}"
-    wrapper:
-        "v9.2.0/bio/cnvkit/batch"
 
 
 # index phased.inlcude.panel.vcf
