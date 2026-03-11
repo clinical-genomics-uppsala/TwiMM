@@ -192,7 +192,7 @@ generate_copy_rules(output_spec)
 CALLER_VCF_PATHS = {
     "pbsv": "cnv_sv/pbsv_call/{sample}_{type}.vcf",
     "sniffles2": "cnv_sv/sniffles2_call/{sample}_{type}.vcf.gz",
-    "severus": "cnv_sv/severus_t_only/{sample}_{type}_all_sv.vcf"
+    "severus": "cnv_sv/severus_t_only/{sample}_{type}_all_sv.vcf",
 }
 
 
