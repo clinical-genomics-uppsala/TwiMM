@@ -341,6 +341,7 @@ def test_parse_cnvkit_vcf_line(line, expected):
         ("docker://hydragenetics/severus:1.5", "1.5"),
         ("docker://hydragenetics/pbmm2:1.16", "1.16"),
         ("docker://hkubal/clairs-to:latest", "latest"),
+        ("docker://org/tool:", ""),
         ("someimage", "unknown"),
         ("", "unknown"),
     ],
