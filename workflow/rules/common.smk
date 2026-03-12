@@ -190,14 +190,13 @@ generate_copy_rules(output_spec)
 
 
 def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
-    """Return VCF paths for SVDB merge, grouped by tc_method wildcard.
+    """Return native SV caller VCF paths for SVDB merge for the given tc_method wildcard.
     When add_suffix=False (default): returns plain file paths suitable for
     use as Snakemake input entries.
     When add_suffix=True: appends ':{caller}' to each path, producing the
     'file.vcf:CALLER' notation expected by SVDB --vcf; do NOT use these
     strings as Snakemake input files.
     """
-    vcf_dict = {}
     if "svdb_merge" not in config:
         raise KeyError("Config section 'svdb_merge' is missing.")
     if "tc_method" not in config["svdb_merge"]:
@@ -206,28 +205,22 @@ def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
     for v in config["svdb_merge"]["tc_method"]:
         if "name" not in v:
             raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
-        tc_method = v["name"]
+        if v["name"] != wildcards.tc_method:
+            continue
 
         if "sv_caller" not in v:
-            raise KeyError(f"tc_method '{tc_method}' is missing the 'sv_caller' key.")
+            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'sv_caller' key.")
 
-        if "priority" not in v:
-            raise KeyError(f"tc_method '{tc_method}' is missing the 'priority' key.")
+        vcf_paths = []
+        for entry in v["sv_caller"]:
+            if "caller" not in entry or "vcf" not in entry:
+                raise KeyError(f"Each sv_caller entry must have 'caller' and 'vcf' keys, got: {entry}")
+            caller_suffix = f":{entry['caller']}" if add_suffix else ""
+            vcf_paths.append(entry["vcf"].format(sample=wildcards.sample, type=wildcards.type) + caller_suffix)
+        return vcf_paths
 
-        callers = v["sv_caller"]
-        for caller in callers:
-            caller_suffix = f":{caller}" if add_suffix else ""
-            vcf_path = f"cnv_sv/{caller}_vcf/{wildcards.sample}_{wildcards.type}.{tc_method}.vcf{caller_suffix}"
-            if tc_method in vcf_dict:
-                vcf_dict[tc_method].append(vcf_path)
-            else:
-                vcf_dict[tc_method] = [vcf_path]
-
-    if wildcards.tc_method not in vcf_dict:
-        raise KeyError(
-            f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' config. " f"Available: {list(vcf_dict.keys())}"
-        )
-    return vcf_dict[wildcards.tc_method]
+    available = [v["name"] for v in config["svdb_merge"]["tc_method"] if "name" in v]
+    raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' config. Available: {available}")
 
 
 def get_svdb_merge_priority(wildcards):

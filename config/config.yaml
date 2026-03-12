@@ -146,6 +146,12 @@ sequali:
   container: "docker://hydragenetics/sequali:0.12.0"
   extra: ""
 
+severus_t_only:
+  container: "docker://hydragenetics/severus:1.5"
+  vntr: *trf
+  pon: "ref_data/PoN_1000G_hg38.tsv.gz"
+  extra: ""
+
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: "--phase"
@@ -154,8 +160,12 @@ svdb_merge:
   tc_method:
     - name: pathology
       sv_caller:
-        - pbsv
-        - sniffles2
+        - caller: severus
+          vcf: "cnv_sv/severus_t_only/{sample}_T_all_sv.vcf"
+        - caller: pbsv
+          vcf: "cnv_sv/pbsv_call/{sample}_T.vcf"
+        - caller: sniffles2
+          vcf: "cnv_sv/sniffles2_call/{sample}_T.vcf.gz"
       cnv_caller:
         - cnvkit
       priority: severus,sniffles2,pbsv

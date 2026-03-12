@@ -298,6 +298,25 @@ properties:
         description: "Container image used for pbmm2 merge (if applicable)."
     required: []
 
+  severus_t_only:
+    type: object
+    description: "Configuration for Severus tumor-only structural variant calling."
+    properties:
+      container:
+        type: string
+        description: "Container image for Severus."
+      vntr:
+        type: string
+        description: "Path to tandem repeat BED file passed to Severus (--vntr)."
+      pon:
+        type: string
+        description: "Path to the Severus panel of normals TSV file (--pon)."
+      extra:
+        type: string
+        description: "Extra command-line flags passed to Severus."
+    required: ["container", "vntr", "pon"]
+    additionalProperties: false
+
   sniffles2_call:
     type: object
     description: "Configuration for running Sniffles2 for structural variant calling."
@@ -316,10 +335,40 @@ properties:
     properties:
       tc_method:
         type: array
+        description: "List of tumour/clinical methods and per-method settings (e.g. cnv_caller used)."
         items:
           type: object
-        description: "List of tumour/clinical methods and per-method settings (e.g. cnv_caller used)."
-    required: []
+          properties:
+            name:
+              type: string
+              description: "Identifier for this tc_method entry (e.g. 'pathology')."
+            sv_caller:
+              type: array
+              description: "SV callers contributing VCFs to SVDB merge for this tc_method."
+              items:
+                type: object
+                properties:
+                  caller:
+                    type: string
+                    description: "Caller name used as SVDB source tag (e.g. 'severus', 'pbsv', 'sniffles2')."
+                  vcf:
+                    type: string
+                    description: "Path template to the caller's output VCF (may include {sample} placeholder)."
+                required: ["caller", "vcf"]
+                additionalProperties: false
+            cnv_caller:
+              type: array
+              items:
+                type: string
+              description: "CNV callers used alongside SV callers (e.g. 'cnvkit')."
+            priority:
+              type: string
+              description: "Comma-separated caller priority order for SVDB merge (e.g. 'severus,sniffles2,pbsv')."
+          required: ["name", "sv_caller", "priority"]
+      container:
+        type: string
+        description: "Container image for SVDB."
+    required: ["tc_method", "container"]
 
   trimmer_software:
     type: string
@@ -328,6 +377,22 @@ properties:
   use_deepsomatic:
     type: boolean
     description: "Flag to enable/disable DeepSomatic calling in the pipeline. If not used, set to false."
+
+  vacmap_align:
+    type: object
+    description: "Configuration for VACmap alignment step."
+    properties:
+      container:
+        type: string
+        description: "Container image used to run VACmap."
+      mode:
+        type: string
+        description: "VACmap alignment mode (e.g. 'L' for long reads)."
+      extra:
+        type: string
+        description: "Extra command-line flags passed to VACmap."
+    required: ["container", "mode"]
+    additionalProperties: false
 
   vep:
     type: object
@@ -400,8 +465,10 @@ required:
   - pbmm2_index
   - pbmm2_align
   - pbmm2_merge
+  - severus_t_only
   - sniffles2_call
   - svdb_merge
+  - vacmap_align
   - vep
   - whatshap_phase
   - whatshap_haplotag  

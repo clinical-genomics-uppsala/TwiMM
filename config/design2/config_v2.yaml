@@ -1,8 +1,8 @@
 ---
 output: "config/design2/output_files_v2.yaml"
 resources: "config/resources.yaml"
-samples: "config/design2/samples_v2.tsv"
-units: "config/design2/units_v2.tsv"
+samples: "config/design2/samples_v2_tumor.tsv"
+units: "config/design2/units_v2_tumor.tsv"
 
 reference:
   fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
