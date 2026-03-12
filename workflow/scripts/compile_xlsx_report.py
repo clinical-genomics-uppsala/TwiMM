@@ -1,6 +1,7 @@
 import argparse
 import functools
 import gzip
+import json
 import logging
 import re
 
@@ -124,6 +125,13 @@ def get_genes_from_bed(bed_path: str) -> set[str]:
             if len(parts) >= 4:
                 genes.add(parts[3])
     return genes
+
+
+def parse_version_from_container(container: str) -> str:
+    """Extract version tag from a container image string (e.g. 'docker://org/tool:1.2.3' → '1.2.3')."""
+    if ":" in container:
+        return container.rsplit(":", 1)[-1]
+    return "unknown"
 
 
 def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
@@ -430,6 +438,7 @@ def create_report(snakemake_obj: Any):
 
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
+    software_versions = getattr(snakemake_obj.params, "software_versions", {})
     logging.info(f"Loaded {len(genes_to_keep)} genes from {genes_bed}")
 
     if any(
@@ -536,6 +545,11 @@ def create_report(snakemake_obj: Any):
 
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
+    versions_df = pd.DataFrame(
+        [{"Tool": tool, "Version": parse_version_from_container(container)}
+         for tool, container in software_versions.items()]
+    )
+
     # --- Write to Excel ---
     logging.info("Writing XLSX file.")
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
@@ -544,6 +558,7 @@ def create_report(snakemake_obj: Any):
         write_excel_sheet(writer, translocations_df, "Translocations")
         write_excel_sheet(writer, sv_chr14_idid, "SV")
         write_excel_sheet(writer, cnv_df, "CNV")
+        write_excel_sheet(writer, versions_df, "Software Versions")
 
     logging.info("Script finished successfully")
 
@@ -561,6 +576,7 @@ if __name__ == "__main__":
         parser.add_argument("--output-xlsx", "-o", required=True, help="Path to output XLSX file")
         parser.add_argument("--filter-config", required=True, help="Path to filter config YAML file")
         parser.add_argument("--genes-bed", help="Path to genes BED file", default="")
+        parser.add_argument("--software-versions", help="JSON dict of tool→container strings", default="{}")
         parser.add_argument("--sample", help="Sample name", default="unknown")
         parser.add_argument("--log", help="Path to log file", default=None)
 
@@ -571,7 +587,11 @@ if __name__ == "__main__":
             def __init__(self, args):
                 self.input = argparse.Namespace(vcf_snv=args.vcf_snv, vcf_sv=args.vcf_sv, vcf_cnv=args.vcf_cnv)
                 self.output = argparse.Namespace(xlsx=args.output_xlsx)
-                self.params = argparse.Namespace(filter_config=args.filter_config, genes_bed=args.genes_bed)
+                self.params = argparse.Namespace(
+                    filter_config=args.filter_config,
+                    genes_bed=args.genes_bed,
+                    software_versions=json.loads(args.software_versions),
+                )
                 self.wildcards = argparse.Namespace(sample=args.sample)
                 self.log = [args.log] if args.log else []
 

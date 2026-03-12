@@ -12,6 +12,7 @@ from compile_xlsx_report import ( # type: ignore
     parse_format,
     parse_sv_vcf_line,
     parse_cnvkit_vcf_line,
+    parse_version_from_container,
     get_genes_from_bed,
 )
 
@@ -331,6 +332,22 @@ def test_parse_cnvkit_vcf_line(line, expected):
     else:
         with expected:
             parse_cnvkit_vcf_line(line)
+
+
+# --- Tests for parse_version_from_container ---
+@pytest.mark.parametrize(
+    "container, expected",
+    [
+        ("docker://hydragenetics/severus:1.5", "1.5"),
+        ("docker://hydragenetics/pbmm2:1.16", "1.16"),
+        ("docker://hkubal/clairs-to:latest", "latest"),
+        ("docker://org/tool:", ""),
+        ("someimage", "unknown"),
+        ("", "unknown"),
+    ],
+)
+def test_parse_version_from_container(container, expected):
+    assert parse_version_from_container(container) == expected
 
 
 # --- Tests for get_genes_from_bed ---

@@ -317,6 +317,18 @@ properties:
     required: ["container", "vntr", "pon"]
     additionalProperties: false
 
+  pbsv_call:
+    type: object
+    description: "Configuration for PBSV structural variant calling."
+    properties:
+      container:
+        type: string
+        description: "Container image for PBSV."
+      extra:
+        type: string
+        description: "Extra command-line flags passed to pbsv call."
+    required: ["container"]
+
   sniffles2_call:
     type: object
     description: "Configuration for running Sniffles2 for structural variant calling."
@@ -449,13 +461,11 @@ required:
   - annotate_cnv
   - bcftools_filter_include_region
   - caller
-  - clairs_to_call
   - cnv_html_report
   - cnvkit_batch
   - cnvkit_call
   - cnvkit_vcf
   - compile_xlsx_report
-  - deepsomatic_t_only
   - filter_vcf
   - general_report
   - merge_cnv_json
@@ -465,10 +475,21 @@ required:
   - pbmm2_index
   - pbmm2_align
   - pbmm2_merge
+  - pbsv_call
   - severus_t_only
   - sniffles2_call
   - svdb_merge
   - vacmap_align
   - vep
   - whatshap_phase
-  - whatshap_haplotag  
+  - whatshap_haplotag
+
+oneOf:
+  - properties:
+      use_deepsomatic:
+        enum: [false]
+    required: [clairs_to_call]
+  - properties:
+      use_deepsomatic:
+        enum: [true]
+    required: [deepsomatic_t_only]
