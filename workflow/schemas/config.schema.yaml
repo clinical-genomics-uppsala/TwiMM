@@ -298,6 +298,25 @@ properties:
         description: "Container image used for pbmm2 merge (if applicable)."
     required: []
 
+  severus_t_only:
+    type: object
+    description: "Configuration for Severus tumor-only structural variant calling."
+    properties:
+      container:
+        type: string
+        description: "Container image for Severus."
+      vntr:
+        type: string
+        description: "Path to tandem repeat BED file passed to Severus (--vntr)."
+      pon:
+        type: string
+        description: "Path to the Severus panel of normals TSV file (--pon)."
+      extra:
+        type: string
+        description: "Extra command-line flags passed to Severus."
+    required: ["container", "vntr", "pon"]
+    additionalProperties: false
+
   sniffles2_call:
     type: object
     description: "Configuration for running Sniffles2 for structural variant calling."
@@ -349,7 +368,7 @@ properties:
       container:
         type: string
         description: "Container image for SVDB."
-    required: []
+    required: ["tc_method", "container"]
 
   trimmer_software:
     type: string
@@ -358,6 +377,22 @@ properties:
   use_deepsomatic:
     type: boolean
     description: "Flag to enable/disable DeepSomatic calling in the pipeline. If not used, set to false."
+
+  vacmap_align:
+    type: object
+    description: "Configuration for VACmap alignment step."
+    properties:
+      container:
+        type: string
+        description: "Container image used to run VACmap."
+      mode:
+        type: string
+        description: "VACmap alignment mode (e.g. 'L' for long reads)."
+      extra:
+        type: string
+        description: "Extra command-line flags passed to VACmap."
+    required: ["container", "mode"]
+    additionalProperties: false
 
   vep:
     type: object
@@ -430,6 +465,7 @@ required:
   - pbmm2_index
   - pbmm2_align
   - pbmm2_merge
+  - severus_t_only
   - sniffles2_call
   - svdb_merge
   - vep
