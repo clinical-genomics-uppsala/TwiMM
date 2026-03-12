@@ -468,6 +468,7 @@ required:
   - severus_t_only
   - sniffles2_call
   - svdb_merge
+  - vacmap_align
   - vep
   - whatshap_phase
   - whatshap_haplotag  
