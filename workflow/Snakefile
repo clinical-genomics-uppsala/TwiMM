@@ -294,7 +294,7 @@ use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover with:
 use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
 
 
-# filter PBSV results
+# bgzip & tabix PBSV results
 use rule bgzip from cnv_sv as cnv_sv_bgzip_pbsv with:
     wildcard_constraints:
         file="^cnv_sv/pbsv_call/.+",
@@ -305,6 +305,7 @@ use rule tabix from cnv_sv as cnv_sv_tabix_pbsv with:
         file="^cnv_sv/pbsv_call/.+",
 
 
+# filter PBSV results
 use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_pbsv with:
     wildcard_constraints:
         file="^cnv_sv/pbsv_call/.+",
