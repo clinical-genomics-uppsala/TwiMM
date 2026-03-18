@@ -2,7 +2,7 @@
 authors = ["Andrei Guliaev <andrei.guliaev@scilifelab.uu.se>"]
 channels = ["bioconda", "conda-forge"]
 name = "TwiMM"
-platforms = ["linux-64"]
+platforms = ["linux-64", "osx-arm64"]
 version = "1.6.0"
 
 [tasks]
