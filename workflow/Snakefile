@@ -249,18 +249,18 @@ use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2 with:
 # bgzip & tabix Sniffles2 VCF
 use rule bgzip from cnv_sv as cnv_sv_bgzip_sniffles with:
     wildcard_constraints:
-        file="cnv_sv/sniffles2_call/.+",
+        file="^cnv_sv/sniffles2_call/.+",
 
 
 use rule tabix from cnv_sv as cnv_sv_tabix_sniffles with:
     wildcard_constraints:
-        file="cnv_sv/sniffles2_call/.+",
+        file="^cnv_sv/sniffles2_call/.+",
 
 
 # filter Sniffles2 results
 use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_sniffles with:
     wildcard_constraints:
-        file="cnv_sv/sniffles2_call/.+",
+        file="^cnv_sv/sniffles2_call/.+",
 
 
 # severus
