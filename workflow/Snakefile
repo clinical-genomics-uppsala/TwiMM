@@ -249,32 +249,66 @@ use rule sniffles2_call from cnv_sv as cnv_sv_sniffles2 with:
 # bgzip & tabix Sniffles2 VCF
 use rule bgzip from cnv_sv as cnv_sv_bgzip_sniffles with:
     wildcard_constraints:
-        file="cnv_sv/sniffles2_call/.+",
+        file="^cnv_sv/sniffles2_call/.+",
 
 
 use rule tabix from cnv_sv as cnv_sv_tabix_sniffles with:
     wildcard_constraints:
-        file="cnv_sv/sniffles2_call/.+",
+        file="^cnv_sv/sniffles2_call/.+",
 
 
 # filter Sniffles2 results
 use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_sniffles with:
     wildcard_constraints:
-        file="cnv_sv/sniffles2_call/.+",
+        file="^cnv_sv/sniffles2_call/.+",
 
 
 # severus
 use rule severus_t_only from cnv_sv as cnv_sv_severus_t_only
 
 
+# bgzip & tabix Severus vcf
+use rule bgzip from cnv_sv as cnv_sv_bgzip_severus with:
+    wildcard_constraints:
+        file="^cnv_sv/severus_t_only/.+",
+
+
+use rule tabix from cnv_sv as cnv_sv_tabix_severus with:
+    wildcard_constraints:
+        file="^cnv_sv/severus_t_only/.+",
+
+
+# filter Severus results
+use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_severus with:
+    wildcard_constraints:
+        file="^cnv_sv/severus_t_only/.+",
+
+
 # PBSV
-use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
-
-
 use rule pbsv_discover from cnv_sv as cnv_sv_pbsv_discover with:
     input:
         bam="alignment/pbmm2_align/{sample}_{type}.bam",
         bai="alignment/pbmm2_align/{sample}_{type}.bam.bai",
+
+
+use rule pbsv_call from cnv_sv as cnv_sv_pbsv_call
+
+
+# bgzip & tabix PBSV results
+use rule bgzip from cnv_sv as cnv_sv_bgzip_pbsv with:
+    wildcard_constraints:
+        file="^cnv_sv/pbsv_call/.+",
+
+
+use rule tabix from cnv_sv as cnv_sv_tabix_pbsv with:
+    wildcard_constraints:
+        file="^cnv_sv/pbsv_call/.+",
+
+
+# filter PBSV results
+use rule bcftools_filter_include_region from filtering as filtering_bcftools_filter_include_region_pbsv with:
+    wildcard_constraints:
+        file="^cnv_sv/pbsv_call/.+",
 
 
 # SVDB
