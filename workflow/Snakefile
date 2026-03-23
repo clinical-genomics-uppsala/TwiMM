@@ -323,7 +323,12 @@ use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
         vcfs=lambda wildcards: get_local_vcfs_for_svdb_merge(wildcards, add_suffix=True),
 
 
-use rule svdb_query from cnv_sv as cnv_sv_svdb_query
+use rule svdb_query from cnv_sv as cnv_sv_svdb_query with:
+    params:
+        db_string=get_svdb_string,
+        extra=config.get("svdb_query", {}).get("extra", ""),
+        prefix=lambda wildcards, output: os.path.splitext(output[0])[0][:-6],
+
 
 
 # CNVkit by default uses config-defined aligner to construct path to BAM
