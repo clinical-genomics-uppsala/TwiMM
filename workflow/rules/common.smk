@@ -272,16 +272,11 @@ def get_ubam_input(wildcards):
 def get_svdb_string(wildcards):
     """
     Constructs the --db argument for SVDB query.
-    Collects SV database paths (gnomAD and custom PoN) from the reference configuration.
+    sv_gnomad is mandatory; sv_pon is included only when defined in the reference config.
     """
     ref = config.get("reference", {})
-    # List of possible SV database keys in the config
-    db_keys = ["sv_gnomad", "sv_pon"]
-
-    # Collect defined paths
-    paths = [ref.get(key) for key in db_keys if ref.get(key)]
-
-    if not paths:
-        return ""
-
+    paths = [ref["sv_gnomad"]]
+    if ref.get("sv_pon"):
+        paths.append(ref["sv_pon"])
+    logger.info(f"svdb_query: using SV databases: {paths}")
     return f"--db {','.join(paths)}"

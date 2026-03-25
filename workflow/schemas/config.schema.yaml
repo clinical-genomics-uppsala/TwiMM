@@ -39,7 +39,13 @@ properties:
       design_bed:
         type: string
         description: "BED file with regions included in design."
-    required: ["fasta", "fai", "trf", "design_bed"]
+      sv_gnomad:
+        type: string
+        description: "Path to the gnomAD SV VCF database used by SVDB query."
+      sv_pon:
+        type: string
+        description: "Path to the custom SV panel of normals VCF database used by SVDB query (optional)."
+    required: ["fasta", "fai", "trf", "design_bed", "sv_gnomad"]
 
   aligner:
     type: string
