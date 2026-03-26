@@ -1,11 +1,11 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples.tsv"
-units: "config/units.tsv"
+samples: "config/samples_T.tsv"
+units: "config/units_T.tsv"
 
 default_container: "docker://hydragenetics/common:3.3.0"
-pipeline_version: "v1.6.0"
+pipeline_version: "v1.8.0"
 
 module_versions:
   alignment: "develop"
@@ -18,12 +18,17 @@ module_versions:
   qc: "v0.6.0"
 
 reference:
-  fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
-  fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: &trf "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: &design_bed "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
-  design_intervals: "ref_data/twist_probes_v1.interval_list"
-  panel_full_genes: &panel_full_genes "ref_data/panel_full_genes.bed"
+  fasta: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: &trf "../ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: &design_bed "../ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  design_intervals: "../ref_data/expected_capture_targets_covered_v2.interval_list"
+  panel_full_genes: &panel_full_genes "../ref_data/panel_full_genes.bed"
+  cnv_pon: &cnv_pon "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
+  sv_pon: "../build_pon/results/bcftools_merge/sv_normal.vcf.gz"
+  sv_gnomad: "/data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
+  severus_pon: &severus_pon "../ref_data/PoN_1000G_hg38.tsv.gz"
+  snv_pon: &snv_pon "../build_pon/results/bcftools_merge/snv_normal.vcf.gz"
 
 aligner: "vacmap"
 haplotag_path: "snv_indels/whatshap_haplotag"
@@ -52,7 +57,7 @@ cnv_html_report:
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.11"
-  normal_reference: "ref_data/cnvkit.PoN.cnn"
+  normal_reference: *cnv_pon
   method: "hybrid"
 
 cnvkit_call:
@@ -71,7 +76,7 @@ compile_xlsx_report:
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
   model: "PACBIO"
-  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  pon: *snv_pon
   extra: ""
 
 filter_vcf:
@@ -86,7 +91,7 @@ merge_cnv_json:
   filtered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   annotations:
-    - "ref_data/Myelom_expected_coverage_annotated_Oct2024_genes_only.bed"
+    - *design_bed
 
 mosdepth:
   container: "docker://hydragenetics/mosdepth:0.3.6"
@@ -149,7 +154,7 @@ sequali:
 severus_t_only:
   container: "docker://hydragenetics/severus:1.5"
   vntr: *trf
-  pon: "ref_data/PoN_1000G_hg38.tsv.gz"
+  pon: *severus_pon
   extra: ""
 
 sniffles2_call:
@@ -172,9 +177,9 @@ svdb_merge:
   container: "docker://hydragenetics/svdb:2.6.0"
 
 svdb_query:
-  db_string: "--out_occ GNOMAD_AC --out_frq GNOMAD_AF --out_frq AF --in_occ AN --in_frq AF --db /data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
+  db_string: "" # this string is created by a helper function
   container: "docker://hydragenetics/svdb:2.6.0"
-  extra: ""
+  extra: "--out_occ GNOMAD_AC --out_frq GNOMAD_AF --out_frq AF --in_occ AN --in_frq AF"
 
 trimmer_software: "None"
 

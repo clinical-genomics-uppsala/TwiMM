@@ -48,3 +48,6 @@ copilot-instructions.md
 # pixi environments
 .pixi/
 !.pixi/config.toml
+
+# rest
+sync_*.sh
