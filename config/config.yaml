@@ -4,7 +4,7 @@ resources: "config/resources.yaml"
 samples: "config/samples_T.tsv"
 units: "config/units_T.tsv"
 
-default_container: "docker://hydragenetics/common:3.3.0"
+default_container: "docker://hydragenetics/common:4.0.0"
 pipeline_version: "v1.8.0"
 
 module_versions:
@@ -15,7 +15,7 @@ module_versions:
   prealignment: "v1.4.0"
   reports: "f5ff8bde067a4d10c81eb021c685fa75ef34d541" # last change compatible with this pipeline before v0.11.0
   snv_indels: "v2.0.0"
-  qc: "v0.6.0"
+  qc: "v0.7.0"
 
 reference:
   fasta: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
@@ -25,14 +25,13 @@ reference:
   design_intervals: "../ref_data/expected_capture_targets_covered_v2.interval_list"
   panel_full_genes: &panel_full_genes "../ref_data/panel_full_genes.bed"
   cnv_pon: &cnv_pon "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
-  sv_pon: "../build_pon/results/bcftools_merge/sv_normal.vcf.gz"
+  # sv_pon: "../build_pon/results/bcftools_merge/sv_normal.vcf.gz"
   sv_gnomad: "/data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
   severus_pon: &severus_pon "../ref_data/PoN_1000G_hg38.tsv.gz"
   snv_pon: &snv_pon "../build_pon/results/bcftools_merge/snv_normal.vcf.gz"
 
 aligner: "vacmap"
-haplotag_path: "snv_indels/whatshap_haplotag"
-haplotag_suffix: "haplotagged"
+phaser: "whatshap"
 
 annotate_cnv:
   tag: "germline"

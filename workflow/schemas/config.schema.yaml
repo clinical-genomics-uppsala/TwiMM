@@ -51,13 +51,9 @@ properties:
     type: string
     description: "Name of aligner to use (e.g. 'pbmm2')."
 
-  haplotag_path:
+  phaser:
     type: string
-    description: "Relative path template/directory where haplotagging output (whatshap haplotag) is stored (e.g. 'snv_indels/whatshap_haplotag')."
-
-  haplotag_suffix:
-    type: string
-    description: "Suffix appended to haplotagged BAM files (e.g. 'haplotagged')."
+    description: "Name of phaser to use (e.g. 'whatshap')."
 
   annotate_cnv:
     type: object
@@ -462,8 +458,7 @@ required:
   - default_container
   - reference
   - aligner
-  - haplotag_path
-  - haplotag_suffix
+  - phaser
   - annotate_cnv
   - bcftools_filter_include_region
   - caller
