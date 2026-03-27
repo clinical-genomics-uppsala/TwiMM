@@ -65,5 +65,5 @@ hydra-genetics = "==3.3.2"
 hydra-genetics = "==4.0.0"
 
 [environments]
-default = { features = ["hg3"], solve-group = "hg3" }
-hg4 = { features = ["hg4"], solve-group = "hg4" }
+default = { features = ["hg4"], solve-group = "hg4" }
+hg3 = { features = ["hg3"], solve-group = "hg3" }
