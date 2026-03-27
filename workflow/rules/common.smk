@@ -26,7 +26,7 @@ from hydra_genetics.utils.software_versions import touch_pipeline_version_file_n
 from hydra_genetics.utils.software_versions import touch_software_version_file
 from hydra_genetics.utils.software_versions import use_container
 
-min_version("6.8.0")
+min_version("7.32.4")
 
 ### Set and validate config file
 
