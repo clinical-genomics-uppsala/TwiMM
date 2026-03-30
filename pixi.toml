@@ -22,8 +22,9 @@ dot-cl = "snakemake --configfiles config/config.yaml config/config_test.yaml --r
 dot-ds = "snakemake --configfiles config/config.yaml config/config_test.yaml --config use_deepsomatic=True --rulegraph > images/rulegraph_deepsomatic.dot"
 
 
+# shared conda dependencies
 [dependencies]
-python = "==3.10"
+python = "3.9.*"
 pycodestyle = ">=2.14.0,<3"
 pytest = ">=8.4.1,<9"
 snakefmt = ">=0.11.0,<0.12"
@@ -33,15 +34,18 @@ pandas = ">=2.3.1,<3"
 pulp = "<2.8"
 tabulate = ">=0.9.0,<0.10"
 snakemake-wrapper-utils = ">=0.8.0,<0.9"
-networkx = ">=3.4.2,<4"
-xlsxwriter = ">=3.2.9,<4"
+networkx = ">=3.2.1,<4"
+xlsxwriter = ">=3.2.5,<4"
 
+# linux only
 [target.linux-64.dependencies]
-drmaa = "==0.7.9"
+drmaa = "==0.7.9,<0.8"
 python-graphviz = ">=0.16,<0.17"
 
+# shared PyPI dependencies
 [pypi-dependencies]
-hydra-genetics = ">=3.3.0, <4"
+snakemake = ">=7.32.4, <8"
+setuptools = "*"
 jinja2 = "<3.1.0"
 mkdocs = "==1.4.2"
 pymdown-extensions = "==9.10"
@@ -51,3 +55,15 @@ mdx-spanner = "==0.0.5"
 mkdocs-yaml-schema-plugin = "==0.2.3"
 mkdocs-snakemake-rule-plugin = "==0.3.3"
 mkdocs-material = "==9.1.7"
+
+# hydra-genetics 3.x / Snakemake 7 environment (default)
+[feature.hg3.pypi-dependencies]
+hydra-genetics = "==3.3.2"
+
+# hydra-genetics 4.x / Snakemake 7 environment
+[feature.hg4.pypi-dependencies]
+hydra-genetics = "==4.0.0"
+
+[environments]
+default = { features = ["hg4"], solve-group = "hg4" }
+hg3 = { features = ["hg3"], solve-group = "hg3" }
