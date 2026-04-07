@@ -25,8 +25,9 @@ reference:
   design_intervals: "../ref_data/expected_capture_targets_covered_v2.interval_list"
   panel_full_genes: &panel_full_genes "../ref_data/panel_full_genes.bed"
   cnv_pon: &cnv_pon "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
-  # sv_pon: "../build_pon/results/bcftools_merge/sv_normal.vcf.gz"
-  sv_gnomad: "/data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
+  sv_databases:
+    - "/data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
+    - "../build_pon/results/bcftools_merge/sv_normal.vcf.gz"
   severus_pon: &severus_pon "../ref_data/PoN_1000G_hg38.tsv.gz"
   snv_pon: &snv_pon "../build_pon/results/bcftools_merge/snv_normal.vcf.gz"
 
@@ -160,6 +161,9 @@ sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: "--phase"
 
+svdb_build:
+  container: "docker://hydragenetics/svdb:2.8.4"
+
 svdb_merge:
   tc_method:
     - name: pathology
@@ -173,11 +177,11 @@ svdb_merge:
       cnv_caller:
         - cnvkit
       priority: severus,sniffles2,pbsv
-  container: "docker://hydragenetics/svdb:2.6.0"
+  container: "docker://hydragenetics/svdb:2.8.4"
 
 svdb_query:
   db_string: "" # this string is created by a helper function
-  container: "docker://hydragenetics/svdb:2.6.0"
+  container: "docker://hydragenetics/svdb:2.8.4"
   extra: "--out_occ GNOMAD_AC --out_frq GNOMAD_AF --out_frq AF --in_occ AN --in_frq AF"
 
 trimmer_software: "None"
