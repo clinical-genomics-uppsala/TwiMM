@@ -267,5 +267,3 @@ def get_snv_caller_output(wildcards):
 
 def get_ubam_input(wildcards):
     return units.loc[(wildcards.sample, wildcards.type), "bam"].tolist()
-
-
