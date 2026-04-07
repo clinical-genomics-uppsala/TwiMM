@@ -350,6 +350,9 @@ properties:
       container:
         type: string
         description: "Container image for SVDB."
+      db_prefix:
+        type: string
+        description: "Output path prefix for the built SQLite database (without .db extension)."
     required: ["container"]
     additionalProperties: false
 

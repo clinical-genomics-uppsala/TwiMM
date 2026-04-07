@@ -319,7 +319,7 @@ rule cnv_sv_svdb_build:
     output:
         db="cnv_sv/svdb_build/sv_databases.db",
     params:
-        prefix="cnv_sv/svdb_build/sv_databases",
+        prefix=config.get("svdb_build", {}).get("db_prefix", "cnv_sv/svdb_build/sv_databases"),
     log:
         "cnv_sv/svdb_build/sv_databases.db.log",
     benchmark:
