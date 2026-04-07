@@ -163,7 +163,6 @@ sniffles2_call:
 
 svdb_build:
   container: "docker://hydragenetics/svdb:2.8.4"
-  db_prefix: "cnv_sv/svdb_build/sv_databases"
 
 svdb_merge:
   tc_method:
