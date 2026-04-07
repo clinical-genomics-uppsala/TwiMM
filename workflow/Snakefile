@@ -315,7 +315,7 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 # Build population SV database once from all sv_databases in config
 rule cnv_sv_svdb_build:
     input:
-        vcfs=config.get("reference", {}).get("sv_databases", []),
+        vcfs=config["reference"]["sv_databases"],
     output:
         db="cnv_sv/svdb_build/sv_databases.db",
     params:
