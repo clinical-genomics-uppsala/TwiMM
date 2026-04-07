@@ -269,14 +269,3 @@ def get_ubam_input(wildcards):
     return units.loc[(wildcards.sample, wildcards.type), "bam"].tolist()
 
 
-def get_svdb_string(wildcards):
-    """
-    Constructs the --db argument for SVDB query.
-    sv_gnomad is mandatory; sv_pon is included only when defined in the reference config.
-    """
-    ref = config.get("reference", {})
-    paths = [ref["sv_gnomad"]]
-    if ref.get("sv_pon"):
-        paths.append(ref["sv_pon"])
-    logger.info(f"svdb_query: using SV databases: {paths}")
-    return f"--db {','.join(paths)}"
