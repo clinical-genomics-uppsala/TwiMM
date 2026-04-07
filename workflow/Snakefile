@@ -358,7 +358,7 @@ use rule svdb_query from cnv_sv as cnv_sv_svdb_query with:
         vcf="cnv_sv/svdb_merge/{sample}_{type}.{tc_method}.merged.vcf",
         db="cnv_sv/svdb_build/sv_databases.db",
     params:
-        db_string=lambda wildcards, input: f"--db {input.db}",
+        db_string=lambda wildcards, input: f"--sqdb {input.db}",
         extra=config.get("svdb_query", {}).get("extra", ""),
         prefix=lambda wildcards, output: os.path.splitext(output[0])[0][:-6],
 
