@@ -350,6 +350,24 @@ properties:
       container:
         type: string
         description: "Container image for SVDB."
+      benchmark_repeats:
+        type: integer
+        description: "Number of benchmark repeats for the svdb_build rule."
+      threads:
+        type: integer
+        description: "Number of threads for the svdb_build rule."
+      mem_mb:
+        type: integer
+        description: "Memory in MB for the svdb_build rule."
+      mem_per_cpu:
+        type: integer
+        description: "Memory per CPU in MB for the svdb_build rule."
+      partition:
+        type: string
+        description: "SLURM partition for the svdb_build rule."
+      time:
+        type: string
+        description: "Wall-clock time limit for the svdb_build rule (e.g. '4:00:00')."
     required: ["container"]
     additionalProperties: false
 
