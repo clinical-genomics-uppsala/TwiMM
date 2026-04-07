@@ -26,7 +26,7 @@ reference:
   panel_full_genes: &panel_full_genes "../ref_data/panel_full_genes.bed"
   cnv_pon: &cnv_pon "../build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
   sv_databases:
-    - "/data/ref_genomes/GNOMAD/gnomad_v2.1_sv.sites.vcf.gz"
+    - "/beegfs-storage/data/ref_data/wp3/gnomad/gnomad.v4.1.sv.sites.no_cnv.PASS.vcf.gz"
     - "../build_pon/results/bcftools_merge/sv_normal.vcf.gz"
   severus_pon: &severus_pon "../ref_data/PoN_1000G_hg38.tsv.gz"
   snv_pon: &snv_pon "../build_pon/results/bcftools_merge/snv_normal.vcf.gz"
