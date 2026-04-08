@@ -4,6 +4,7 @@ import sys
 
 TEST_DIR = Path(__file__).parent.resolve()
 SCRIPT_DIR = TEST_DIR / "../../workflow/scripts"
+RESULTS_DIR = TEST_DIR / "../../results"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from compile_xlsx_report import ( # type: ignore
@@ -14,6 +15,7 @@ from compile_xlsx_report import ( # type: ignore
     parse_cnvkit_vcf_line,
     parse_version_from_container,
     get_genes_from_bed,
+    process_sv_vcf,
 )
 
 
@@ -252,6 +254,74 @@ def test_parse_vcf_line(line, vep_fields, format_fields, expected):
                 "DEPTH TRANS": "10",
             },
         ),
+        # PBSV with two sample columns: data is in last column (index 10), col 9 is empty
+        # DR/DV absent → AD fallback populates depth; COVERAGE/SUPPORT/STRAND absent in INFO
+        (
+            "chr3\t57119\tpbsv.DEL.3\tGTTT\tG\t.\tPASS\tSVTYPE=DEL;END=57200;SVLEN=-26;svdb_origin=pbsv\tGT:AD:DP\t./.:.\t1/1:0,3:3",
+            {
+                "CHROM": "chr3",
+                "POS": "57119",
+                "END": "57200",
+                "TYPE": "DEL",
+                "SVLEN": "-26",
+                "ALT": "G",
+                "FILTER": "PASS",
+                "CALLER": "pbsv",
+                "COVERAGE": "",
+                "SUPPORT": "",
+                "STRAND": "",
+                "VAF": "",
+                "GENOTYPE": "1/1",
+                "GENOME QUALITY": "",
+                "DEPTH REF": "0",
+                "DEPTH TRANS": "3",
+            },
+        ),
+        # Sniffles2 with two sample columns: data is in last column (index 10), col 9 is empty
+        (
+            "chr1\t111\tSniffles2.DEL.1\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=2;COVERAGE=2,2,2;STRAND=+;VAF=1;svdb_origin=sniffles2\tGT:GQ:DR:DV:PS\t./.:.:.:.:.\t1/1:5:0:2:.",
+            {
+                "CHROM": "chr1",
+                "POS": "111",
+                "END": "1114",
+                "TYPE": "DEL",
+                "SVLEN": "100",
+                "ALT": "G",
+                "FILTER": "PASS",
+                "CALLER": "sniffles2",
+                "COVERAGE": "2,2,2",
+                "SUPPORT": "2",
+                "STRAND": "+",
+                "VAF": "1",
+                "GENOTYPE": "1/1",
+                "GENOME QUALITY": "5",
+                "DEPTH REF": "0",
+                "DEPTH TRANS": "2",
+            },
+        ),
+        # Severus with two sample columns: data is in col 9 (haplotagged); STRANDS (plural)
+        # and VAF in FORMAT (not INFO)
+        (
+            "chr14\t106473\tseverus_DUP0\tN\tN\t60\tPASS\tIMPRECISE;SVTYPE=DUP;SVLEN=70;END=106500;STRANDS=++;svdb_origin=severus\tGT:VAF:hVAF:DR:DV\t0/1:1:1,0,0:0:3\t./.:.:.:.:.",
+            {
+                "CHROM": "chr14",
+                "POS": "106473",
+                "END": "106500",
+                "TYPE": "DUP",
+                "SVLEN": "70",
+                "ALT": "N",
+                "FILTER": "PASS",
+                "CALLER": "severus",
+                "COVERAGE": "",
+                "SUPPORT": "",
+                "STRAND": "++",
+                "VAF": "1",
+                "GENOTYPE": "0/1",
+                "GENOME QUALITY": "",
+                "DEPTH REF": "0",
+                "DEPTH TRANS": "3",
+            },
+        ),
     ],
 )
 def test_parse_sv_vcf_line(line, expected):
@@ -348,6 +418,61 @@ def test_parse_cnvkit_vcf_line(line, expected):
 )
 def test_parse_version_from_container(container, expected):
     assert parse_version_from_container(container) == expected
+
+
+# --- Integration test for process_sv_vcf ---
+COLO829_VCF = RESULTS_DIR / "COLO829_T.vcf"
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_columns():
+    """process_sv_vcf must return all expected columns including the four population frequency columns."""
+    df = process_sv_vcf(str(COLO829_VCF))
+    expected_cols = [
+        "CHROM", "POS", "END", "TYPE", "SVLEN", "ALT", "FILTER", "CALLER",
+        "COVERAGE", "SUPPORT", "STRAND", "VAF", "GENOTYPE", "GENOME QUALITY",
+        "DEPTH REF", "DEPTH TRANS",
+        "GNOMAD_AC", "GNOMAD_AF", "CUSTOM_AC", "CUSTOM_AF",
+    ]
+    assert list(df.columns) == expected_cols
+    assert len(df) > 0
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_types():
+    """Population frequency columns must be numeric (not string) where present.
+    pandas coerces int+None columns to float64, which is fine for Excel rendering."""
+    import pandas as pd
+    df = process_sv_vcf(str(COLO829_VCF))
+    for col in ["GNOMAD_AC", "GNOMAD_AF", "CUSTOM_AC", "CUSTOM_AF"]:
+        assert pd.api.types.is_numeric_dtype(df[col]), \
+            f"Column {col} should be numeric, got dtype {df[col].dtype}"
+    # Spot-check: at least one row has a non-null GNOMAD_AC value
+    assert df["GNOMAD_AC"].notna().any(), "Expected at least one non-null GNOMAD_AC"
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_sample_selection():
+    """
+    Severus records should have depth from the haplotagged sample (DR/DV present).
+    PBSV records should have depth from the AD fallback.
+    """
+    df = process_sv_vcf(str(COLO829_VCF))
+    severus_rows = df[df["CALLER"] == "severus"]
+    pbsv_rows = df[df["CALLER"] == "pbsv"]
+    # Severus: DR and DV are explicit FORMAT fields → non-empty
+    assert (severus_rows["DEPTH TRANS"] != "").all(), "Severus DEPTH TRANS should be non-empty"
+    # PBSV: depth comes from AD fallback → non-empty
+    assert (pbsv_rows["DEPTH TRANS"] != "").all(), "PBSV DEPTH TRANS should be non-empty (AD fallback)"
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_severus_strand_vaf():
+    """Severus records should have STRANDS → STRAND populated and VAF from FORMAT."""
+    df = process_sv_vcf(str(COLO829_VCF))
+    severus_rows = df[df["CALLER"] == "severus"]
+    assert (severus_rows["STRAND"] != "").all(), "Severus STRAND should be non-empty (from STRANDS field)"
+    assert (severus_rows["VAF"] != "").all(), "Severus VAF should be non-empty (from FORMAT)"
 
 
 # --- Tests for get_genes_from_bed ---
