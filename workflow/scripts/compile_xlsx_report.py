@@ -11,6 +11,7 @@ from typing import Callable
 from typing import TextIO
 
 import pandas as pd
+import pysam
 import yaml
 
 
@@ -221,43 +222,59 @@ def parse_vcf_line(
 def parse_sv_vcf_line(
     line: str,
     allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP", "BND"],
-    info_values: list[str] = ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"],
     ncol: int = 10,
 ) -> dict[str, str]:
     """
     Parse a single structural variant VCF line into a dictionary.
+
+    Multi-caller VCFs from SVDB merge may have two sample columns:
+    index 9 (haplotagged, used by Severus) and index 10 (regular BAM,
+    used by PBSV and Sniffles2).  The correct column is selected based
+    on svdb_origin parsed from INFO.
     """
     parts = line.strip().split("\t")
     if len(parts) < ncol:
         raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
-    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_ = parts[:ncol]
+    chrom, pos, id_, ref, alt, qual, filter_, info, format_ = parts[:9]
 
-    # Parse ID field
-    match = re.search(r"\.(.*?)\.", id_)
-    var_type = match.group(1) if match else id_
     # check that id_ is not empty
     if not id_:
         raise ValueError("ID field (type of variant) is empty!")
 
-    # Strip potential caller suffixes from var_type if they exist (e.g. from SVDB merge)
+    # Parse INFO field early — needed for SVTYPE fallback and caller/sample-column detection
+    info_dict = parse_info(info)
+    if not info_dict:
+        raise ValueError("Could not parse INFO field. Does it exist?")
+
+    # Extract variant type from ID (e.g. "Sniffles2.DEL.1" → "DEL").
+    # Callers like Severus use IDs without embedded type (e.g. "severus_DUP0"), so fall
+    # back to SVTYPE from INFO when the regex yields nothing in allowed_var_types.
+    match = re.search(r"\.(.*?)\.", id_)
+    var_type = match.group(1) if match else ""
     if ":" in var_type:
         var_type = var_type.split(":")[0]
+    if not var_type or var_type not in allowed_var_types:
+        var_type = info_dict.get("SVTYPE", var_type or id_)
 
     # check if the extracted variant type is valid
     if var_type not in allowed_var_types:
         # Fallback for unexpected types
         logging.warning(f"Unexpected variant type '{var_type}' at {chrom}:{pos}. Expected one of {allowed_var_types}")
 
-    # Parse INFO field
-    info_dict = parse_info(info)
-    # check if it is empty
-    if not info_dict:
-        raise ValueError("Could not parse INFO field. Does it exist?")
-
     # Extract Caller name
     caller = info_dict.get("svdb_origin", "unknown")
     if (caller == "unknown" or not caller) and "." in id_:
         caller = id_.split(".")[0]
+
+    # Select the correct sample column.
+    # After SVDB merge the VCF may contain two sample columns:
+    #   index 9  — haplotagged BAM sample (Severus)
+    #   index 10 — regular BAM sample (PBSV, Sniffles2)
+    # When only one sample column is present, always use index 9.
+    if caller == "severus" or len(parts) <= 10:
+        sample_ = parts[9]
+    else:
+        sample_ = parts[-1]
 
     # Parse FORMAT and SAMPLE columns
     format_dict = parse_format(format_, sample_)
@@ -283,8 +300,10 @@ def parse_sv_vcf_line(
         "CALLER": caller,
         "COVERAGE": info_dict.get("COVERAGE", ""),
         "SUPPORT": info_dict.get("SUPPORT", ""),
-        "STRAND": info_dict.get("STRAND", ""),
-        "VAF": info_dict.get("VAF", ""),
+        # Severus uses STRANDS (plural); Sniffles2 uses STRAND
+        "STRAND": info_dict.get("STRAND", info_dict.get("STRANDS", "")),
+        # Severus stores VAF in FORMAT, not INFO; try INFO first, then FORMAT
+        "VAF": info_dict.get("VAF", format_dict.get("VAF", "")),
         "GENOTYPE": format_dict.get("GT", ""),
         "GENOME QUALITY": format_dict.get("GQ", ""),
         "DEPTH REF": depth_ref,
@@ -370,6 +389,111 @@ def parse_cnvkit_vcf_line(
 
 
 # --- Main Processing Logic ---
+
+
+@log_execution
+def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
+    """
+    Parse an SV VCF file (e.g. from SVDB query) using pysam.
+
+    Advantages over plain-text parsing:
+    - Sample columns are selected by name, not by index, which is robust when
+      SVDB merge produces two sample columns (haplotagged for Severus; regular
+      BAM for PBSV / Sniffles2).
+    - INFO fields are returned with their declared types so GNOMAD_AC / CUSTOM_AC
+      land in Excel as integers and GNOMAD_AF / CUSTOM_AF as floats.
+    """
+    ALLOWED_VAR_TYPES = ["DEL", "INS", "INV", "DUP", "BND"]
+    rows: list[dict] = []
+
+    with pysam.VariantFile(vcf_path, "r") as vcf:
+        all_samples = list(vcf.header.samples)
+        # SVDB merge may produce two sample columns:
+        #   haplotagged BAM sample — used by Severus
+        #   regular BAM sample    — used by PBSV and Sniffles2
+        haplotagged = next((s for s in all_samples if "haplotagged" in s.lower()), None)
+        regular = next((s for s in all_samples if "haplotagged" not in s.lower()), None) or (all_samples[0] if all_samples else None)
+
+        for record in vcf:
+            # ── Caller ──────────────────────────────────────────────────────────
+            caller = record.info["svdb_origin"] if "svdb_origin" in record.info else "unknown"
+            if (not caller or caller == "unknown") and record.id and "." in record.id:
+                caller = record.id.split(".")[0]
+
+            # ── Variant type ─────────────────────────────────────────────────────
+            # Try dot-delimited ID (e.g. "Sniffles2.DEL.1"); fall back to SVTYPE
+            # for callers like Severus whose IDs don't embed the type.
+            var_type = ""
+            if record.id:
+                m = re.search(r"\.(.*?)\.", record.id)
+                var_type = m.group(1) if m else ""
+                if ":" in var_type:
+                    var_type = var_type.split(":")[0]
+            if not var_type or var_type not in ALLOWED_VAR_TYPES:
+                var_type = (record.info["SVTYPE"] if "SVTYPE" in record.info else None) or var_type or (record.id or "")
+            if var_type not in ALLOWED_VAR_TYPES:
+                logging.warning(f"Unexpected variant type '{var_type}' at {record.chrom}:{record.pos}.")
+
+            # ── Sample selection ─────────────────────────────────────────────────
+            samp_name = haplotagged if (caller == "severus" and haplotagged) else regular
+            samp = record.samples[samp_name] if samp_name else None
+
+            # ── Genotype / depth ─────────────────────────────────────────────────
+            gt = gq = ""
+            dr = dv = None
+            if samp is not None:
+                raw_gt = samp.get("GT")
+                if raw_gt is not None:
+                    gt = "/".join("." if a is None else str(a) for a in raw_gt)
+                raw_gq = samp.get("GQ")
+                gq = "" if raw_gq is None else str(raw_gq)
+                dr = samp.get("DR")
+                dv = samp.get("DV")
+                # PBSV uses AD (ref, alt) instead of DR / DV
+                if (dr is None or dv is None):
+                    ad = samp.get("AD")
+                    if ad is not None and len(ad) >= 2:
+                        dr, dv = ad[0], ad[1]
+
+            # ── COVERAGE (Sniffles2 tuple → comma-separated string) ───────────────
+            raw_cov = record.info["COVERAGE"] if "COVERAGE" in record.info else None
+            coverage = ",".join(str(int(v)) for v in raw_cov) if raw_cov is not None else ""
+
+            # ── STRAND / STRANDS ─────────────────────────────────────────────────
+            strand = record.info.get("STRAND") or record.info.get("STRANDS") or ""
+
+            # ── VAF: INFO first (Sniffles2), FORMAT fallback (Severus) ────────────
+            vaf = record.info["VAF"] if "VAF" in record.info else None
+            if vaf is None and samp is not None:
+                vaf = samp.get("VAF")
+
+            row = {
+                "CHROM": record.chrom,
+                "POS": str(record.pos),
+                "END": str(record.info["END"]) if "END" in record.info else "",
+                "TYPE": var_type,
+                "SVLEN": str(record.info["SVLEN"]) if "SVLEN" in record.info else "",
+                "ALT": record.alts[0] if record.alts else "",
+                "FILTER": ";".join(record.filter.keys()) or ".",
+                "CALLER": caller,
+                "COVERAGE": coverage,
+                "SUPPORT": str(record.info["SUPPORT"]) if "SUPPORT" in record.info else "",
+                "STRAND": strand,
+                "VAF": str(vaf) if vaf is not None else "",
+                "GENOTYPE": gt,
+                "GENOME QUALITY": gq,
+                "DEPTH REF": str(dr) if dr is not None else "",
+                "DEPTH TRANS": str(dv) if dv is not None else "",
+                # Population frequency annotations added by SVDB query
+                # Kept as native int / float so Excel renders them as numbers
+                "GNOMAD_AC": record.info["GNOMAD_AC"] if "GNOMAD_AC" in record.info else None,
+                "GNOMAD_AF": record.info["GNOMAD_AF"] if "GNOMAD_AF" in record.info else None,
+                "CUSTOM_AC": record.info["CUSTOM_AC"] if "CUSTOM_AC" in record.info else None,
+                "CUSTOM_AF": record.info["CUSTOM_AF"] if "CUSTOM_AF" in record.info else None,
+            }
+            rows.append(row)
+
+    return pd.DataFrame(rows)
 
 
 @log_execution
@@ -497,7 +621,7 @@ def create_report(snakemake_obj: Any):
     # --- 2. Process SV VCF ---
     logging.info(f"Parsing file: {vcf_sv}")
     try:
-        sv_df = process_vcf(vcf_sv, parse_sv_vcf_line)
+        sv_df = process_sv_vcf(vcf_sv)
     except Exception as e:
         logging.error(f"{e}")
         sv_df = pd.DataFrame()
