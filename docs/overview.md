@@ -9,7 +9,7 @@ Here is a brief overview of the entire pipeline. For details see subsections and
   
    2.1 Mark duplicates with `pbmarkdup`.
   
-   2.2 Align reads with `pbmm2`.
+   2.2 Align reads with `pbmm2` or `VACmap` (configured via `aligner` key).
 
 3. **SNV and InDels**:  
   
@@ -24,10 +24,14 @@ Here is a brief overview of the entire pipeline. For details see subsections and
    3.5 Filter variants with `bcftools` (based on "germline" checks from panel of normals).
 
 4. **Structural Variants (SV)**:
-   
-   4.1 Call SVs with `Sniffles2`.
-   
-   4.2 Filter and annotate SVs.
+
+   4.1 Call SVs in parallel with three callers: `Severus` (tumor-only, uses haplotagged BAM and panel of normals), `PBSV` (uses pbmm2-aligned BAM), and `Sniffles2` (uses haplotagged BAM).
+
+   4.2 Filter SV calls per caller to panel regions with `bcftools`.
+
+   4.3 Merge per-sample SV calls from all three callers into a single VCF using `svdb --merge` (priority: Severus > Sniffles2 > PBSV).
+
+   4.4 Annotate the merged VCF with population SV frequencies using `svdb --query`, querying the population VCF files (gnomAD SV, custom PoN) directly. Querying VCF files directly rather than a pre-built SQLite database preserves per-source allele frequency fields.
 
 5. **Copy Number Variants (CNV)**:
    
@@ -43,4 +47,4 @@ Here is a brief overview of the entire pipeline. For details see subsections and
    
    7.1 Create HTML reports with `cnvkit`.
    
-   7.2 Create Excel reports with combined data on SNV, CNV, and SV.
+   7.2 Create Excel reports with combined data on SNV, CNV, and SV, including a **Software Versions** tab listing the tool versions used.

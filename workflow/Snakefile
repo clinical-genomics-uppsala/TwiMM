@@ -324,8 +324,11 @@ use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
 
 
 use rule svdb_query from cnv_sv as cnv_sv_svdb_query with:
+    input:
+        vcf="cnv_sv/svdb_merge/{sample}_{type}.{tc_method}.merged.vcf",
+        db=config["reference"]["sv_databases"],
     params:
-        db_string=get_svdb_string,
+        db_string=lambda wildcards, input: "--db " + ",".join(input.db),
         extra=config.get("svdb_query", {}).get("extra", ""),
         prefix=lambda wildcards, output: os.path.splitext(output[0])[0][:-6],
 

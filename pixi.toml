@@ -17,10 +17,7 @@ all-full = "snakemake --configfile config/config.yaml --profile profiles/marvin_
 test-dry = "snakemake --configfiles config/config.yaml config/config_test.yaml -n --cores 1"
 test-full = "snakemake --configfiles config/config.yaml config/config_test.yaml --profile profiles/marvin_cpu"
 ruleg-cl = "snakemake --configfiles config/config.yaml config/config_test.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
-ruleg-ds = "snakemake --configfiles config/config.yaml config/config_test.yaml --config use_deepsomatic=True --rulegraph | dot -Tsvg > images/rulegraph_deepsomatic.svg"
 dot-cl = "snakemake --configfiles config/config.yaml config/config_test.yaml --rulegraph > images/rulegraph_clairs.dot"
-dot-ds = "snakemake --configfiles config/config.yaml config/config_test.yaml --config use_deepsomatic=True --rulegraph > images/rulegraph_deepsomatic.dot"
-
 
 # shared conda dependencies
 [dependencies]
