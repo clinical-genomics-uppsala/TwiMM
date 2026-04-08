@@ -29,11 +29,9 @@ Here is a brief overview of the entire pipeline. For details see subsections and
 
    4.2 Filter SV calls per caller to panel regions with `bcftools`.
 
-   4.3 Build a population SV database (once globally) from population VCF files (gnomAD SV, custom PoN) using `svdb --build`.
+   4.3 Merge per-sample SV calls from all three callers into a single VCF using `svdb --merge` (priority: Severus > Sniffles2 > PBSV).
 
-   4.4 Merge per-sample SV calls from all three callers into a single VCF using `svdb --merge` (priority: Severus > Sniffles2 > PBSV).
-
-   4.5 Annotate the merged VCF with population SV frequencies using `svdb --query` against the pre-built population database.
+   4.4 Annotate the merged VCF with population SV frequencies using `svdb --query`, querying the population VCF files (gnomAD SV, custom PoN) directly. Querying VCF files directly rather than a pre-built SQLite database preserves per-source allele frequency fields.
 
 5. **Copy Number Variants (CNV)**:
    

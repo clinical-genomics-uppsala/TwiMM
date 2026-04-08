@@ -343,34 +343,6 @@ properties:
         description: "Extra flags to pass to sniffles2."
     required: ["container"]
 
-  svdb_build:
-    type: object
-    description: "Configuration for building the SVDB SQLite population database."
-    properties:
-      container:
-        type: string
-        description: "Container image for SVDB."
-      benchmark_repeats:
-        type: integer
-        description: "Number of benchmark repeats for the svdb_build rule."
-      threads:
-        type: integer
-        description: "Number of threads for the svdb_build rule."
-      mem_mb:
-        type: integer
-        description: "Memory in MB for the svdb_build rule."
-      mem_per_cpu:
-        type: integer
-        description: "Memory per CPU in MB for the svdb_build rule."
-      partition:
-        type: string
-        description: "SLURM partition for the svdb_build rule."
-      time:
-        type: string
-        description: "Wall-clock time limit for the svdb_build rule (e.g. '4:00:00')."
-    required: ["container"]
-    additionalProperties: false
-
   svdb_merge:
     type: object
     description: "Settings used for SV database merging/annotation steps."
@@ -507,7 +479,6 @@ required:
   - pbsv_call
   - severus_t_only
   - sniffles2_call
-  - svdb_build
   - svdb_merge
   - vacmap_align
   - vep

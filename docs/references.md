@@ -9,7 +9,7 @@ They are defined in the `config/config.yaml` file and can be found in the `ref_d
 |                                | fai              | `GRCh38.fasta.fai`                        | Index file for the reference genome                                               |
 |                                | trf              | `GRCh38.trf.bed`                          | Human tandem repeats (used by Severus and PBSV)                                   |
 |                                | design_bed       | `expected_coverage_annotated.bed`         | BED file with panel target regions                                                |
-|                                | sv_databases     | `gnomad.v4.1.sv.sites.no_cnv.PASS.vcf.gz`, `sv_normal.vcf.gz` | Population SV VCF files used to build the SVDB SQLite database. List — add new population databases here. |
+|                                | sv_databases     | `gnomad.v4.1.sv.sites.no_cnv.PASS.vcf.gz`, `sv_normal.vcf.gz` | Population SV VCF files queried directly by SVDB. List — add new population databases here. |
 | cnvkit_batch                   | normal_reference | `cnvkit.PoN.cnn`                          | Panel of normals for CNVkit                                                       |
 | deepsomatic_t_only             | pon              | `snv_normal.vcf.gz`                       | Panel of normals for DeepSomatic (used when `use_deepsomatic: true`)              |
 | severus_t_only                 | pon              | `PoN_1000G_hg38.tsv.gz`                   | Panel of normals for Severus (1000 Genomes project)                               |

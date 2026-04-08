@@ -161,9 +161,6 @@ sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
   extra: "--phase"
 
-svdb_build:
-  container: "docker://hydragenetics/svdb:2.8.4"
-
 svdb_merge:
   tc_method:
     - name: pathology
@@ -182,7 +179,7 @@ svdb_merge:
 svdb_query:
   db_string: "" # this string is created by a helper function
   container: "docker://hydragenetics/svdb:2.8.4"
-  extra: "--out_occ GNOMAD_AC --out_frq GNOMAD_AF --out_frq AF --in_occ AN --in_frq AF"
+  extra: "--in_occ AC,default --in_frq AF,default --out_occ GNOMAD_AC,CUSTOM_AC --out_frq GNOMAD_AF,CUSTOM_AF"
 
 trimmer_software: "None"
 

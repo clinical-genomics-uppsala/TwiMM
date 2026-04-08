@@ -312,36 +312,6 @@ use rule bcftools_filter_include_region from filtering as filtering_bcftools_fil
 
 
 # SVDB
-# Build population SV database once from all sv_databases in config
-rule cnv_sv_svdb_build:
-    input:
-        vcfs=config["reference"]["sv_databases"],
-    output:
-        db="cnv_sv/svdb_build/sv_databases.db",
-    params:
-        prefix=lambda wildcards, output: os.path.splitext(output.db)[0],
-    log:
-        "cnv_sv/svdb_build/sv_databases.db.log",
-    benchmark:
-        repeat(
-            "cnv_sv/svdb_build/sv_databases.db.benchmark.tsv",
-            config.get("svdb_build", {}).get("benchmark_repeats", 1),
-        )
-    threads: config.get("svdb_build", {}).get("threads", config["default_resources"]["threads"])
-    resources:
-        mem_mb=config.get("svdb_build", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
-        mem_per_cpu=config.get("svdb_build", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
-        partition=config.get("svdb_build", {}).get("partition", config["default_resources"]["partition"]),
-        threads=config.get("svdb_build", {}).get("threads", config["default_resources"]["threads"]),
-        time=config.get("svdb_build", {}).get("time", config["default_resources"]["time"]),
-    container:
-        config.get("svdb_build", {}).get("container", config["default_container"])
-    message:
-        "{rule}: building SVDB population database from {input.vcfs}"
-    shell:
-        "(svdb --build --prefix {params.prefix} --files {input.vcfs}) &> {log}"
-
-
 use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
     input:
         vcfs=lambda wildcards: get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False),
@@ -356,9 +326,9 @@ use rule svdb_merge from cnv_sv as cnv_sv_svdb_merge with:
 use rule svdb_query from cnv_sv as cnv_sv_svdb_query with:
     input:
         vcf="cnv_sv/svdb_merge/{sample}_{type}.{tc_method}.merged.vcf",
-        db="cnv_sv/svdb_build/sv_databases.db",
+        db=config["reference"]["sv_databases"],
     params:
-        db_string=lambda wildcards, input: f"--sqdb {input.db}",
+        db_string=lambda wildcards, input: "--db " + ",".join(input.db),
         extra=config.get("svdb_query", {}).get("extra", ""),
         prefix=lambda wildcards, output: os.path.splitext(output[0])[0][:-6],
 
