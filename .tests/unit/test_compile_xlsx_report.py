@@ -1,6 +1,8 @@
 import pytest # type: ignore
 from pathlib import Path
 import sys
+import pandas as pd
+
 
 TEST_DIR = Path(__file__).parent.resolve()
 SCRIPT_DIR = TEST_DIR / "../../workflow/scripts"
@@ -11,7 +13,6 @@ from compile_xlsx_report import ( # type: ignore
     parse_info,
     parse_vcf_line,
     parse_format,
-    parse_sv_vcf_line,
     parse_cnvkit_vcf_line,
     parse_version_from_container,
     get_genes_from_bed,
@@ -125,212 +126,6 @@ def test_parse_vcf_line(line, vep_fields, format_fields, expected):
             parse_vcf_line(line, vep_fields, format_fields)
 
 
-# --- Tests for parse_sv_vcf_line ---
-@pytest.mark.parametrize(
-    "line, expected",
-    [
-        # Normal case
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # Not all expected columns are in the line
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS",
-            pytest.raises(ValueError),
-        ),
-        # No info field (no annotation)
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE\tGT:GQ:DR:DV\t0/1:30:14:10",
-            pytest.raises(ValueError),
-        ),
-        # One of the expected values in INFO is missing (SVLEN) - should now return empty string
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # One of the expected values in FORMAT is missing (GT, GQ etc) - should now return empty strings
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\t?\t?",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "",
-                "GENOME QUALITY": "",
-                "DEPTH REF": "",
-                "DEPTH TRANS": "",
-            },
-        ),
-        # The ID (variant type) is empty
-        (
-            "chr1\t111\t\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            pytest.raises(ValueError),
-        ),
-        # Not allowed variant type (here it's a "?") in ID value - should now log warning and proceed
-        (
-            "chr1\t111\tSniffles2.?.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=?;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "?",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # Caller suffix in ID/var_type (e.g. from SVDB merge) should be stripped
-        (
-            "chr1\t111\tSniffles2.DEL:svdb.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # PBSV with two sample columns: data is in last column (index 10), col 9 is empty
-        # DR/DV absent → AD fallback populates depth; COVERAGE/SUPPORT/STRAND absent in INFO
-        (
-            "chr3\t57119\tpbsv.DEL.3\tGTTT\tG\t.\tPASS\tSVTYPE=DEL;END=57200;SVLEN=-26;svdb_origin=pbsv\tGT:AD:DP\t./.:.\t1/1:0,3:3",
-            {
-                "CHROM": "chr3",
-                "POS": "57119",
-                "END": "57200",
-                "TYPE": "DEL",
-                "SVLEN": "-26",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "pbsv",
-                "COVERAGE": "",
-                "SUPPORT": "",
-                "STRAND": "",
-                "VAF": "",
-                "GENOTYPE": "1/1",
-                "GENOME QUALITY": "",
-                "DEPTH REF": "0",
-                "DEPTH TRANS": "3",
-            },
-        ),
-        # Sniffles2 with two sample columns: data is in last column (index 10), col 9 is empty
-        (
-            "chr1\t111\tSniffles2.DEL.1\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=2;COVERAGE=2,2,2;STRAND=+;VAF=1;svdb_origin=sniffles2\tGT:GQ:DR:DV:PS\t./.:.:.:.:.\t1/1:5:0:2:.",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "sniffles2",
-                "COVERAGE": "2,2,2",
-                "SUPPORT": "2",
-                "STRAND": "+",
-                "VAF": "1",
-                "GENOTYPE": "1/1",
-                "GENOME QUALITY": "5",
-                "DEPTH REF": "0",
-                "DEPTH TRANS": "2",
-            },
-        ),
-        # Severus with two sample columns: data is in col 9 (haplotagged); STRANDS (plural)
-        # and VAF in FORMAT (not INFO)
-        (
-            "chr14\t106473\tseverus_DUP0\tN\tN\t60\tPASS\tIMPRECISE;SVTYPE=DUP;SVLEN=70;END=106500;STRANDS=++;svdb_origin=severus\tGT:VAF:hVAF:DR:DV\t0/1:1:1,0,0:0:3\t./.:.:.:.:.",
-            {
-                "CHROM": "chr14",
-                "POS": "106473",
-                "END": "106500",
-                "TYPE": "DUP",
-                "SVLEN": "70",
-                "ALT": "N",
-                "FILTER": "PASS",
-                "CALLER": "severus",
-                "COVERAGE": "",
-                "SUPPORT": "",
-                "STRAND": "++",
-                "VAF": "1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "",
-                "DEPTH REF": "0",
-                "DEPTH TRANS": "3",
-            },
-        ),
-    ],
-)
-def test_parse_sv_vcf_line(line, expected):
-    if isinstance(expected, dict):
-        assert parse_sv_vcf_line(line) == expected
-    else:
-        with expected:
-            parse_sv_vcf_line(line)
-
 
 @pytest.mark.parametrize(
     "line, expected",
@@ -442,7 +237,6 @@ def test_process_sv_vcf_columns():
 def test_process_sv_vcf_types():
     """Population frequency columns must be numeric (not string) where present.
     pandas coerces int+None columns to float64, which is fine for Excel rendering."""
-    import pandas as pd
     df = process_sv_vcf(str(COLO829_VCF))
     for col in ["GNOMAD_AC", "GNOMAD_AF", "CUSTOM_AC", "CUSTOM_AF"]:
         assert pd.api.types.is_numeric_dtype(df[col]), \
@@ -460,6 +254,8 @@ def test_process_sv_vcf_sample_selection():
     df = process_sv_vcf(str(COLO829_VCF))
     severus_rows = df[df["CALLER"] == "severus"]
     pbsv_rows = df[df["CALLER"] == "pbsv"]
+    assert len(severus_rows) > 0, "Expected at least one severus record in fixture"
+    assert len(pbsv_rows) > 0, "Expected at least one pbsv record in fixture"
     # Severus: DR and DV are explicit FORMAT fields → non-empty
     assert (severus_rows["DEPTH TRANS"] != "").all(), "Severus DEPTH TRANS should be non-empty"
     # PBSV: depth comes from AD fallback → non-empty
@@ -471,6 +267,7 @@ def test_process_sv_vcf_severus_strand_vaf():
     """Severus records should have STRANDS → STRAND populated and VAF from FORMAT."""
     df = process_sv_vcf(str(COLO829_VCF))
     severus_rows = df[df["CALLER"] == "severus"]
+    assert len(severus_rows) > 0, "Expected at least one severus record in fixture"
     assert (severus_rows["STRAND"] != "").all(), "Severus STRAND should be non-empty (from STRANDS field)"
     assert (severus_rows["VAF"] != "").all(), "Severus VAF should be non-empty (from FORMAT)"
 
