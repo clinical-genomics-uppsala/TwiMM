@@ -133,7 +133,9 @@ def get_genes_from_bed(bed_path: str) -> set[str]:
 
 def unwrap_info(value):
     """Return the first element if value is a tuple, otherwise return value unchanged."""
-    return value[0] if isinstance(value, tuple) else value
+    if isinstance(value, tuple):
+        return value[0] if value else None
+    return value
 
 
 def parse_version_from_container(container: str) -> str:
@@ -332,11 +334,8 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
 
         for record in vcf:
             # ── Caller ──────────────────────────────────────────────────────────
-            raw_caller = record.info["svdb_origin"] if "svdb_origin" in record.info else None
-            if isinstance(raw_caller, tuple):
-                caller = raw_caller[0] if raw_caller else "unknown"
-            else:
-                caller = raw_caller if raw_caller else "unknown"
+            caller = unwrap_info(record.info["svdb_origin"]) if "svdb_origin" in record.info else None
+            caller = caller if caller else "unknown"
             if (not caller or caller == "unknown") and record.id and "." in record.id:
                 caller = record.id.split(".")[0]
 
