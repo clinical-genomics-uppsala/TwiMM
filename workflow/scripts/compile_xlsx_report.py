@@ -336,9 +336,9 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
         for record in vcf:
             # ── Caller ──────────────────────────────────────────────────────────
             caller = unwrap_info(record.info["svdb_origin"]) if "svdb_origin" in record.info else None
-            caller = caller if caller else "unknown"
+            caller = caller.lower() if caller else "unknown"
             if (not caller or caller == "unknown") and record.id and "." in record.id:
-                caller = record.id.split(".")[0]
+                caller = record.id.split(".")[0].lower()
 
             # ── Variant type ─────────────────────────────────────────────────────
             # Try dot-delimited ID (e.g. "Sniffles2.DEL.1"); fall back to SVTYPE
