@@ -228,7 +228,6 @@ def parse_vcf_line(
     return row
 
 
-
 @safe_parser
 def parse_cnvkit_vcf_line(
     vcf_line: str,
@@ -328,7 +327,9 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
         #   haplotagged BAM sample — used by Severus
         #   regular BAM sample    — used by PBSV and Sniffles2
         haplotagged = next((s for s in all_samples if "haplotagged" in s.lower()), None)
-        regular = next((s for s in all_samples if "haplotagged" not in s.lower()), None) or (all_samples[0] if all_samples else None)
+        regular = next((s for s in all_samples if "haplotagged" not in s.lower()), None) or (
+            all_samples[0] if all_samples else None
+        )
         if not haplotagged and not regular:
             logging.warning(f"No valid sample columns found in {vcf_path}; sample data will be empty.")
 
@@ -369,7 +370,7 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 dr = samp.get("DR")
                 dv = samp.get("DV")
                 # PBSV uses AD (ref, alt) instead of DR / DV
-                if (dr is None or dv is None):
+                if dr is None or dv is None:
                     ad = samp.get("AD")
                     if ad is not None and len(ad) >= 2:
                         dr, dv = ad[0], ad[1]
@@ -589,8 +590,7 @@ def create_report(snakemake_obj: Any):
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     versions_df = pd.DataFrame(
-        [{"Tool": tool, "Version": parse_version_from_container(container)}
-         for tool, container in software_versions.items()]
+        [{"Tool": tool, "Version": parse_version_from_container(container)} for tool, container in software_versions.items()]
     )
 
     # --- Write to Excel ---
