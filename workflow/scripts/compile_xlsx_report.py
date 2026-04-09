@@ -377,7 +377,16 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
 
             # ── COVERAGE (Sniffles2 tuple → comma-separated string) ───────────────
             raw_cov = record.info["COVERAGE"] if "COVERAGE" in record.info else None
-            coverage = ",".join(str(int(v)) for v in raw_cov) if raw_cov is not None else ""
+            if raw_cov is not None:
+                parts = []
+                for v in raw_cov:
+                    try:
+                        parts.append(str(int(v)))
+                    except (TypeError, ValueError):
+                        pass
+                coverage = ",".join(parts)
+            else:
+                coverage = ""
 
             # ── STRAND / STRANDS ─────────────────────────────────────────────────
             strand = record.info.get("STRAND") or record.info.get("STRANDS") or ""
