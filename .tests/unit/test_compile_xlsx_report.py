@@ -1,19 +1,22 @@
 import pytest # type: ignore
 from pathlib import Path
 import sys
+import pandas as pd
+
 
 TEST_DIR = Path(__file__).parent.resolve()
 SCRIPT_DIR = TEST_DIR / "../../workflow/scripts"
+RESULTS_DIR = TEST_DIR / "../../results"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from compile_xlsx_report import ( # type: ignore
     parse_info,
     parse_vcf_line,
     parse_format,
-    parse_sv_vcf_line,
     parse_cnvkit_vcf_line,
     parse_version_from_container,
     get_genes_from_bed,
+    process_sv_vcf,
 )
 
 
@@ -123,144 +126,6 @@ def test_parse_vcf_line(line, vep_fields, format_fields, expected):
             parse_vcf_line(line, vep_fields, format_fields)
 
 
-# --- Tests for parse_sv_vcf_line ---
-@pytest.mark.parametrize(
-    "line, expected",
-    [
-        # Normal case
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # Not all expected columns are in the line
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS",
-            pytest.raises(ValueError),
-        ),
-        # No info field (no annotation)
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE\tGT:GQ:DR:DV\t0/1:30:14:10",
-            pytest.raises(ValueError),
-        ),
-        # One of the expected values in INFO is missing (SVLEN) - should now return empty string
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tPRECISE;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # One of the expected values in FORMAT is missing (GT, GQ etc) - should now return empty strings
-        (
-            "chr1\t111\tSniffles2.DEL.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\t?\t?",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "",
-                "GENOME QUALITY": "",
-                "DEPTH REF": "",
-                "DEPTH TRANS": "",
-            },
-        ),
-        # The ID (variant type) is empty
-        (
-            "chr1\t111\t\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;STDEV_LEN=0;STDEV_POS=4.131;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            pytest.raises(ValueError),
-        ),
-        # Not allowed variant type (here it's a "?") in ID value - should now log warning and proceed
-        (
-            "chr1\t111\tSniffles2.?.1FES9\tACGT\tG\t59\tPASS\tSVTYPE=?;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;SUPPORT_SA=15;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "?",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-        # Caller suffix in ID/var_type (e.g. from SVDB merge) should be stripped
-        (
-            "chr1\t111\tSniffles2.DEL:svdb.1FES9\tACGT\tG\t59\tPASS\tPRECISE;SVTYPE=DEL;SVLEN=100;END=1114;SUPPORT=20;COVERAGE=6,1,8,5,9;STRAND=+;VAF=0.1\tGT:GQ:DR:DV\t0/1:30:14:10",
-            {
-                "CHROM": "chr1",
-                "POS": "111",
-                "END": "1114",
-                "TYPE": "DEL",
-                "SVLEN": "100",
-                "ALT": "G",
-                "FILTER": "PASS",
-                "CALLER": "Sniffles2",
-                "COVERAGE": "6,1,8,5,9",
-                "SUPPORT": "20",
-                "STRAND": "+",
-                "VAF": "0.1",
-                "GENOTYPE": "0/1",
-                "GENOME QUALITY": "30",
-                "DEPTH REF": "14",
-                "DEPTH TRANS": "10",
-            },
-        ),
-    ],
-)
-def test_parse_sv_vcf_line(line, expected):
-    if isinstance(expected, dict):
-        assert parse_sv_vcf_line(line) == expected
-    else:
-        with expected:
-            parse_sv_vcf_line(line)
-
 
 @pytest.mark.parametrize(
     "line, expected",
@@ -348,6 +213,63 @@ def test_parse_cnvkit_vcf_line(line, expected):
 )
 def test_parse_version_from_container(container, expected):
     assert parse_version_from_container(container) == expected
+
+
+# --- Integration test for process_sv_vcf ---
+COLO829_VCF = RESULTS_DIR / "COLO829_T.vcf"
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_columns():
+    """process_sv_vcf must return all expected columns including the four population frequency columns."""
+    df = process_sv_vcf(str(COLO829_VCF))
+    expected_cols = [
+        "CHROM", "POS", "END", "TYPE", "SVLEN", "ALT", "FILTER", "CALLER",
+        "COVERAGE", "SUPPORT", "STRAND", "VAF", "GENOTYPE", "GENOME QUALITY",
+        "DEPTH REF", "DEPTH TRANS",
+        "GNOMAD_AC", "GNOMAD_AF", "CUSTOM_AC", "CUSTOM_AF",
+    ]
+    assert list(df.columns) == expected_cols
+    assert len(df) > 0
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_types():
+    """Population frequency columns must be numeric (not string) where present.
+    pandas coerces int+None columns to float64, which is fine for Excel rendering."""
+    df = process_sv_vcf(str(COLO829_VCF))
+    for col in ["GNOMAD_AC", "GNOMAD_AF", "CUSTOM_AC", "CUSTOM_AF"]:
+        assert pd.api.types.is_numeric_dtype(df[col]), \
+            f"Column {col} should be numeric, got dtype {df[col].dtype}"
+    # Spot-check: at least one row has a non-null GNOMAD_AC value
+    assert df["GNOMAD_AC"].notna().any(), "Expected at least one non-null GNOMAD_AC"
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_sample_selection():
+    """
+    Severus records should have depth from the haplotagged sample (DR/DV present).
+    PBSV records should have depth from the AD fallback.
+    """
+    df = process_sv_vcf(str(COLO829_VCF))
+    severus_rows = df[df["CALLER"] == "severus"]
+    pbsv_rows = df[df["CALLER"] == "pbsv"]
+    assert len(severus_rows) > 0, "Expected at least one severus record in fixture"
+    assert len(pbsv_rows) > 0, "Expected at least one pbsv record in fixture"
+    # Severus: DR and DV are explicit FORMAT fields → non-empty
+    assert (severus_rows["DEPTH TRANS"] != "").all(), "Severus DEPTH TRANS should be non-empty"
+    # PBSV: depth comes from AD fallback → non-empty
+    assert (pbsv_rows["DEPTH TRANS"] != "").all(), "PBSV DEPTH TRANS should be non-empty (AD fallback)"
+
+
+@pytest.mark.skipif(not COLO829_VCF.exists(), reason="COLO829_T.vcf not present")
+def test_process_sv_vcf_severus_strand_vaf():
+    """Severus records should have STRANDS → STRAND populated and VAF from FORMAT."""
+    df = process_sv_vcf(str(COLO829_VCF))
+    severus_rows = df[df["CALLER"] == "severus"]
+    assert len(severus_rows) > 0, "Expected at least one severus record in fixture"
+    assert (severus_rows["STRAND"] != "").all(), "Severus STRAND should be non-empty (from STRANDS field)"
+    assert (severus_rows["VAF"] != "").all(), "Severus VAF should be non-empty (from FORMAT)"
 
 
 # --- Tests for get_genes_from_bed ---

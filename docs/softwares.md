@@ -5,8 +5,8 @@ Below is a list of the key software components used in the pipeline:
 
 | Software       | Version    | Description                                                                                                                  |
 |----------------|------------|------------------------------------------------------------------------------------------------------------------------------|
-| snakemake      | >=7.8.0,<8 | A workflow management system that allows for the creation of reproducible and scalable data analyses.                        |
-| hydra-genetics | 3.3.0      | A framework for building and managing Snakemake pipelines, providing a structured approach to bioinformatics workflows.      |
+| snakemake      | >=7.32.4,<8 | A workflow management system that allows for the creation of reproducible and scalable data analyses.                        |
+| hydra-genetics | 4.0.0      | A framework for building and managing Snakemake pipelines, providing a structured approach to bioinformatics workflows.      |
 | DeepSomatic    | 1.9.0      | A tool for somatic variant calling in long-read sequencing data, specifically designed for PacBio data. Used when `use_deepsomatic: true`. |
 | ClairS-TO      | 0.4.1      | Tumor-only somatic small variant caller for long-read data. Default SNV caller (`use_deepsomatic: false`).                   |
 | bcftools       | 1.16       | A set of utilities for manipulating variant call format (VCF) and binary call format (BCF) files.                            |

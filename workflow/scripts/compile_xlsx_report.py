@@ -11,7 +11,11 @@ from typing import Callable
 from typing import TextIO
 
 import pandas as pd
+import pysam
 import yaml
+
+
+ALLOWED_SV_TYPES = ["DEL", "INS", "INV", "DUP", "BND"]
 
 
 # --- Decorators ---
@@ -127,6 +131,13 @@ def get_genes_from_bed(bed_path: str) -> set[str]:
     return genes
 
 
+def unwrap_info(value):
+    """Return the first element if value is a tuple, otherwise return value unchanged."""
+    if isinstance(value, tuple):
+        return value[0] if value else None
+    return value
+
+
 def parse_version_from_container(container: str) -> str:
     """Extract version tag from a container image string (e.g. 'docker://org/tool:1.2.3' → '1.2.3')."""
     if ":" in container:
@@ -218,82 +229,6 @@ def parse_vcf_line(
 
 
 @safe_parser
-def parse_sv_vcf_line(
-    line: str,
-    allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP", "BND"],
-    info_values: list[str] = ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"],
-    ncol: int = 10,
-) -> dict[str, str]:
-    """
-    Parse a single structural variant VCF line into a dictionary.
-    """
-    parts = line.strip().split("\t")
-    if len(parts) < ncol:
-        raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
-    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_ = parts[:ncol]
-
-    # Parse ID field
-    match = re.search(r"\.(.*?)\.", id_)
-    var_type = match.group(1) if match else id_
-    # check that id_ is not empty
-    if not id_:
-        raise ValueError("ID field (type of variant) is empty!")
-
-    # Strip potential caller suffixes from var_type if they exist (e.g. from SVDB merge)
-    if ":" in var_type:
-        var_type = var_type.split(":")[0]
-
-    # check if the extracted variant type is valid
-    if var_type not in allowed_var_types:
-        # Fallback for unexpected types
-        logging.warning(f"Unexpected variant type '{var_type}' at {chrom}:{pos}. Expected one of {allowed_var_types}")
-
-    # Parse INFO field
-    info_dict = parse_info(info)
-    # check if it is empty
-    if not info_dict:
-        raise ValueError("Could not parse INFO field. Does it exist?")
-
-    # Extract Caller name
-    caller = info_dict.get("svdb_origin", "unknown")
-    if (caller == "unknown" or not caller) and "." in id_:
-        caller = id_.split(".")[0]
-
-    # Parse FORMAT and SAMPLE columns
-    format_dict = parse_format(format_, sample_)
-
-    # Extract depth with fallback to AD if DR/DV are missing (common in PBSV)
-    depth_ref = format_dict.get("DR", "")
-    depth_trans = format_dict.get("DV", "")
-    if (not depth_ref or not depth_trans) and "AD" in format_dict:
-        ad_parts = format_dict["AD"].split(",")
-        if len(ad_parts) >= 2:
-            depth_ref = ad_parts[0]
-            depth_trans = ad_parts[1]
-
-    # build row dictionary
-    row = {
-        "CHROM": chrom,
-        "POS": pos,
-        "END": info_dict.get("END", ""),
-        "TYPE": var_type,
-        "SVLEN": info_dict.get("SVLEN", ""),
-        "ALT": alt,
-        "FILTER": filter_,
-        "CALLER": caller,
-        "COVERAGE": info_dict.get("COVERAGE", ""),
-        "SUPPORT": info_dict.get("SUPPORT", ""),
-        "STRAND": info_dict.get("STRAND", ""),
-        "VAF": info_dict.get("VAF", ""),
-        "GENOTYPE": format_dict.get("GT", ""),
-        "GENOME QUALITY": format_dict.get("GQ", ""),
-        "DEPTH REF": depth_ref,
-        "DEPTH TRANS": depth_trans,
-    }
-    return row
-
-
-@safe_parser
 def parse_cnvkit_vcf_line(
     vcf_line: str,
     ncol: int = 10,
@@ -370,6 +305,126 @@ def parse_cnvkit_vcf_line(
 
 
 # --- Main Processing Logic ---
+
+
+@log_execution
+def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
+    """
+    Parse an SV VCF file (e.g. from SVDB query) using pysam.
+
+    Advantages over plain-text parsing:
+    - Sample columns are selected by name, not by index, which is robust when
+      SVDB merge produces two sample columns (haplotagged for Severus; regular
+      BAM for PBSV / Sniffles2).
+    - INFO fields are returned with their declared types so GNOMAD_AC / CUSTOM_AC
+      land in Excel as integers and GNOMAD_AF / CUSTOM_AF as floats.
+    """
+    rows: list[dict] = []
+
+    with pysam.VariantFile(vcf_path, "r") as vcf:
+        all_samples = list(vcf.header.samples)
+        # SVDB merge may produce two sample columns:
+        #   haplotagged BAM sample — used by Severus
+        #   regular BAM sample    — used by PBSV and Sniffles2
+        haplotagged = next((s for s in all_samples if "haplotagged" in s.lower()), None)
+        regular = next((s for s in all_samples if "haplotagged" not in s.lower()), None) or (
+            all_samples[0] if all_samples else None
+        )
+        if not haplotagged and not regular:
+            logging.warning(f"No valid sample columns found in {vcf_path}; sample data will be empty.")
+
+        for record in vcf:
+            # ── Caller ──────────────────────────────────────────────────────────
+            caller = unwrap_info(record.info["svdb_origin"]) if "svdb_origin" in record.info else None
+            caller = caller.lower() if caller else "unknown"
+            if (not caller or caller == "unknown") and record.id and "." in record.id:
+                caller = record.id.split(".")[0].lower()
+
+            # ── Variant type ─────────────────────────────────────────────────────
+            # Try dot-delimited ID (e.g. "Sniffles2.DEL.1"); fall back to SVTYPE
+            # for callers like Severus whose IDs don't embed the type.
+            var_type = ""
+            if record.id:
+                m = re.search(r"\.(.*?)\.", record.id)
+                var_type = m.group(1) if m else ""
+                if ":" in var_type:
+                    var_type = var_type.split(":")[0]
+            if not var_type or var_type not in ALLOWED_SV_TYPES:
+                var_type = (record.info["SVTYPE"] if "SVTYPE" in record.info else None) or var_type or (record.id or "")
+            if var_type not in ALLOWED_SV_TYPES:
+                logging.warning(f"Unexpected variant type '{var_type}' at {record.chrom}:{record.pos}.")
+
+            # ── Sample selection ─────────────────────────────────────────────────
+            samp_name = haplotagged if (caller == "severus" and haplotagged) else regular
+            samp = record.samples[samp_name] if samp_name else None
+
+            # ── Genotype / depth ─────────────────────────────────────────────────
+            gt = gq = ""
+            dr = dv = None
+            if samp is not None:
+                raw_gt = samp.get("GT")
+                if raw_gt is not None:
+                    gt = "/".join("." if a is None else str(a) for a in raw_gt)
+                raw_gq = samp.get("GQ")
+                gq = "" if raw_gq is None else str(raw_gq)
+                dr = samp.get("DR")
+                dv = samp.get("DV")
+                # PBSV uses AD (ref, alt) instead of DR / DV
+                if dr is None or dv is None:
+                    ad = samp.get("AD")
+                    if ad is not None and len(ad) >= 2:
+                        dr, dv = ad[0], ad[1]
+
+            # ── COVERAGE (Sniffles2 tuple → comma-separated string) ───────────────
+            raw_cov = record.info["COVERAGE"] if "COVERAGE" in record.info else None
+            if raw_cov is not None:
+                if isinstance(raw_cov, (str, bytes)) or not isinstance(raw_cov, (list, tuple, set)):
+                    raw_cov = [raw_cov]
+                parts = []
+                for v in raw_cov:
+                    try:
+                        parts.append(str(int(v)))
+                    except (TypeError, ValueError):
+                        pass
+                coverage = ",".join(parts)
+            else:
+                coverage = ""
+
+            # ── STRAND / STRANDS ─────────────────────────────────────────────────
+            strand = record.info.get("STRAND") or record.info.get("STRANDS") or ""
+
+            # ── VAF: INFO first (Sniffles2), FORMAT fallback (Severus) ────────────
+            vaf = record.info["VAF"] if "VAF" in record.info else None
+            if vaf is None and samp is not None:
+                vaf = samp.get("VAF")
+
+            row = {
+                "CHROM": record.chrom,
+                "POS": str(record.pos),
+                "END": str(record.info["END"]) if "END" in record.info else "",
+                "TYPE": var_type,
+                "SVLEN": str(record.info["SVLEN"]) if "SVLEN" in record.info else "",
+                "ALT": record.alts[0] if record.alts else "",
+                "FILTER": ";".join(record.filter.keys()) or ".",
+                "CALLER": caller,
+                "COVERAGE": coverage,
+                "SUPPORT": str(record.info["SUPPORT"]) if "SUPPORT" in record.info else "",
+                "STRAND": strand,
+                "VAF": str(vaf) if vaf is not None else "",
+                "GENOTYPE": gt,
+                "GENOME QUALITY": gq,
+                "DEPTH REF": str(dr) if dr is not None else "",
+                "DEPTH TRANS": str(dv) if dv is not None else "",
+                # Population frequency annotations added by SVDB query
+                # Kept as native int / float so Excel renders them as numbers
+                "GNOMAD_AC": unwrap_info(record.info["GNOMAD_AC"]) if "GNOMAD_AC" in record.info else None,
+                "GNOMAD_AF": unwrap_info(record.info["GNOMAD_AF"]) if "GNOMAD_AF" in record.info else None,
+                "CUSTOM_AC": unwrap_info(record.info["CUSTOM_AC"]) if "CUSTOM_AC" in record.info else None,
+                "CUSTOM_AF": unwrap_info(record.info["CUSTOM_AF"]) if "CUSTOM_AF" in record.info else None,
+            }
+            rows.append(row)
+
+    return pd.DataFrame(rows)
 
 
 @log_execution
@@ -497,7 +552,7 @@ def create_report(snakemake_obj: Any):
     # --- 2. Process SV VCF ---
     logging.info(f"Parsing file: {vcf_sv}")
     try:
-        sv_df = process_vcf(vcf_sv, parse_sv_vcf_line)
+        sv_df = process_sv_vcf(vcf_sv)
     except Exception as e:
         logging.error(f"{e}")
         sv_df = pd.DataFrame()
@@ -546,8 +601,7 @@ def create_report(snakemake_obj: Any):
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
     versions_df = pd.DataFrame(
-        [{"Tool": tool, "Version": parse_version_from_container(container)}
-         for tool, container in software_versions.items()]
+        [{"Tool": tool, "Version": parse_version_from_container(container)} for tool, container in software_versions.items()]
     )
 
     # --- Write to Excel ---

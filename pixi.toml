@@ -39,6 +39,9 @@ xlsxwriter = ">=3.2.5,<4"
 drmaa = "==0.7.9,<0.8"
 python-graphviz = ">=0.16,<0.17"
 
+[target.osx-arm64.dependencies]
+pysam = ">=0.23.3,<0.24"
+
 # shared PyPI dependencies
 [pypi-dependencies]
 snakemake = ">=7.32.4, <8"
