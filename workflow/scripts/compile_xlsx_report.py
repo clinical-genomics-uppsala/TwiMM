@@ -378,6 +378,8 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
             # ── COVERAGE (Sniffles2 tuple → comma-separated string) ───────────────
             raw_cov = record.info["COVERAGE"] if "COVERAGE" in record.info else None
             if raw_cov is not None:
+                if isinstance(raw_cov, (str, bytes)) or not isinstance(raw_cov, (list, tuple, set)):
+                    raw_cov = [raw_cov]
                 parts = []
                 for v in raw_cov:
                     try:
