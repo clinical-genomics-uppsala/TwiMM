@@ -1,6 +1,20 @@
 ---
 
  files:
+   # reports
+   - name: "cnvkit_html_reports"
+     output: "results/cnv_sv/cnvkit/html_reports/{sample}_{type}.pathology.cnv_report.html"
+     input: "reports/cnv_html_report/{sample}_{type}.pathology.cnv_report.html"
+
+   - name: "excel_report"
+     output: "results/xlsx_reports/{sample}_{type}_combined_report.xlsx"
+     input: "reports/xlsx_reports/{sample}_{type}_combined_report.xlsx"
+
+   - name: "multiqc_html_report"
+     output: "results/qc/multiqc/multiqc_design2.html"
+     input: "qc/multiqc/multiqc_DNA.html"
+
+   # VCF and index files
    - name: "snv_vep_annotated_vcf"
      output: "results/snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.vcf.gz"
      input: "snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.vcf.gz"
@@ -21,18 +35,6 @@
      output: "results/cnv_sv/severus_t_only/{sample}_{type}_all_sv.include.panel.vcf.gz.tbi"
      input: "cnv_sv/severus_t_only/{sample}_{type}_all_sv.include.panel.vcf.gz.tbi"
 
-   - name: "cnvkit_html_reports"
-     output: "results/cnv_sv/cnvkit/html_reports/{sample}_{type}.pathology.cnv_report.html"
-     input: "reports/cnv_html_report/{sample}_{type}.pathology.cnv_report.html"
-
-   - name: "mapped_haplotagged_bam"
-     output: "results/snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"
-     input: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"
-
-   - name: "mapped_haplotagged_bam_index"
-     output: "results/snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai"
-     input: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai"
-
    - name: "annotated_cnvkit_vcf"
      output: "results/cnv_sv/cnvkit/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf.gz"
      input: "cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf.gz"
@@ -40,34 +42,6 @@
    - name: "index_cnvkit_vcf"
      output: "results/cnv_sv/cnvkit/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf.gz.tbi"
      input: "cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf.gz.tbi"
-
-   - name: "cnvkit_cnr"
-     output: "results/cnv_sv/cnvkit/cnvkit_batch/{sample}_{type}.cnr"
-     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cnr"
-
-   - name: "cnvkit_cns"
-     output: "results/cnv_sv/cnvkit/cnvkit_batch/{sample}_{type}.cns"
-     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns"
-
-   - name: "excel_report"
-     output: "results/xlsx_reports/{sample}_{type}_combined_report.xlsx"
-     input: "reports/xlsx_reports/{sample}_{type}_combined_report.xlsx"
-
-   - name: "multiqc_html_report"
-     output: "results/qc/multiqc/multiqc_design2.html"
-     input: "qc/multiqc/multiqc_DNA.html"
-
-   - name: "coverage_regions"
-     output: "results/qc/mosdepth/{sample}_{type}.regions.bed.gz"
-     input: "qc/mosdepth/{sample}_{type}.regions.bed.gz"
-
-   - name: "pbmm2_bam"
-     output: "results/mapped_bam/pbmm2_align/{sample}_{type}.bam"
-     input: "alignment/pbmm2_align/{sample}_{type}.bam"
-
-   - name: "vacmap_bam"
-     output: "results/mapped_bam/vacmap_align/{sample}_{type}.bam"
-     input: "alignment/vacmap_align/{sample}_{type}.bam"
 
    - name: "pbsv_vcf"
      output: "results/cnv_sv/pbsv_call/{sample}_{type}.include.panel.vcf.gz"
@@ -84,3 +58,33 @@
    - name: "svdb_queried_vcf"
      output: "results/cnv_sv/svdb_query/{sample}_{type}.vcf"
      input: "cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf"
+
+  # BAM and index files
+   - name: "mapped_haplotagged_bam"
+     output: "results/snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"
+     input: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam"
+
+   - name: "mapped_haplotagged_bam_index"
+     output: "results/snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai"
+     input: "snv_indels/whatshap_haplotag/{sample}_{type}.haplotagged.bam.bai"
+
+   - name: "pbmm2_bam"
+     output: "results/mapped_bam/pbmm2_align/{sample}_{type}.bam"
+     input: "alignment/pbmm2_align/{sample}_{type}.bam"
+
+   - name: "vacmap_bam"
+     output: "results/mapped_bam/vacmap_align/{sample}_{type}.bam"
+     input: "alignment/vacmap_align/{sample}_{type}.bam"
+
+   # Other
+   - name: "cnvkit_cnr"
+     output: "results/cnv_sv/cnvkit/cnvkit_batch/{sample}_{type}.cnr"
+     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cnr"
+
+   - name: "cnvkit_cns"
+     output: "results/cnv_sv/cnvkit/cnvkit_batch/{sample}_{type}.cns"
+     input: "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns"
+
+   - name: "coverage_regions"
+     output: "results/qc/mosdepth/{sample}_{type}.regions.bed.gz"
+     input: "qc/mosdepth/{sample}_{type}.regions.bed.gz"
