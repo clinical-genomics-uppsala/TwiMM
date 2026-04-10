@@ -145,6 +145,60 @@ def parse_version_from_container(container: str) -> str:
     return "unknown"
 
 
+def filter_cnv_df(
+    df: pd.DataFrame,
+    corr_cn_min: float,
+    corr_cn_max: float,
+    baf_min: float,
+    baf_max: float,
+    svlen_min_mb: float,
+) -> pd.DataFrame:
+    """
+    Apply CNV-tab filters to a CNV DataFrame (SVLEN column must already be in Mb).
+
+    Keeps rows where:
+    - VARIANT_TYPE != COPY_NORMAL
+    - CORR_CN < corr_cn_min OR CORR_CN > corr_cn_max
+    - BAF < baf_min OR BAF > baf_max
+    - |SVLEN (Mb)| >= svlen_min_mb  (only applied when svlen_min_mb > 0)
+
+    Rows whose CORR_CN or BAF cannot be coerced to float are dropped.
+    """
+    if df.empty:
+        return df
+
+    n_before = len(df)
+    df = df[df["VARIANT_TYPE"] != "COPY_NORMAL"]
+    logging.info(f"CNV rows after removing COPY_NORMAL: {len(df)} (removed {n_before - len(df)})")
+
+    n_before = len(df)
+    corr_cn = pd.to_numeric(df["CORR_CN"], errors="coerce")
+    df = df[(corr_cn < corr_cn_min) | (corr_cn > corr_cn_max)]
+    logging.info(
+        f"CNV rows after CORR_CN filter (outside [{corr_cn_min}, {corr_cn_max}]): "
+        f"{len(df)} (removed {n_before - len(df)})"
+    )
+
+    n_before = len(df)
+    baf = pd.to_numeric(df["BAF"], errors="coerce")
+    df = df[(baf < baf_min) | (baf > baf_max)]
+    logging.info(
+        f"CNV rows after BAF filter (outside [{baf_min}, {baf_max}]): "
+        f"{len(df)} (removed {n_before - len(df)})"
+    )
+
+    if svlen_min_mb > 0:
+        n_before = len(df)
+        svlen_abs = pd.to_numeric(df["SVLEN (Mb)"], errors="coerce").abs()
+        df = df[svlen_abs >= svlen_min_mb]
+        logging.info(
+            f"CNV rows after SVLEN filter (>= {svlen_min_mb} Mb): "
+            f"{len(df)} (removed {n_before - len(df)})"
+        )
+
+    return df
+
+
 def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
     """
     Write a dataframe to an Excel sheet and apply autofilter to the header.
@@ -490,6 +544,11 @@ def create_report(snakemake_obj: Any):
     # idid stands for Insertion, Deletion, Duplication, Inversion (SV)
     idid_min_len = filters.get("sv_min_len", 1000)
     columns_drop_idid = filters.get("columns_drop_sv", [])
+    cnv_corr_cn_min = filters.get("cnv_corr_cn_min", 1.4)
+    cnv_corr_cn_max = filters.get("cnv_corr_cn_max", 2.5)
+    cnv_baf_min = filters.get("cnv_baf_min", 0.3)
+    cnv_baf_max = filters.get("cnv_baf_max", 0.7)
+    cnv_svlen_min_mb = filters.get("cnv_svlen_min_mb", 0.0)
 
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
@@ -599,6 +658,9 @@ def create_report(snakemake_obj: Any):
         cnv_df = pd.DataFrame()
 
     logging.info(f"Total CNVs read: {len(cnv_df)}")
+
+    cnv_df = filter_cnv_df(cnv_df, cnv_corr_cn_min, cnv_corr_cn_max, cnv_baf_min, cnv_baf_max, cnv_svlen_min_mb)
+    logging.info(f"CNVs after filtering: {len(cnv_df)}")
 
     versions_df = pd.DataFrame(
         [{"Tool": tool, "Version": parse_version_from_container(container)} for tool, container in software_versions.items()]
