@@ -43,14 +43,6 @@ columns_drop_tn:
 columns_drop_sv:
   - "GENOTYPE"
   - "GENOME QUALITY"
-# CNV tab filters: rows outside the normal CN range and BAF range are kept
-# VARIANT_TYPE == COPY_NORMAL is always removed
-cnv_corr_cn_min: 1.4
-cnv_corr_cn_max: 2.5
-cnv_baf_min: 0.3
-cnv_baf_max: 0.7
-# Minimum absolute SVLEN in Megabases (0.0 = no filter)
-cnv_svlen_min_mb: 0.0
 # must match present VEP annotation fields
 vep_info_fields:
   - "Allele"
