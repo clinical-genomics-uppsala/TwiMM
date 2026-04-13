@@ -435,6 +435,24 @@ use rule tabix from cnv_sv as cnv_sv_tabix_cnvkit_vcf with:
         file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline",
 
 
+# hard-filter CNVkit germline VCF (removes COPY_NORMAL / diploid-BAF regions)
+# output: temp("{file}.filter.{tag}.vcf"), tag='cnv_loh'
+use rule filter_vcf from filtering as filtering_filter_cnvkit_vcf with:
+    wildcard_constraints:
+        file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline",
+
+
+# bgzip & tabix filtered CNVkit VCF (needed by merge_cnv_json filtered_cnv_vcfs)
+use rule bgzip from cnv_sv as cnv_sv_bgzip_filtered_cnvkit_vcf with:
+    wildcard_constraints:
+        file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline\.filter\.cnv_loh",
+
+
+use rule tabix from cnv_sv as cnv_sv_tabix_filtered_cnvkit_vcf with:
+    wildcard_constraints:
+        file="cnv_sv/cnvkit_vcf/.+\.pathology\.annotate_cnv\.germline\.filter\.cnv_loh",
+
+
 # CNVkit reports
 # the inputs here are cns and cnr files from cnvkit_batch
 # t.ex.: "cnv_sv/cnvkit_batch/{sample}/{sample}_{type}.cns"
@@ -482,7 +500,7 @@ rule reports_compile_xlsx_report:
     input:
         vcf_snv="snv_indels/whatshap_phase/{sample}_{type}.phased.include.panel.vep_annotated.vcf.gz",
         vcf_sv="cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf",
-        vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.vcf",
+        vcf_cnv="cnv_sv/cnvkit_vcf/{sample}_{type}.pathology.annotate_cnv.germline.filter.cnv_loh.vcf",
     output:
         xlsx=temp("reports/xlsx_reports/{sample}_{type}_combined_report.xlsx"),
     params:
