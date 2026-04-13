@@ -81,6 +81,7 @@ deepsomatic_t_only:
 
 filter_vcf:
   germline: "config/filters/config_hard_filter_germline_vep.yaml"
+  cnv_loh: "config/filters/config_hard_filter_cnv_loh.yaml"
 
 general_report: "config/report.yaml"
 
@@ -89,7 +90,7 @@ merge_cnv_json:
   unfiltered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs:
-    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.filter.cnv_loh.vcf.gz"
   annotations:
     - *design_bed
 
