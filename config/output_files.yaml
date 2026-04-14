@@ -11,7 +11,7 @@
      input: "reports/xlsx_reports/{sample}_{type}_combined_report.xlsx"
 
    - name: "multiqc_html_report"
-     output: "results/qc/multiqc/multiqc_design2.html"
+     output: "results/qc/multiqc/multiqc_tumors.html"
      input: "qc/multiqc/multiqc_DNA.html"
 
    # VCF and index files
