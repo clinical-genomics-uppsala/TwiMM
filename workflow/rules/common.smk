@@ -266,5 +266,16 @@ def get_snv_caller_output(wildcards):
         return "snv_indels/clairs_to/{sample}_{type}.vcf.gz"
 
 
+def get_concat_caller_vcfs(wildcards):
+    """Return caller-tagged VCF paths for bcftools concat.
+    Only called when use_deepsomatic is true (the concat rule is only
+    triggered by get_snv_caller_output in that case).
+    """
+    return [
+        f"snv_indels/clairs_to/{wildcards.sample}_{wildcards.type}.caller_tagged.vcf.gz",
+        f"snv_indels/deepsomatic_t_only/{wildcards.sample}_{wildcards.type}.caller_tagged.vcf.gz",
+    ]
+
+
 def get_ubam_input(wildcards):
     return units.loc[(wildcards.sample, wildcards.type), "bam"].tolist()

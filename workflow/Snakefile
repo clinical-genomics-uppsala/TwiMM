@@ -274,14 +274,8 @@ rule snv_indels_bcftools_concat_callers:
     tabix-indexed inputs.
     """
     input:
-        vcfs=[
-            "snv_indels/clairs_to/{sample}_{type}.caller_tagged.vcf.gz",
-            "snv_indels/deepsomatic_t_only/{sample}_{type}.caller_tagged.vcf.gz",
-        ],
-        tbis=[
-            "snv_indels/clairs_to/{sample}_{type}.caller_tagged.vcf.gz.tbi",
-            "snv_indels/deepsomatic_t_only/{sample}_{type}.caller_tagged.vcf.gz.tbi",
-        ],
+        vcfs=get_concat_caller_vcfs,
+        tbis=lambda wildcards: [f"{v}.tbi" for v in get_concat_caller_vcfs(wildcards)],
     output:
         vcf=temp("snv_indels/snv_concat/{sample}_{type}.vcf.gz"),
     log:
