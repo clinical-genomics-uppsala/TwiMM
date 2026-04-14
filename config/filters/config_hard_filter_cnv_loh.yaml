@@ -1,0 +1,5 @@
+filters:
+  copy_number:
+    description: "Hard filter cnvs with over 1.4 copies if the BAF is close to 0.5 as well as all amplifications"
+    expression: "(INFO:CORR_CN > 1.4 and INFO:NA_TRUE:BAF > 0.3 and INFO:NA_TRUE:BAF < 0.7) or (INFO:CORR_CN > 2.5)"
+    soft_filter: "False"

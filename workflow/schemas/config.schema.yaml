@@ -192,7 +192,10 @@ properties:
       germline:
         type: string
         description: "Path to filter YAML used for germline filtering of VEP annotated VCFs."
-    required: ["germline"]
+      cnv_loh:
+        type: string
+        description: "Path to filter YAML used for hard-filtering of CNVkit germline VCFs (removes diploid-BAF and COPY_NORMAL regions)."
+    required: ["germline", "cnv_loh"]
 
   general_report:
     type: string
