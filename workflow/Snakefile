@@ -193,6 +193,7 @@ use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only wit
 # Each VCF is tagged with a CALLER INFO field, then they are concatenated and
 # sorted so that the merged file can flow through the shared downstream pipeline.
 
+
 rule snv_indels_clairs_to_add_caller_tag:
     """Add CALLER=clairs_to to the INFO field of every ClairS-TO record."""
     input:
