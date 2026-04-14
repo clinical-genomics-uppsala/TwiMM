@@ -260,7 +260,8 @@ def get_tc_file(wildcards):
 
 def get_snv_caller_output(wildcards):
     if config["use_deepsomatic"]:
-        return "snv_indels/deepsomatic_t_only/{sample}_{type}.vcf.gz"
+        # Both callers are used; fix_af receives the sorted concat VCF
+        return "snv_indels/snv_concat/{sample}_{type}.vcf.gz"
     else:
         return "snv_indels/clairs_to/{sample}_{type}.vcf.gz"
 
