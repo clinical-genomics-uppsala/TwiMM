@@ -16,8 +16,8 @@ all-dry = "snakemake --configfile config/config.yaml -n --cores 1"
 all-full = "snakemake --configfile config/config.yaml --profile profiles/marvin_cpu"
 test-dry = "snakemake --configfiles config/config.yaml config/config_test.yaml -n --cores 1"
 test-full = "snakemake --configfiles config/config.yaml config/config_test.yaml --profile profiles/marvin_cpu"
-ruleg-cl = "snakemake --configfiles config/config.yaml config/config_test.yaml --rulegraph | dot -Tsvg > images/rulegraph_clairs.svg"
-dot-cl = "snakemake --configfiles config/config.yaml config/config_test.yaml --rulegraph > images/rulegraph_clairs.dot"
+ruleg = "snakemake --configfiles config/config.yaml config/config_test.yaml --rulegraph | dot -Tsvg > images/rulegraph.svg"
+dot = "snakemake --configfiles config/config.yaml config/config_test.yaml --rulegraph > images/rulegraph.dot"
 
 # shared conda dependencies
 [dependencies]
