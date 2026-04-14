@@ -192,10 +192,10 @@ properties:
       germline:
         type: string
         description: "Path to filter YAML used for germline filtering of VEP annotated VCFs."
-      cnv_loh:
+      cnv_filter:
         type: string
-        description: "Path to filter YAML used for hard-filtering of CNVkit germline VCFs (removes diploid-BAF and COPY_NORMAL regions)."
-    required: ["germline", "cnv_loh"]
+        description: "Path to filter YAML used for hard-filtering of CNVkit germline VCFs (removes COPY_NORMAL regions)."
+    required: ["germline", "cnv_filter"]
 
   general_report:
     type: string
@@ -393,7 +393,7 @@ properties:
 
   use_deepsomatic:
     type: boolean
-    description: "Flag to enable/disable DeepSomatic calling in the pipeline. If not used, set to false."
+    description: "When false (default): use ClairS-TO only. When true: run both ClairS-TO and DeepSomatic; each VCF is tagged with a CALLER INFO field and the results are concatenated for downstream processing."
 
   vacmap_align:
     type: object
@@ -496,4 +496,4 @@ oneOf:
   - properties:
       use_deepsomatic:
         enum: [true]
-    required: [deepsomatic_t_only]
+    required: [clairs_to_call, deepsomatic_t_only]
