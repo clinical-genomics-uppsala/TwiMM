@@ -117,7 +117,7 @@ validate(output_spec, schema="../schemas/output_files.schema.yaml")
 ### Set wildcard constraints
 wildcard_constraints:
     sample="|".join(samples.index),
-    type="N|T|R",
+    type="T",
 
 
 def compile_output_file_list(wildcards):
