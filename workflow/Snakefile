@@ -278,6 +278,7 @@ rule snv_indels_bcftools_concat_callers:
         tbis=lambda wildcards: [f"{v}.tbi" for v in get_concat_caller_vcfs(wildcards)],
     output:
         vcf=temp("snv_indels/snv_concat/{sample}_{type}.vcf.gz"),
+        tbi=temp("snv_indels/snv_concat/{sample}_{type}.vcf.gz.tbi"),
     log:
         "snv_indels/snv_concat/{sample}_{type}.vcf.gz.log",
     threads: config.get("bcftools_concat_callers", {}).get("threads", config["default_resources"]["threads"])
@@ -293,12 +294,27 @@ rule snv_indels_bcftools_concat_callers:
         "{rule}: merging ClairS-TO and DeepSomatic VCFs for {wildcards.sample}_{wildcards.type}"
     shell:
         """
-        (bcftools concat -a {input.vcfs} | bcftools sort -O z -o {output.vcf}) 2> {log}
+        (
+          tmpdir=$(mktemp -d)
+          trap "rm -rf $tmpdir" EXIT
+          echo "{wildcards.sample}" > $tmpdir/samples.txt
+          bcftools reheader -s $tmpdir/samples.txt {input.vcfs[0]} -o $tmpdir/vcf0.vcf.gz
+          tabix $tmpdir/vcf0.vcf.gz
+          bcftools reheader -s $tmpdir/samples.txt {input.vcfs[1]} -o $tmpdir/vcf1.vcf.gz
+          tabix $tmpdir/vcf1.vcf.gz
+          bcftools concat -a $tmpdir/vcf0.vcf.gz $tmpdir/vcf1.vcf.gz | \
+          bcftools norm -m- | \
+          bcftools sort -O z -o {output.vcf}
+          tabix {output.vcf}
+        ) 2> {log}
         """
 
 
 # fix AF entries
-use rule fix_af from snv_indels as snv_indels_fix_af with:
+# Local script overrides the module's fix_af.py to add snv_concat as a valid
+# caller (the concat of clairs_to + deepsomatic VCFs), treated identically to
+# clairs_to: FORMAT/AF is propagated to INFO/AF with no transformation.
+rule fix_af:
     input:
         vcf=get_snv_caller_output,
     output:
@@ -310,6 +326,19 @@ use rule fix_af from snv_indels as snv_indels_fix_af with:
             "snv_indels/fix_af/{sample}_{type}.vcf.benchmark.tsv",
             config.get("fix_af", {}).get("benchmark_repeats", 1),
         )
+    threads: config.get("fix_af", {}).get("threads", config["default_resources"]["threads"])
+    resources:
+        mem_mb=config.get("fix_af", {}).get("mem_mb", config["default_resources"]["mem_mb"]),
+        mem_per_cpu=config.get("fix_af", {}).get("mem_per_cpu", config["default_resources"]["mem_per_cpu"]),
+        partition=config.get("fix_af", {}).get("partition", config["default_resources"]["partition"]),
+        threads=config.get("fix_af", {}).get("threads", config["default_resources"]["threads"]),
+        time=config.get("fix_af", {}).get("time", config["default_resources"]["time"]),
+    container:
+        config.get("fix_af", {}).get("container", config["default_container"])
+    message:
+        "{rule}: fix missing allele frequency field in format column in {input.vcf}"
+    script:
+        "scripts/fix_af.py"
 
 
 # Phase SNV output with fixed AF
