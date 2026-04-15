@@ -92,4 +92,4 @@ Key output files (see [full list](docs/result_files.md)):
 
 ## :judge: Rule Graph
 
-![rule_graph2](images/rulegraph_clairs.svg)
+![rule_graph](images/rulegraph.svg)

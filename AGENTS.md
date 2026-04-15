@@ -104,3 +104,4 @@ Container images for this pipeline can be found at https://hub.docker.com/u/hydr
 ## Development
 Add new rules from `hydra-genetics` repos. If it's not possible, write local rules.
 After adding a new rule, update schemas and notify the user that rulegraphs can only be updated on the server.
+After adding a new feature or refactoring, run `coderabbit --prompt-only` in the background and fix the issues found.

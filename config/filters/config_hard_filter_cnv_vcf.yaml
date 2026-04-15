@@ -1,0 +1,5 @@
+filters:
+  copy_number:
+    description: "Hard filter CNVs classified as copy normal"
+    expression: "INFO:SVTYPE = COPY_NORMAL"
+    soft_filter: "False"

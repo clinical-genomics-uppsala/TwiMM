@@ -215,6 +215,7 @@ def parse_vcf_line(
         "ALT": alt,
         "QUAL": qual,
         "FILTER": fltr,
+        "CALLER": info_dict.get("CALLER", ""),
     }
 
     row.update(csq_dict)
@@ -535,6 +536,10 @@ def create_report(snakemake_obj: Any):
             if col in snv_picked_columns.columns:
                 snv_picked_columns[col] = snv_picked_columns[col].str.replace(r"^.*:", "", regex=True)
 
+        # Propagate CALLER column when caller provenance is present in the VCF
+        if "CALLER" in snv_all_df.columns and snv_all_df["CALLER"].ne("").any():
+            snv_picked_columns["CALLER"] = snv_all_df["CALLER"].values
+
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
 
@@ -603,11 +608,23 @@ def create_report(snakemake_obj: Any):
         [{"Tool": tool, "Version": parse_version_from_container(container)} for tool, container in software_versions.items()]
     )
 
+    # --- Build CALLER concordance tab ---
+    # Combines SNV and TP53 rows; only populated when CALLER tags are present.
+    all_snv_df = pd.concat([snv_rest, snv_tp53], ignore_index=True)
+    if "CALLER" in all_snv_df.columns and all_snv_df["CALLER"].ne("").any():
+        caller_cols = [c for c in ["CHROM", "POS", "REF", "ALT", "GENE", "Consequence", "CALLER"]
+                       if c in all_snv_df.columns]
+        caller_df = all_snv_df[caller_cols]
+    else:
+        caller_df = pd.DataFrame()
+    logging.info(f"CALLER tab rows: {len(caller_df)}")
+
     # --- Write to Excel ---
     logging.info("Writing XLSX file.")
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         write_excel_sheet(writer, snv_rest, "SNV")
         write_excel_sheet(writer, snv_tp53, "TP53")
+        write_excel_sheet(writer, caller_df, "CALLER")
         write_excel_sheet(writer, translocations_df, "Translocations")
         write_excel_sheet(writer, sv_chr14_idid, "SV")
         write_excel_sheet(writer, cnv_df, "CNV")

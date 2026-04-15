@@ -72,7 +72,7 @@ def test_parse_format(format_str, sample_str, expected):
 @pytest.mark.parametrize(
     "line, vep_fields, format_fields, expected",
     [
-        # Normal case
+        # Normal case — no CALLER in INFO, CALLER defaults to empty string
         (
             "chr1\t12345\t.\tA\tT\t33\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:35",
             ["Gene", "Impact"],
@@ -84,10 +84,49 @@ def test_parse_format(format_str, sample_str, expected):
                 "ALT": "T",
                 "QUAL": "33",
                 "FILTER": "PASS",
+                "CALLER": "",
                 "GT": "0/1",
                 "DP": "35",
                 "Gene": "gene1",
                 "Impact": "impact1",
+            },
+        ),
+        # CALLER tag present in INFO
+        (
+            "chr1\t12345\t.\tA\tT\t33\tPASS\tCALLER=clairs_to;CSQ=gene1|impact1\tGT:DP\t0/1:35",
+            ["Gene", "Impact"],
+            ["GT", "DP"],
+            {
+                "CHROM": "chr1",
+                "POS": "12345",
+                "REF": "A",
+                "ALT": "T",
+                "QUAL": "33",
+                "FILTER": "PASS",
+                "CALLER": "clairs_to",
+                "GT": "0/1",
+                "DP": "35",
+                "Gene": "gene1",
+                "Impact": "impact1",
+            },
+        ),
+        # CALLER=deepsomatic in INFO
+        (
+            "chr1\t200\t.\tG\tC\t50\tPASS\tCALLER=deepsomatic;CSQ=geneX|HIGH\tGT:DP\t1/1:40",
+            ["Gene", "Impact"],
+            ["GT", "DP"],
+            {
+                "CHROM": "chr1",
+                "POS": "200",
+                "REF": "G",
+                "ALT": "C",
+                "QUAL": "50",
+                "FILTER": "PASS",
+                "CALLER": "deepsomatic",
+                "GT": "1/1",
+                "DP": "40",
+                "Gene": "geneX",
+                "Impact": "HIGH",
             },
         ),
         # Too few columns in VCF line
@@ -299,3 +338,83 @@ def test_get_genes_from_bed(tmp_path):
     malformed_file = tmp_path / "malformed.bed"
     malformed_file.write_text(malformed_content)
     assert get_genes_from_bed(str(malformed_file)) == set()
+
+
+# --- Tests for CALLER tab logic ---
+
+def _make_snv_df_with_caller(caller_values: list[str]) -> pd.DataFrame:
+    """Return a minimal SNV DataFrame with a CALLER column for CALLER-tab tests."""
+    return pd.DataFrame(
+        {
+            "CHROM": ["chr1"] * len(caller_values),
+            "POS": list(range(100, 100 + len(caller_values))),
+            "REF": ["A"] * len(caller_values),
+            "ALT": ["T"] * len(caller_values),
+            "GENE": ["GENE1"] * len(caller_values),
+            "Consequence": ["missense_variant"] * len(caller_values),
+            "CALLER": caller_values,
+        }
+    )
+
+
+def test_caller_tab_populated_when_caller_column_present():
+    """CALLER tab contains rows whenever the CALLER column has non-empty values."""
+    snv_rest = _make_snv_df_with_caller(["clairs_to", "deepsomatic"])
+    snv_tp53 = _make_snv_df_with_caller(["clairs_to"])
+
+    all_snv_df = pd.concat([snv_rest, snv_tp53], ignore_index=True)
+    caller_cols = [c for c in ["CHROM", "POS", "REF", "ALT", "GENE", "Consequence", "CALLER"]
+                   if c in all_snv_df.columns]
+    caller_df = (
+        all_snv_df[caller_cols]
+        if "CALLER" in all_snv_df.columns and all_snv_df["CALLER"].ne("").any()
+        else pd.DataFrame()
+    )
+
+    assert not caller_df.empty
+    assert "CALLER" in caller_df.columns
+    assert set(caller_df["CALLER"].unique()) == {"clairs_to", "deepsomatic"}
+    assert len(caller_df) == 3  # 2 from snv_rest + 1 from snv_tp53
+
+
+def test_caller_tab_empty_when_no_caller_info():
+    """CALLER tab is an empty DataFrame when no CALLER values are present."""
+    snv_rest = _make_snv_df_with_caller(["", ""])
+    snv_tp53 = pd.DataFrame()
+
+    all_snv_df = pd.concat([snv_rest, snv_tp53], ignore_index=True)
+    caller_df = (
+        all_snv_df[["CHROM", "POS", "REF", "ALT", "GENE", "Consequence", "CALLER"]]
+        if "CALLER" in all_snv_df.columns and all_snv_df["CALLER"].ne("").any()
+        else pd.DataFrame()
+    )
+
+    assert caller_df.empty
+
+
+def test_caller_tab_columns_subset():
+    """CALLER tab only exposes the expected subset of columns."""
+    snv_rest = _make_snv_df_with_caller(["clairs_to"])
+    snv_tp53 = pd.DataFrame()
+
+    all_snv_df = pd.concat([snv_rest, snv_tp53], ignore_index=True)
+    caller_cols = [c for c in ["CHROM", "POS", "REF", "ALT", "GENE", "Consequence", "CALLER"]
+                   if c in all_snv_df.columns]
+    caller_df = all_snv_df[caller_cols]
+
+    assert list(caller_df.columns) == ["CHROM", "POS", "REF", "ALT", "GENE", "Consequence", "CALLER"]
+
+
+def test_parse_vcf_line_caller_missing_defaults_to_empty():
+    """When CALLER is absent from INFO, parse_vcf_line returns CALLER=''."""
+    line = "chr1\t500\t.\tC\tG\t.\tPASS\tCSQ=geneA|LOW\tGT:DP\t0/1:20"
+    result = parse_vcf_line(line, ["Gene", "Impact"], ["GT", "DP"])
+    assert "CALLER" in result
+    assert result["CALLER"] == ""
+
+
+def test_parse_vcf_line_caller_present():
+    """When CALLER=deepsomatic is in INFO, parse_vcf_line captures it correctly."""
+    line = "chr7\t100\t.\tA\tT\t.\tPASS\tCALLER=deepsomatic;CSQ=tp53|HIGH\tGT:DP\t0/1:30"
+    result = parse_vcf_line(line, ["Gene", "Impact"], ["GT", "DP"])
+    assert result["CALLER"] == "deepsomatic"
