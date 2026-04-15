@@ -49,7 +49,11 @@ properties:
 
   aligner:
     type: string
-    description: "Name of aligner to use (e.g. 'pbmm2')."
+    description: "Primary aligner for SV callers and haplotagging (e.g. 'vacmap')."
+
+  snv_aligner:
+    type: string
+    description: "Aligner used for SNV callers (clairs_to, deepsomatic) and SNV phasing. Defaults to aligner if not set. Use 'pbmm2' when the primary aligner produces BAMs incompatible with SNV callers (e.g. vacmap)."
 
   phaser:
     type: string

@@ -32,6 +32,7 @@ reference:
   snv_pon: &snv_pon "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results/bcftools_merge/snv_normal.vcf.gz"
 
 aligner: "vacmap"
+snv_aligner: "pbmm2"
 phaser: "whatshap"
 
 annotate_cnv:
