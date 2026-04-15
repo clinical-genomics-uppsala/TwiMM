@@ -188,6 +188,11 @@ def generate_copy_rules(output_spec):
 
 generate_copy_rules(output_spec)
 
+# Shallow config copy with aligner replaced by snv_aligner so that
+# get_input_aligned_bam returns pbmm2 paths for SNV callers while SV callers
+# and whatshap_haplotag continue to use the primary (vacmap) aligner.
+_snv_config = {**config, "aligner": config.get("snv_aligner", config["aligner"])}
+
 
 def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
     """Return native SV caller VCF paths for SVDB merge for the given tc_method wildcard.
