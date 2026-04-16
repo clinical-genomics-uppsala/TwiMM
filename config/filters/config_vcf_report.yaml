@@ -35,6 +35,7 @@ columns_keep_snv:
   - "AF"
   - "DP"
   - "AD"
+  - "CALLER"
 columns_drop_tn:
   - "END"
   - "SVLEN"
