@@ -221,10 +221,10 @@ def parse_vcf_line(
     row.update(csq_dict)
 
     # populate row with values from FORMAT column
+    # Use empty string for fields absent from a particular record (e.g. AF is
+    # missing from DeepSomatic records which use VAF instead).
     for key in format_fields:
-        if key not in format_dict:
-            raise KeyError(f"Required FORMAT field '{key}' is missing in sample data.")
-        row[key] = format_dict[key]
+        row[key] = format_dict.get(key, "")
 
     return row
 

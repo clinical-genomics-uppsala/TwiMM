@@ -131,12 +131,26 @@ def test_parse_format(format_str, sample_str, expected):
         ),
         # Too few columns in VCF line
         ("chr1\t12345\t.\tA\tT", [], [], pytest.raises(ValueError)),
-        # GQ missing in the line
+        # GQ missing in the FORMAT string — parsed as empty string rather than error
+        # (e.g. DeepSomatic records lack AF; missing fields must not abort parsing)
         (
             "chr1\t12345\t.\tA\tT\t.\tPASS\tFAU=46;FCU=28;CSQ=gene1|impact1\tGT:DP\t0/1:25",
             ["Gene", "Impact"],
             ["GT", "DP", "GQ"],
-            pytest.raises(ValueError),
+            {
+                "CHROM": "chr1",
+                "POS": "12345",
+                "REF": "A",
+                "ALT": "T",
+                "QUAL": ".",
+                "FILTER": "PASS",
+                "CALLER": "",
+                "Gene": "gene1",
+                "Impact": "impact1",
+                "GT": "0/1",
+                "DP": "25",
+                "GQ": "",
+            },
         ),
         # You request too many VEP fields from the VCF file
         (
