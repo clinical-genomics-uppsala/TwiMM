@@ -100,6 +100,12 @@ def writeNewVcf(
                 af = row.samples[0].get("VAF")
             if af is not None:
                 row.info["AF"] = af
+            else:
+                logging.warning(
+                    "Record at %s:%s has neither FORMAT/AF nor FORMAT/VAF; INFO/AF will not be set.",
+                    row.chrom,
+                    row.pos,
+                )
         elif caller == "gatk_select_variants_final":
             row.info["AF"] = row.samples[0].get("AF")
         elif caller == "varscan":
