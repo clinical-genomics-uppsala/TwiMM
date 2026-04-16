@@ -513,6 +513,13 @@ def create_report(snakemake_obj: Any):
 
     logging.info(f"Total number of rows: {len(snv_all_df)}.")
 
+    # Derive the expected output column list once so it can be reused for
+    # empty-DataFrame fallbacks (preserving headers even when there are no rows).
+    snv_output_cols = [c if c != "SYMBOL" else "GENE" for c in columns_keep_snv]
+    if "POS" in snv_output_cols and "ALT" in snv_output_cols:
+        snv_output_cols.remove("ALT")
+        snv_output_cols.insert(snv_output_cols.index("POS") + 1, "ALT")
+
     if not snv_all_df.empty:
         logging.info("Filtering out unwanted SNVs and SNVs not passing the tool's default filter.")
         snv_all_df = snv_all_df[(~snv_all_df["Consequence"].isin(snvs_remove)) & (snv_all_df["FILTER"] == "PASS")]
@@ -536,10 +543,6 @@ def create_report(snakemake_obj: Any):
             if col in snv_picked_columns.columns:
                 snv_picked_columns[col] = snv_picked_columns[col].str.replace(r"^.*:", "", regex=True)
 
-        # Propagate CALLER column when caller provenance is present in the VCF
-        if "CALLER" in snv_all_df.columns and snv_all_df["CALLER"].ne("").any():
-            snv_picked_columns["CALLER"] = snv_all_df["CALLER"].values
-
         snv_tp53 = snv_picked_columns[snv_picked_columns.get("GENE") == "TP53"]
         snv_rest = snv_picked_columns[snv_picked_columns.get("GENE") != "TP53"]
 
@@ -547,8 +550,8 @@ def create_report(snakemake_obj: Any):
             logging.info(f"Filtering SNV tab to keep only {len(genes_to_keep)} genes.")
             snv_rest = snv_rest[snv_rest["GENE"].isin(genes_to_keep)]
     else:
-        snv_tp53 = pd.DataFrame()
-        snv_rest = pd.DataFrame()
+        snv_tp53 = pd.DataFrame(columns=snv_output_cols)
+        snv_rest = pd.DataFrame(columns=snv_output_cols)
 
     logging.info(f"Number of SNVs in TP53: {len(snv_tp53)}")
     logging.info(f"Number of SNVs in the other genes: {len(snv_rest)}")
@@ -608,23 +611,11 @@ def create_report(snakemake_obj: Any):
         [{"Tool": tool, "Version": parse_version_from_container(container)} for tool, container in software_versions.items()]
     )
 
-    # --- Build CALLER concordance tab ---
-    # Combines SNV and TP53 rows; only populated when CALLER tags are present.
-    all_snv_df = pd.concat([snv_rest, snv_tp53], ignore_index=True)
-    if "CALLER" in all_snv_df.columns and all_snv_df["CALLER"].ne("").any():
-        caller_cols = [c for c in ["CHROM", "POS", "REF", "ALT", "GENE", "Consequence", "CALLER"]
-                       if c in all_snv_df.columns]
-        caller_df = all_snv_df[caller_cols]
-    else:
-        caller_df = pd.DataFrame()
-    logging.info(f"CALLER tab rows: {len(caller_df)}")
-
     # --- Write to Excel ---
     logging.info("Writing XLSX file.")
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         write_excel_sheet(writer, snv_rest, "SNV")
         write_excel_sheet(writer, snv_tp53, "TP53")
-        write_excel_sheet(writer, caller_df, "CALLER")
         write_excel_sheet(writer, translocations_df, "Translocations")
         write_excel_sheet(writer, sv_chr14_idid, "SV")
         write_excel_sheet(writer, cnv_df, "CNV")

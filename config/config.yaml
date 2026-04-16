@@ -21,7 +21,8 @@ reference:
   fasta: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
   fai: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
   trf: &trf "../ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: &design_bed "../ref_data/Myelom_expected_capture_targets_annotated_v2.bed"
+  design_bed: &design_bed "../ref_data/Myelom_expected_capture_targets_annotated_v2.bed" # for coverage analysis and by-region filtering
+  design_bed_plot: &design_bed_plot "../ref_data/Myelom_expected_capture_targets_annotated_v2_no_backbone.bed" # for annotations on CNVkit HTML plot
   design_intervals: "../ref_data/expected_capture_targets_covered_v2.interval_list"
   panel_full_genes: &panel_full_genes "../ref_data/panel_full_genes.bed"
   cnv_pon: &cnv_pon "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.target_2kb.cnn"
@@ -32,6 +33,7 @@ reference:
   snv_pon: &snv_pon "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results/bcftools_merge/snv_normal.vcf.gz"
 
 aligner: "vacmap"
+snv_aligner: "pbmm2"
 phaser: "whatshap"
 
 annotate_cnv:
@@ -92,7 +94,7 @@ merge_cnv_json:
   filtered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.filter.cnv_filter.vcf.gz"
   annotations:
-    - *design_bed
+    - *design_bed_plot
 
 mosdepth:
   container: "docker://hydragenetics/mosdepth:0.3.6"

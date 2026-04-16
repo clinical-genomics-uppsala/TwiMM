@@ -173,7 +173,14 @@ use rule samtools_index from alignment as alignment_samtools_index_vacmap_merge 
 
 
 # SNV & INDELS
-use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call
+# Override BAM input to use snv_aligner (pbmm2) instead of the primary aligner
+# (vacmap). DeepSomatic and ClairS-TO are not compatible with vacmap BAMs.
+use rule clairs_to_call from snv_indels as snv_indels_clairs_to_call with:
+    input:
+        bam=lambda wildcards: get_input_aligned_bam(wildcards, _snv_config)[0],
+        bai=lambda wildcards: get_input_aligned_bam(wildcards, _snv_config)[1],
+        ref=config.get("reference", {}).get("fasta", ""),
+        bed=config.get("reference", {}).get("design_bed", ""),
 
 
 use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat with:
@@ -182,11 +189,15 @@ use rule clairs_to_concat from snv_indels as snv_indels_clairs_to_concat with:
 
 
 # SNV & INDELS from DeepSomatic-TO
-# use custom PoN from config
-# post-calling filtering by regions BED is not needed here
+# Override BAM input to use snv_aligner (pbmm2) — see clairs_to_call note above.
 use rule deepsomatic_t_only from snv_indels as snv_indels_deepsomatic_t_only with:
     wildcard_constraints:
         type="T",
+    input:
+        bam=lambda wildcards: get_input_aligned_bam(wildcards, _snv_config)[0],
+        bai=lambda wildcards: get_input_aligned_bam(wildcards, _snv_config)[1],
+        ref=config.get("reference", {}).get("fasta", ""),
+        bed=config.get("reference", {}).get("design_bed", ""),
 
 
 # When use_deepsomatic is true both callers run.
@@ -344,8 +355,8 @@ rule fix_af:
 # Phase SNV output with fixed AF
 use rule whatshap_phase from snv_indels as snv_indels_whatshap_phase with:
     input:
-        bam=lambda wildcards: get_input_aligned_bam(wildcards, config)[0],
-        bai=lambda wildcards: get_input_aligned_bam(wildcards, config)[1],
+        bam=lambda wildcards: get_input_aligned_bam(wildcards, _snv_config)[0],
+        bai=lambda wildcards: get_input_aligned_bam(wildcards, _snv_config)[1],
         fasta=config.get("reference", {}).get("fasta", ""),
         vcf="snv_indels/fix_af/{sample}_{type}.vcf",
 
