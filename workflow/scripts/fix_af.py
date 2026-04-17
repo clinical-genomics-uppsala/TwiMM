@@ -93,7 +93,19 @@ def writeNewVcf(
             row.info["AF"] = row.samples[0].get("VAF")
             row.samples[0]["AF"] = row.samples[0].get("VAF")
         elif caller in ("clairs_to", "snv_concat"):
-            row.info["AF"] = row.samples[0].get("AF")
+            # ClairS-TO reports FORMAT/AF; DeepSomatic reports FORMAT/VAF.
+            # Try AF first, fall back to VAF so both caller types are handled.
+            af = row.samples[0].get("AF")
+            if af is None:
+                af = row.samples[0].get("VAF")
+            if af is not None:
+                row.info["AF"] = af
+            else:
+                logging.warning(
+                    "Record at %s:%s has neither FORMAT/AF nor FORMAT/VAF; INFO/AF will not be set.",
+                    row.chrom,
+                    row.pos,
+                )
         elif caller == "gatk_select_variants_final":
             row.info["AF"] = row.samples[0].get("AF")
         elif caller == "varscan":
