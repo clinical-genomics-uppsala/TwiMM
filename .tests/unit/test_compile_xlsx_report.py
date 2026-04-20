@@ -396,7 +396,7 @@ chr14\t1000\t.\tN\t<DEL>\t.\tPASS\tSVTYPE=DEL;SVLEN=-5000;END=6000;svdb_origin=p
 def test_process_sv_vcf_svlen_tuple_parsed_as_number(tmp_path):
     """SVLEN declared as Number=. causes pysam to return a tuple.
     process_sv_vcf must unwrap it so pd.to_numeric succeeds and the record
-    is not silently dropped by the SVLEN >= idid_min_len filter."""
+    is not silently dropped by the SVLEN >= sv_min_len filter."""
     vcf_path = tmp_path / "sv_tuple_svlen.vcf"
     vcf_path.write_text(_SV_VCF_TUPLE_SVLEN)
     gz_path = str(tmp_path / "sv_tuple_svlen.vcf.gz")
