@@ -9,11 +9,11 @@ Here is a brief overview of the entire pipeline. For details see subsections and
   
    2.1 Mark duplicates with `pbmarkdup`.
   
-   2.2 Align reads with `pbmm2` or `VACmap` (configured via `aligner` key).
+   2.2 Align reads with `pbmm2` or `VACmap`. Two aligners can be configured independently: `aligner` is used for SV callers and haplotagging; `snv_aligner` is used for SNV callers (`ClairS-TO`, `DeepSomatic`) and phasing. This allows using `vacmap` for SVs while keeping `pbmm2` for SNV callers, which require pbmm2-aligned BAMs.
 
 3. **SNV and InDels**:  
   
-   3.1 Call variants with `DeepSomatic` (tumor-only mode) or `ClairS-TO`. 
+   3.1 Call variants with `ClairS-TO` (always active). When `use_deepsomatic: true`, `DeepSomatic` (tumor-only mode) runs in parallel and both outputs are concatenated into a single VCF; each record is tagged with `CALLER=clairs_to` or `CALLER=deepsomatic` in INFO.
   
    3.2 Phasing with `whatshap` (uses `whatshap phase`).
   
