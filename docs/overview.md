@@ -9,7 +9,7 @@ Here is a brief overview of the entire pipeline. For details see subsections and
   
    2.1 Mark duplicates with `pbmarkdup`.
   
-   2.2 Align reads with `pbmm2` or `VACmap`. Two aligners can be configured independently: `aligner` is used for SV callers and haplotagging; `snv_aligner` is used for SNV callers (`ClairS-TO`, `DeepSomatic`) and phasing. This allows using `vacmap` for SVs while keeping `pbmm2` for SNV callers, which require pbmm2-aligned BAMs.
+   2.2 Align reads with `pbmm2` or `VACmap`. Two aligners can be configured independently: `aligner` is used for SV callers and haplotagging; `snv_aligner` is used for SNV callers (`ClairS-TO`, `DeepSomatic`) and phasing. This allows using `VACmap` for SVs while keeping `pbmm2` for SNV callers, which require pbmm2-aligned BAMs.
 
 3. **SNV and InDels**:  
   
