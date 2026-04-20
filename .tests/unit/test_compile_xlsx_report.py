@@ -9,6 +9,8 @@ SCRIPT_DIR = TEST_DIR / "../../workflow/scripts"
 RESULTS_DIR = TEST_DIR / "../../results"
 sys.path.insert(0, str(SCRIPT_DIR))
 
+import pysam
+
 from compile_xlsx_report import ( # type: ignore
     parse_info,
     parse_vcf_line,
@@ -367,3 +369,51 @@ def test_parse_vcf_line_caller_present():
     line = "chr7\t100\t.\tA\tT\t.\tPASS\tCALLER=deepsomatic;CSQ=tp53|HIGH\tGT:DP\t0/1:30"
     result = parse_vcf_line(line, ["Gene", "Impact"], ["GT", "DP"])
     assert result["CALLER"] == "deepsomatic"
+
+
+# --- Regression test: SVLEN tuple unwrapping ---
+
+_SV_VCF_TUPLE_SVLEN = """\
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=chr14,length=107043718>
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="SV type">
+##INFO=<ID=SVLEN,Number=.,Type=Integer,Description="SV length (dot=tuple in pysam)">
+##INFO=<ID=STRAND,Number=1,Type=String,Description="Strand">
+##INFO=<ID=STRANDS,Number=1,Type=String,Description="Strands">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position">
+##INFO=<ID=svdb_origin,Number=1,Type=String,Description="Caller origin">
+##INFO=<ID=SUPPORT,Number=.,Type=Integer,Description="Support">
+##INFO=<ID=VAF,Number=.,Type=Float,Description="VAF">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DR,Number=1,Type=Integer,Description="Ref depth">
+##FORMAT=<ID=DV,Number=1,Type=Integer,Description="Alt depth">
+#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE
+chr14\t1000\t.\tN\t<DEL>\t.\tPASS\tSVTYPE=DEL;SVLEN=-5000;END=6000;svdb_origin=pbsv;SUPPORT=10;VAF=0.5\tGT:DR:DV\t0/1:20:10
+"""
+
+
+def test_process_sv_vcf_svlen_tuple_parsed_as_number(tmp_path):
+    """SVLEN declared as Number=. causes pysam to return a tuple.
+    process_sv_vcf must unwrap it so pd.to_numeric succeeds and the record
+    is not silently dropped by the SVLEN >= sv_min_len filter."""
+    vcf_path = tmp_path / "sv_tuple_svlen.vcf"
+    vcf_path.write_text(_SV_VCF_TUPLE_SVLEN)
+    gz_path = str(tmp_path / "sv_tuple_svlen.vcf.gz")
+    pysam.tabix_compress(str(vcf_path), gz_path, force=True)
+    pysam.tabix_index(gz_path, preset="vcf", force=True)
+
+    df = process_sv_vcf(gz_path)
+    assert len(df) == 1, "Expected one record in the output DataFrame"
+
+    svlen_numeric = pd.to_numeric(df["SVLEN"], errors="coerce")
+    assert svlen_numeric.notna().all(), (
+        f"SVLEN could not be parsed as a number — raw value was {df['SVLEN'].iloc[0]!r}; "
+        "likely a pysam tuple was not unwrapped before str() conversion"
+    )
+    assert abs(svlen_numeric.iloc[0]) == 5000
+
+    # SUPPORT and VAF should also be unwrapped
+    assert df["SUPPORT"].iloc[0] == "10", f"SUPPORT was {df['SUPPORT'].iloc[0]!r}, expected '10'"
+    assert df["VAF"].iloc[0] == "0.5", f"VAF was {df['VAF'].iloc[0]!r}, expected '0.5'"
+    assert df["END"].iloc[0] == "6000", f"END was {df['END'].iloc[0]!r}, expected '6000'"
