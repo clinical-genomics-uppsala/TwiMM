@@ -56,8 +56,12 @@
      input: "cnv_sv/svdb_merge/{sample}_{type}.pathology.merged.vcf"
 
    - name: "svdb_queried_vcf"
-     output: "results/cnv_sv/svdb_query/{sample}_{type}.vcf"
-     input: "cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf"
+     output: "results/cnv_sv/svdb_query/{sample}_{type}.vcf.gz"
+     input: "cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf.gz"
+
+   - name: "svdb_queried_vcf_index"
+     output: "results/cnv_sv/svdb_query/{sample}_{type}.vcf.gz.tbi"
+     input: "cnv_sv/svdb_query/{sample}_{type}.pathology.svdb_query.vcf.gz.tbi"
 
   # BAM and index files
    - name: "mapped_haplotagged_bam"
