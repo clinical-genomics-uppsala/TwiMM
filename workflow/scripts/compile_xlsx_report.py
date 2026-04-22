@@ -420,7 +420,7 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 "FILTER": ";".join(record.filter.keys()) or ".",
                 "CALLER": caller,
                 "COVERAGE": coverage,
-                "SUPPORT": str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else "",
+                "SUPPORT": str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else (str(dv) if dv is not None else ""),
                 "STRAND": strand,
                 "VAF": f"{unwrap_info(vaf):.2f}" if vaf is not None else "",
                 "GENOTYPE": gt,

@@ -455,3 +455,6 @@ def test_process_sv_vcf_pbsv_vaf_derived_from_ad(tmp_path):
     assert vaf_str == "0.25", (
         f"Expected VAF = alt_depth/total_depth formatted to 2 d.p. = '0.25', got {vaf_str!r}"
     )
+    assert df["SUPPORT"].iloc[0] == "10", (
+        f"Expected SUPPORT = AD[1] = 10 for a PBSV record, got {df['SUPPORT'].iloc[0]!r}"
+    )
