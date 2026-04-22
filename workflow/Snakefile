@@ -481,6 +481,17 @@ use rule svdb_query from cnv_sv as cnv_sv_svdb_query with:
         prefix=lambda wildcards, output: os.path.splitext(output[0])[0][:-6],
 
 
+# bgzip and tabix SVDB query VCF
+use rule bgzip from cnv_sv as cnv_sv_bgzip_svdb_query with:
+    wildcard_constraints:
+        file="^cnv_sv/svdb_query/.+",
+
+
+use rule tabix from cnv_sv as cnv_sv_tabix_svdb_query with:
+    wildcard_constraints:
+        file="^cnv_sv/svdb_query/.+",
+
+
 # CNVkit by default uses config-defined aligner to construct path to BAM
 use rule cnvkit_batch from cnv_sv as cnv_sv_cnvkit_batch with:
     input:
