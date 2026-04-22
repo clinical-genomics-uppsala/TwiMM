@@ -395,9 +395,7 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
             # Use 'in' instead of .get() — pysam raises ValueError for keys not
             # in the header, while 'in' safely returns False.
             strand = (
-                record.info["STRAND"] if "STRAND" in record.info else
-                record.info["STRANDS"] if "STRANDS" in record.info else
-                ""
+                record.info["STRAND"] if "STRAND" in record.info else record.info["STRANDS"] if "STRANDS" in record.info else ""
             )
 
             # ── VAF: INFO first (Sniffles2), FORMAT fallback (Severus) ────────────
@@ -422,7 +420,9 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 "FILTER": ";".join(record.filter.keys()) or ".",
                 "CALLER": caller,
                 "COVERAGE": coverage,
-                "SUPPORT": str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else (str(dv) if dv is not None else ""),
+                "SUPPORT": (
+                    str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else (str(dv) if dv is not None else "")
+                ),
                 "STRAND": strand,
                 "VAF": f"{_vaf:.2f}" if _vaf is not None else "",
                 "GENOTYPE": gt,
