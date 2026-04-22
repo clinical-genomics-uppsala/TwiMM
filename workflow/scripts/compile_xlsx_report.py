@@ -410,6 +410,8 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 if total > 0:
                     vaf = round(dv / total, 4)
 
+            _vaf = unwrap_info(vaf) if vaf is not None else None
+
             row = {
                 "CHROM": record.chrom,
                 "POS": str(record.pos),
@@ -422,7 +424,7 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 "COVERAGE": coverage,
                 "SUPPORT": str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else (str(dv) if dv is not None else ""),
                 "STRAND": strand,
-                "VAF": f"{unwrap_info(vaf):.2f}" if vaf is not None else "",
+                "VAF": f"{_vaf:.2f}" if _vaf is not None else "",
                 "GENOTYPE": gt,
                 "GENOME QUALITY": gq,
                 "DEPTH REF": str(dr) if dr is not None else "",
