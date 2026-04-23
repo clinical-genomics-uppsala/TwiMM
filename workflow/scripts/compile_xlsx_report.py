@@ -145,9 +145,15 @@ def parse_version_from_container(container: str) -> str:
     return "unknown"
 
 
-def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
+def write_excel_sheet(
+    writer: pd.ExcelWriter,
+    df: pd.DataFrame,
+    sheet_name: str,
+    col_max_widths: dict | None = None,
+):
     """
     Write a dataframe to an Excel sheet and apply autofilter to the header.
+    col_max_widths: optional per-column width caps, e.g. {"ALT": 30}.
     """
     df.to_excel(writer, sheet_name=sheet_name, index=False)
     worksheet = writer.sheets[sheet_name]
@@ -162,6 +168,8 @@ def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str)
             column_len = 0
         # Compare with the length of the column header itself
         max_len = max(float(column_len), float(len(str(col)))) + 2
+        if col_max_widths and col in col_max_widths:
+            max_len = min(max_len, col_max_widths[col])
         # Set the column width
         worksheet.set_column(i, i, max_len)
 
@@ -504,6 +512,7 @@ def create_report(snakemake_obj: Any):
     # idid stands for Insertion, Deletion, Duplication, Inversion (SV)
     idid_min_len = filters.get("sv_min_len", 1000)
     columns_drop_idid = filters.get("columns_drop_sv", [])
+    sv_col_max_widths = filters.get("sv_col_max_widths", {})
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
     software_versions = getattr(snakemake_obj.params, "software_versions", {})
@@ -629,8 +638,8 @@ def create_report(snakemake_obj: Any):
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         write_excel_sheet(writer, snv_rest, "SNV")
         write_excel_sheet(writer, snv_tp53, "TP53")
-        write_excel_sheet(writer, translocations_df, "Translocations")
-        write_excel_sheet(writer, sv_chr14_idid, "SV")
+        write_excel_sheet(writer, translocations_df, "Translocations", col_max_widths=sv_col_max_widths)
+        write_excel_sheet(writer, sv_chr14_idid, "SV", col_max_widths=sv_col_max_widths)
         write_excel_sheet(writer, cnv_df, "CNV")
         write_excel_sheet(writer, versions_df, "Software Versions")
 

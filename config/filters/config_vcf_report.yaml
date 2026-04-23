@@ -1,4 +1,6 @@
 sv_min_len: 1000
+sv_col_max_widths:
+  ALT: 30
 snvs_remove:
   - "intergenic_variant"
   - "NMD_transcript_variant"
