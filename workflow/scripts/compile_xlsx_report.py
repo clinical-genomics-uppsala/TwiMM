@@ -392,12 +392,23 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 coverage = ""
 
             # ── STRAND / STRANDS ─────────────────────────────────────────────────
-            strand = record.info.get("STRAND") or record.info.get("STRANDS") or ""
+            # Use 'in' instead of .get() — pysam raises ValueError for keys not
+            # in the header, while 'in' safely returns False.
+            strand = (
+                record.info["STRAND"] if "STRAND" in record.info else record.info["STRANDS"] if "STRANDS" in record.info else ""
+            )
 
             # ── VAF: INFO first (Sniffles2), FORMAT fallback (Severus) ────────────
             vaf = record.info["VAF"] if "VAF" in record.info else None
             if vaf is None and samp is not None:
                 vaf = samp.get("VAF")
+            # PBSV carries AD (ref, alt) instead of VAF; derive VAF from depth counts
+            if vaf is None and dr is not None and dv is not None:
+                total = (dr or 0) + (dv or 0)
+                if total > 0:
+                    vaf = round(dv / total, 4)
+
+            _vaf = unwrap_info(vaf) if vaf is not None else None
 
             row = {
                 "CHROM": record.chrom,
@@ -409,9 +420,11 @@ def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
                 "FILTER": ";".join(record.filter.keys()) or ".",
                 "CALLER": caller,
                 "COVERAGE": coverage,
-                "SUPPORT": str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else "",
+                "SUPPORT": (
+                    str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else (str(dv) if dv is not None else "")
+                ),
                 "STRAND": strand,
-                "VAF": str(unwrap_info(vaf)) if vaf is not None else "",
+                "VAF": f"{_vaf:.2f}" if _vaf is not None else "",
                 "GENOTYPE": gt,
                 "GENOME QUALITY": gq,
                 "DEPTH REF": str(dr) if dr is not None else "",

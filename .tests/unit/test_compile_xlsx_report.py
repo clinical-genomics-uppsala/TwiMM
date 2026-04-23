@@ -415,5 +415,46 @@ def test_process_sv_vcf_svlen_tuple_parsed_as_number(tmp_path):
 
     # SUPPORT and VAF should also be unwrapped
     assert df["SUPPORT"].iloc[0] == "10", f"SUPPORT was {df['SUPPORT'].iloc[0]!r}, expected '10'"
-    assert df["VAF"].iloc[0] == "0.5", f"VAF was {df['VAF'].iloc[0]!r}, expected '0.5'"
+    assert df["VAF"].iloc[0] == "0.50", f"VAF was {df['VAF'].iloc[0]!r}, expected '0.50'"
     assert df["END"].iloc[0] == "6000", f"END was {df['END'].iloc[0]!r}, expected '6000'"
+
+
+# --- Regression test: PBSV VAF derived from AD ---
+
+_SV_VCF_PBSV_NO_VAF = """\
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=chr14,length=107043718>
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="SV type">
+##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="SV length">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position">
+##INFO=<ID=svdb_origin,Number=1,Type=String,Description="Caller origin">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for ref and alt">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total depth">
+#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE
+chr14\t5000\tpbsv.BND.1\tN\t<BND>\t.\tPASS\tSVTYPE=BND;SVLEN=10000;END=15000;svdb_origin=pbsv\tGT:AD:DP\t0/1:30,10:40
+"""
+
+
+def test_process_sv_vcf_pbsv_vaf_derived_from_ad(tmp_path):
+    """PBSV records carry FORMAT/AD (ref, alt) but no FORMAT/VAF.
+    process_sv_vcf must derive VAF from AD so the SV and Translocations tabs
+    are not silently left with empty VAF when only Severus+PBSV are merged."""
+    vcf_path = tmp_path / "sv_pbsv_no_vaf.vcf"
+    vcf_path.write_text(_SV_VCF_PBSV_NO_VAF)
+    gz_path = str(tmp_path / "sv_pbsv_no_vaf.vcf.gz")
+    pysam.tabix_compress(str(vcf_path), gz_path, force=True)
+    pysam.tabix_index(gz_path, preset="vcf", force=True)
+
+    df = process_sv_vcf(gz_path)
+    assert len(df) == 1, "Expected one record"
+
+    vaf_str = df["VAF"].iloc[0]
+    assert vaf_str != "", "VAF must not be empty for a PBSV record with AD"
+    assert vaf_str == "0.25", (
+        f"Expected VAF = alt_depth/total_depth formatted to 2 d.p. = '0.25', got {vaf_str!r}"
+    )
+    assert df["SUPPORT"].iloc[0] == "10", (
+        f"Expected SUPPORT = AD[1] = 10 for a PBSV record, got {df['SUPPORT'].iloc[0]!r}"
+    )
