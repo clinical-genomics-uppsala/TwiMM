@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 from typing import Callable
+from typing import Optional
 from typing import TextIO
 
 import pandas as pd
@@ -149,7 +150,7 @@ def write_excel_sheet(
     writer: pd.ExcelWriter,
     df: pd.DataFrame,
     sheet_name: str,
-    col_max_widths: dict | None = None,
+    col_max_widths: Optional[dict] = None,
 ):
     """
     Write a dataframe to an Excel sheet and apply autofilter to the header.
