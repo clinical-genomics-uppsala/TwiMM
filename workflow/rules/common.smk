@@ -90,13 +90,13 @@ _cfg_vars = {k: v for k, v in config.items() if isinstance(v, str)}
 
 def _expand_cfg_placeholders(obj):
     if isinstance(obj, str):
+
         def _replace(m):
             key = m.group(1)
             if key not in _cfg_vars:
-                raise KeyError(
-                    f"Config placeholder '{{{{{key}}}}}' has no matching top-level string variable."
-                )
+                raise KeyError(f"Config placeholder '{{{{{key}}}}}' has no matching top-level string variable.")
             return _cfg_vars[key]
+
         return re.sub(r"\{\{(\w+)\}\}", _replace, obj)
     if isinstance(obj, list):
         return [_expand_cfg_placeholders(i) for i in obj]
