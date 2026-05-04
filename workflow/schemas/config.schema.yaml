@@ -205,10 +205,21 @@ properties:
     type: string
     description: "Path to a general report template or configuration file used by the pipeline."
 
+  REF_DATA:
+    type: string
+    description: "Base path to reference data directory; use {{REF_DATA}} in other string values to reference it."
+
+  PON_DATA:
+    type: string
+    description: "Base path to panel-of-normals directory; use {{PON_DATA}} in other string values to reference it."
+
   merge_cnv_json:
     type: object
     description: "Configuration for merging CNV JSON files used by CNV HTML report generation."
     properties:
+      cytobands:
+        type: string
+        description: "Path to cytoband file (e.g. cytoBand.hg38.txt) for the CNV HTML report."
       germline_vcf:
         type: string
         description: "Path to the germline VCF (may include {sample} wildcard)."
