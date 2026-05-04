@@ -82,6 +82,25 @@ onstart:
 config = load_resources(config, config["resources"])
 validate(config, schema="../schemas/resources.schema.yaml")
 
+# Expand {{VAR}} path placeholders in config using top-level string values.
+# This allows config.yaml to define e.g. REF_DATA and reference it as {{REF_DATA}}
+# in other string values without Snakemake treating REF_DATA as a wildcard.
+_cfg_vars = {k: v for k, v in config.items() if isinstance(v, str)}
+
+
+def _expand_cfg_placeholders(obj):
+    if isinstance(obj, str):
+        return re.sub(r"\{\{(\w+)\}\}", lambda m: _cfg_vars.get(m.group(1), m.group(0)), obj)
+    if isinstance(obj, list):
+        return [_expand_cfg_placeholders(i) for i in obj]
+    if isinstance(obj, dict):
+        return {k: _expand_cfg_placeholders(v) for k, v in obj.items()}
+    return obj
+
+
+config.update(_expand_cfg_placeholders(dict(config)))
+del _cfg_vars, _expand_cfg_placeholders
+
 # Format VEP extra config with FASTA path
 if "vep" in config and "extra" in config["vep"]:
     config["vep"]["extra"] = config["vep"]["extra"].format(fasta=config["reference"]["fasta"])
