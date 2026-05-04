@@ -7,6 +7,9 @@ units: "config/units_T.tsv"
 default_container: "docker://hydragenetics/common:4.0.0"
 pipeline_version: "v1.8.0"
 
+REF_DATA: "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/ref_data"
+PON_DATA: "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results"
+
 module_versions:
   alignment: "develop"
   annotation: "v1.2.0"
@@ -18,19 +21,19 @@ module_versions:
   qc: "v0.7.0"
 
 reference:
-  fasta: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
-  fai: "../ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: &trf "../ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: &design_bed "../ref_data/Myelom_expected_capture_targets_annotated_v2.bed" # for coverage analysis and by-region filtering
-  design_bed_plot: &design_bed_plot "../ref_data/Myelom_expected_capture_targets_annotated_v2_no_backbone.bed" # for annotations on CNVkit HTML plot
-  design_intervals: "../ref_data/expected_capture_targets_covered_v2.interval_list"
-  panel_full_genes: &panel_full_genes "../ref_data/panel_full_genes.bed"
-  cnv_pon: &cnv_pon "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results/cnvkit_build_normal_reference/cnvkit.PoN.target_2kb.cnn"
+  fasta: "{{REF_DATA}}/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "{{REF_DATA}}/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: &trf "{{REF_DATA}}/human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: &design_bed "{{REF_DATA}}/Myelom_expected_capture_targets_annotated_v2.bed" # for coverage analysis and by-region filtering
+  design_bed_plot: &design_bed_plot "{{REF_DATA}}/Myelom_expected_capture_targets_annotated_v2_no_backbone.bed" # for annotations on CNVkit HTML plot
+  design_intervals: "{{REF_DATA}}/expected_capture_targets_covered_v2.interval_list"
+  panel_full_genes: &panel_full_genes "{{REF_DATA}}/panel_full_genes.bed"
+  cnv_pon: &cnv_pon "{{PON_DATA}}/cnvkit_build_normal_reference/cnvkit.PoN.target_2kb.cnn"
   sv_databases:
     - "/beegfs-storage/data/ref_data/wp3/gnomad/gnomad.v4.1.sv.sites.no_cnv.PASS.vcf.gz"
-    - "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results/bcftools_merge/sv_normal.vcf.gz"
-  severus_pon: &severus_pon "../ref_data/PoN_1000G_hg38.tsv.gz"
-  snv_pon: &snv_pon "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results/bcftools_merge/snv_normal.vcf.gz"
+    - "{{PON_DATA}}/bcftools_merge/sv_normal.vcf.gz"
+  severus_pon: &severus_pon "{{REF_DATA}}/PoN_1000G_hg38.tsv.gz"
+  snv_pon: &snv_pon "{{PON_DATA}}/bcftools_merge/snv_normal.vcf.gz"
 
 aligner: "vacmap"
 snv_aligner: "pbmm2"
@@ -55,7 +58,7 @@ clairs_to_call:
 
 cnv_html_report:
   show_table: true
-  cytobands: false
+  cytobands: true
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.11"
@@ -88,6 +91,7 @@ filter_vcf:
 general_report: "config/report.yaml"
 
 merge_cnv_json:
+  cytobands: "config/cytoBand.hg38.txt"
   germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz"
   unfiltered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
