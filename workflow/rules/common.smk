@@ -52,6 +52,10 @@ except WorkflowError as we:
 
 date_string = config.get("pipeline_version", "unknown")
 pipeline_version = get_pipeline_version(workflow, pipeline_name="TwiMM")
+for pipeline_name in pipeline_version:
+    version = pipeline_version[pipeline_name]["version"]
+    if version is not None:
+        pipeline_version[pipeline_name]["version"] = re.sub(r"[/\\]", "-", version)
 version_files = touch_pipeline_version_file_name(pipeline_version, date_string=date_string, directory="results/versions/software")
 if use_container(workflow):
     version_files.append(touch_software_version_file(config, date_string=date_string, directory="results/versions/software"))
