@@ -49,5 +49,10 @@ copilot-instructions.md
 .pixi/
 !.pixi/config.toml
 
+# AI
+CLAUDE.md
+.claude/
+graphify-out/
+
 # rest
 sync_*.sh
