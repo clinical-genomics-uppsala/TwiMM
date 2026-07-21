@@ -7,32 +7,54 @@ units: "config/units.tsv"
 reference:
   fasta: "ref_data/genome.fasta"
   fai: "ref_data/genome.fasta.fai"
-  trf: "ref_data/human_trf.bed"
-  design_bed: "ref_data/test_genes.bed"
-  targets_bed: "ref_data/test_genes.bed"
+  trf: &trf "ref_data/human_trf.bed"
+  design_bed: &design_bed "ref_data/test_genes.bed"
+  design_bed_plot: &design_bed_plot "ref_data/cnvkit_html_gene_annotations.bed"
   design_intervals: "ref_data/probes.interval_list"
+  panel_full_genes: &panel_full_genes "ref_data/panel_full_genes.bed"
+  cnv_pon: &cnv_pon "ref_data/cnvkit_pon.cnn" # or ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn
+  sv_databases:
+    - "ref_data/gnomad_subset.vcf.gz"
+    - "ref_data/sv_normal_subset_edit.vcf.gz" # rename
+  severus_pon: &severus_pon "ref_data/severus_pon_subset.tsv.gz"
+  snv_pon: &snv_pon "ref_data/snv_normal_subset_edit.vcf.gz" # rename
 
-cnvkit_batch:
-  normal_reference: "ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn"
-
-compile_xlsx_report:
-  clairs_vcf: "../../config/filters/config_vcf_filters_clairs.yaml"
+annotate_cnv:
+  tag: "germline"
+  germline: *panel_full_genes
 
 bcftools_filter_include_region:
-  panel: "ref_data/test_genes.bed"
+  panel: *design_bed
 
-pbsv_discover:
-  trf: "ref_data/human_trf.bed"
+cnvkit_batch:
+  normal_reference: *cnv_pon
 
-general_report: "../../config/report.yaml"
+compile_xlsx_report:
+  clairs_vcf: "../../config/filters/config_vcf_report.yaml"
+  genes: *panel_full_genes
 
-vep:
-  vep_cache: "ref_data/VEP"
-  extra: " --assembly GRCh38 --pick --cache_version 110 --variant_class --protein --hgvs --fasta ref_data/genome.fasta"
+deepsomatic_t_only:
+  pon: *snv_pon
 
 filter_vcf:
   germline: "../../config/filters/config_hard_filter_germline_vep.yaml"
+  cnv_filter: "../../config/filters/config_hard_filter_cnv_vcf.yaml"
+
+general_report: "../../config/report.yaml"
 
 merge_cnv_json:
   annotations:
-   - "ref_data/myeloma_annotated_genes_only.bed"
+    - *design_bed_plot
+
+mosdepth:
+  by: *design_bed
+
+pbsv_discover:
+  trf: *trf
+
+severus_t_only:
+  vntr: *trf
+  pon: *severus_pon
+
+vep:
+  vep_cache: "ref_data/VEP"
