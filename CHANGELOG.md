@@ -1,5 +1,101 @@
 # Changelog
 
+## [1.7.0](https://github.com/clinical-genomics-uppsala/TwiMM/compare/v1.6.0...v1.7.0) (2026-07-21)
+
+
+### Features
+
+* add bgzipped and tabixed files to the output ([ef7ea21](https://github.com/clinical-genomics-uppsala/TwiMM/commit/ef7ea2189cacf952f1096d40ad4cc1cd0d6155f7))
+* add caller column to both snv and tp53 tabs ([7d73abe](https://github.com/clinical-genomics-uppsala/TwiMM/commit/7d73abe613772b73c40d0d655df2d1636e3b5f32))
+* add config placeholder expansion function ([2ea34b1](https://github.com/clinical-genomics-uppsala/TwiMM/commit/2ea34b19796192fd83dedbb6c73f80157da17dba))
+* add configurable CNV tab filters to xlsx report ([115880c](https://github.com/clinical-genomics-uppsala/TwiMM/commit/115880c27d133715292e8b0a240d5f39ad7aa6f5))
+* add configurable SVDB database files ([d2ababf](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d2ababf55765722c0c8102ffa80ed7853270c8c8))
+* add cytobands ([27b7456](https://github.com/clinical-genomics-uppsala/TwiMM/commit/27b74561f95f3f2fddaaf6f9812b58a02cc35563))
+* add filtering of VCF files form Severus and PBSV ([40d99be](https://github.com/clinical-genomics-uppsala/TwiMM/commit/40d99bec33588da806c116b9b34155e6560431b2))
+* add rule svdb_build ([58d69e2](https://github.com/clinical-genomics-uppsala/TwiMM/commit/58d69e263da8c02b819881ad22102fcc87d94cc7))
+* add rules to write caller provenance in snv vcf files and concatenate them; update snv helper function ([1472360](https://github.com/clinical-genomics-uppsala/TwiMM/commit/1472360564fda3ac54cfe9b23f90c7cc55d1f3c1))
+* add section in reference with SV databases ([56f5cf3](https://github.com/clinical-genomics-uppsala/TwiMM/commit/56f5cf362f5039d6b6c1cd3c8ad1363dd6225cb6))
+* add severus_t_only rule ([#66](https://github.com/clinical-genomics-uppsala/TwiMM/issues/66)) ([61f3520](https://github.com/clinical-genomics-uppsala/TwiMM/commit/61f3520614dfa6b3dd4668c1c97cf9b7ba0723cc))
+* add software versions tab ([#67](https://github.com/clinical-genomics-uppsala/TwiMM/issues/67)) ([fbc4550](https://github.com/clinical-genomics-uppsala/TwiMM/commit/fbc4550e3406b2b8452bc29b07d2cdf4743f82d1))
+* add svdb & pbsv rules ([973393a](https://github.com/clinical-genomics-uppsala/TwiMM/commit/973393a02a6d1b9d76265ac5dd8a49e82b4e945f))
+* add vacmap aligner ([#65](https://github.com/clinical-genomics-uppsala/TwiMM/issues/65)) ([380b56c](https://github.com/clinical-genomics-uppsala/TwiMM/commit/380b56c375a772ccc5037489d523513e10c74ce0))
+* bgzip and tabix the final svdb query vcf file ([5ed5173](https://github.com/clinical-genomics-uppsala/TwiMM/commit/5ed517352bf83747464d15163b5cfac068da40ad))
+* cnvkit pon with bigger bin size (2kb) ([a2df88c](https://github.com/clinical-genomics-uppsala/TwiMM/commit/a2df88cc7d101271ac1fff3795c63b9bf598bf8b))
+* hard-filter CNVkit germline VCF ([584b624](https://github.com/clinical-genomics-uppsala/TwiMM/commit/584b6245a216cd92ca348d26b83c4a319a44fecf))
+* introduce updates compatible with HG v4 ([60e77cb](https://github.com/clinical-genomics-uppsala/TwiMM/commit/60e77cbecf3fdbb0c4a710ac9fc9006edb38d2fc))
+* log edge case when neither VAF or AF is present ([5967aa9](https://github.com/clinical-genomics-uppsala/TwiMM/commit/5967aa96b0507b968147dea205c02fcfd5a3f62e))
+* SVDB results to Excel report ([#64](https://github.com/clinical-genomics-uppsala/TwiMM/issues/64)) ([168f009](https://github.com/clinical-genomics-uppsala/TwiMM/commit/168f0099d09b771b8ae2b3ff589bb4e8a4ac2748))
+* upd config schema file with sv_databases and svdb_build ([bcc6af2](https://github.com/clinical-genomics-uppsala/TwiMM/commit/bcc6af2a4a25e55f94b46da03c764039c9fb692a))
+* update config.schema.yaml with new keys ([ccf7dc4](https://github.com/clinical-genomics-uppsala/TwiMM/commit/ccf7dc4225a453807a55ebe4dd59fe2fd677cc11))
+* update filter entries ([2102aac](https://github.com/clinical-genomics-uppsala/TwiMM/commit/2102aac002053698791f31e2671ca49f71bf7120))
+* use 2 aligners configuration ([f666370](https://github.com/clinical-genomics-uppsala/TwiMM/commit/f6663706b1e99319cb61a5be429712a62932f401))
+* use hlper funciton to create db_string parameter for svdb query ([d86cb7e](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d86cb7e5c1c5f628fcce933a53a8f8353b61d433))
+
+
+### Bug Fixes
+
+* add additional design bed file ([34938ea](https://github.com/clinical-genomics-uppsala/TwiMM/commit/34938ea39cad43b4e73dea72886dd8d4971b516b))
+* add benchmark, threads and other properties to svdb_build entry ([eb7d344](https://github.com/clinical-genomics-uppsala/TwiMM/commit/eb7d344f33d80947040470f6fc68e34c2dd5677e))
+* add configs for cnv and germline filters ([2f55222](https://github.com/clinical-genomics-uppsala/TwiMM/commit/2f552229ec6db5b9cd6001e8909931b2f42f48a6))
+* add cytoband file to integration test ([7413d98](https://github.com/clinical-genomics-uppsala/TwiMM/commit/7413d98ae3c56c55c9fe1ea6921c11520eadc84c))
+* add db prefix to params ([ca96fe2](https://github.com/clinical-genomics-uppsala/TwiMM/commit/ca96fe23076b36b999d302da47547fbe7d59d247))
+* add more files for integration test ([2a27dc3](https://github.com/clinical-genomics-uppsala/TwiMM/commit/2a27dc3e5610d20bc2d404bccc2a656dcbc31480))
+* add vcf report config to integration test ([11f13e2](https://github.com/clinical-genomics-uppsala/TwiMM/commit/11f13e293bacbf4003bff7c272933967c693c897))
+* additional VAF guard for edge case ([43bba38](https://github.com/clinical-genomics-uppsala/TwiMM/commit/43bba38c13efe9b2194c8f636648d27f9d536df0))
+* cap SV/Translocation ALT column width via config ([ab0dac2](https://github.com/clinical-genomics-uppsala/TwiMM/commit/ab0dac2a5a300992bbb1379d100e186c16ba4557))
+* compatibility with python 3.9 ([0c5dc20](https://github.com/clinical-genomics-uppsala/TwiMM/commit/0c5dc202bb4ec684538e5396d9847bca378ef1b9))
+* correct dual-caller concat pipeline bugs ([4a48213](https://github.com/clinical-genomics-uppsala/TwiMM/commit/4a482132443ea78310f3ed5fd3a0102cd5f44ecd))
+* correct flag in svdb query when using with sqlite ([05691d4](https://github.com/clinical-genomics-uppsala/TwiMM/commit/05691d41c4cb0657869352dd5f4b74fea0f2ae72))
+* derive PBSV VAF from AD and format all SV VAF to 2 decimal places ([8ebff25](https://github.com/clinical-genomics-uppsala/TwiMM/commit/8ebff25c172ce70f027b1fe10ce29d60b5c5c9f2))
+* derive svdb_build prefix from output via lambda to fix snakefmt lint. ([aa90daa](https://github.com/clinical-genomics-uppsala/TwiMM/commit/aa90daa7add0da6d6bb5e13695583d0a50e6dddc))
+* generate real intervals list for picard ([cebe544](https://github.com/clinical-genomics-uppsala/TwiMM/commit/cebe54470037ee70345cfe960ce1b871a4ed7a10))
+* handle DeepSomatic VAF field in fix_af and parse_vcf_line ([21c44b3](https://github.com/clinical-genomics-uppsala/TwiMM/commit/21c44b368122bb4d760f0f0b8592732100eceab2))
+* make hydra-genetics v4 default environment ([d762d9e](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d762d9e137352c56fcea90c5ad59699837aada11))
+* move CALLER to column in SNV/TP53 tabs and preserve headers on empty tabs ([952eff4](https://github.com/clinical-genomics-uppsala/TwiMM/commit/952eff42724cd2f023349549152133ce369d1ac5))
+* normalize caller to a consistent case ([fd51f1e](https://github.com/clinical-genomics-uppsala/TwiMM/commit/fd51f1eeaab8e25c8334eb03db6bea25fce7c919))
+* populate SUPPORT from variant read depth for Severus and PBSV records ([c02b202](https://github.com/clinical-genomics-uppsala/TwiMM/commit/c02b2023884f3023e05061ea7c3cb808181e0818))
+* rename path to VEP's cache dummy file ([ee487cc](https://github.com/clinical-genomics-uppsala/TwiMM/commit/ee487cc0cd672a2e10a01a0c3c0eb686c9bd5a66))
+* safe convert coverage to int ([5f6e00f](https://github.com/clinical-genomics-uppsala/TwiMM/commit/5f6e00f7c5d33fd161f48562dcda7974cb6814e4))
+* sanitize slashes in pipeline version string before use in file paths ([d35cf8d](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d35cf8dfab1eba26218c84d45d33aed9467eb512))
+* set wildcard constraints to T only ([4facc1a](https://github.com/clinical-genomics-uppsala/TwiMM/commit/4facc1ab1e307b62613009889db2a87d2baea13e))
+* trim cytobands file ([5c9e1cb](https://github.com/clinical-genomics-uppsala/TwiMM/commit/5c9e1cbf03c312f5bcaf66327f344e4cbbae2098))
+* unwrap pysam SVLEN tuple to prevent chr14 SVs being dropped ([51c4cd5](https://github.com/clinical-genomics-uppsala/TwiMM/commit/51c4cd53648052ca7782055282211e6516981cc6))
+* update config with all the required paths and placeholders ([4d274c7](https://github.com/clinical-genomics-uppsala/TwiMM/commit/4d274c7d6a06a444a11fb46ef393a13b1d759932))
+* update lock file ([1ce4318](https://github.com/clinical-genomics-uppsala/TwiMM/commit/1ce4318b2fa6f9598d9c751e6151fc6547b56274))
+* update path to correct gnomad sv file ([407116e](https://github.com/clinical-genomics-uppsala/TwiMM/commit/407116ea8596cb4479013d6d666e3e1b275c594a))
+* update paths to ref files ([039fb84](https://github.com/clinical-genomics-uppsala/TwiMM/commit/039fb84449edea790681d22d6ea05246db9ec491))
+* update the handling around raw_cov to not iterate strings/Scalars ([3105016](https://github.com/clinical-genomics-uppsala/TwiMM/commit/31050165f203a15c00f144a122b46efb4b6ac44f))
+* use a helper function instead of hard-coded input paths ([422ab06](https://github.com/clinical-genomics-uppsala/TwiMM/commit/422ab06ded6eb3ce7f60a04de930ae9216346d55))
+* use direct key access in svdb_build input to catch missing key ([3a9455c](https://github.com/clinical-genomics-uppsala/TwiMM/commit/3a9455cabc9ec144adbff6d8a90a1b739cef5300))
+* **xlsx-report:** fix SV VCF parsing and add population frequency columns ([2800366](https://github.com/clinical-genomics-uppsala/TwiMM/commit/28003660047ace656d3a307dabfd781c458ac481))
+* **xlsx-report:** harden pysam INFO field handling and remove dead code ([8b9f711](https://github.com/clinical-genomics-uppsala/TwiMM/commit/8b9f7110ddc567117b7db67b5e534b1c2b9c198e))
+
+
+### Reverts
+
+* remove svdb build ([4cbf02a](https://github.com/clinical-genomics-uppsala/TwiMM/commit/4cbf02a3782a049f344ab573a49c10167c975f5f))
+
+
+### Documentation
+
+* clarify commemts on filter usage ([77d4e60](https://github.com/clinical-genomics-uppsala/TwiMM/commit/77d4e60c4c857505ee7fef8410d828a80878ab24))
+* fix a docstring typo ([6b96e63](https://github.com/clinical-genomics-uppsala/TwiMM/commit/6b96e637ebacbea0e2104323d984484a5a9d88d3))
+* fix typos ([930e1b0](https://github.com/clinical-genomics-uppsala/TwiMM/commit/930e1b0b3a5c992c2a131ba6e419c380a71a776e))
+* material theme ([3c80db3](https://github.com/clinical-genomics-uppsala/TwiMM/commit/3c80db36a34cffb8d7650343f469919396e1b984))
+* remove deepsomatic rulegraphs ([f76d9a5](https://github.com/clinical-genomics-uppsala/TwiMM/commit/f76d9a5a160fc0757355535db9c6bf0c823228a4))
+* revise and update output files list ([b80010c](https://github.com/clinical-genomics-uppsala/TwiMM/commit/b80010ce54c020928e6d40e95e461869cfee9697))
+* unify output file paths ([b72538b](https://github.com/clinical-genomics-uppsala/TwiMM/commit/b72538b641aeb85614d6efbaca46b78443685b87))
+* upd hydra and snakemake version in softwares.md ([1032cf6](https://github.com/clinical-genomics-uppsala/TwiMM/commit/1032cf68068cd8eb2dea73d08f56ff13066afdd0))
+* upd overview.md ([e80863e](https://github.com/clinical-genomics-uppsala/TwiMM/commit/e80863ea4f1bc72b7541d6079344ce30cd09f652))
+* upd README.md ([5e6e1ac](https://github.com/clinical-genomics-uppsala/TwiMM/commit/5e6e1ac71c61ab0120245028392562f5cfdc8e41))
+* upd rulegraph ([6768f5f](https://github.com/clinical-genomics-uppsala/TwiMM/commit/6768f5f47d9672e3b0a8363ac0234f7009ae3167))
+* update documentation files ([d17fa4c](https://github.com/clinical-genomics-uppsala/TwiMM/commit/d17fa4cdbefb0c0d5bcffedae0a5a70a6c8fb991))
+* update gnomad sv filename ([391b33a](https://github.com/clinical-genomics-uppsala/TwiMM/commit/391b33a79fc75c91529ff691dca8d6c90528f164))
+* update README.md ([546cccf](https://github.com/clinical-genomics-uppsala/TwiMM/commit/546cccf40cead26ffe94d4bb12473664dd6332cb))
+* update rulegraph/dot files ([a27dd96](https://github.com/clinical-genomics-uppsala/TwiMM/commit/a27dd968d8e3123ac76f5162958beac303fd73cf))
+* update rulegraphs ([83868c0](https://github.com/clinical-genomics-uppsala/TwiMM/commit/83868c0b203b207e586f48700063e995510ee7e0))
+* update rulegraphs ([5bf865b](https://github.com/clinical-genomics-uppsala/TwiMM/commit/5bf865bd562c5df2979cc50d8a77cac9bcc4db3d))
+
 ## [1.5.0](https://github.com/clinical-genomics-uppsala/TwiMM/compare/v1.4.0...v1.5.0) (2026-02-11)
 
 
