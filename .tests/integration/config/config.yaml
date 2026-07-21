@@ -12,12 +12,12 @@ reference:
   design_bed_plot: &design_bed_plot "ref_data/cnvkit_html_gene_annotations.bed"
   design_intervals: "ref_data/probes.interval_list"
   panel_full_genes: &panel_full_genes "ref_data/panel_full_genes.bed"
-  cnv_pon: &cnv_pon "ref_data/cnvkit_pon.cnn" # or ref_data/cnvkit_build_normal_reference/cnvkit.PoN.cnn
+  cnv_pon: &cnv_pon "ref_data/cnvkit_pon.cnn"
   sv_databases:
     - "ref_data/gnomad_subset.vcf.gz"
-    - "ref_data/sv_normal_subset_edit.vcf.gz" # rename
+    - "ref_data/sv_normal_subset.vcf.gz"
   severus_pon: &severus_pon "ref_data/severus_pon_subset.tsv.gz"
-  snv_pon: &snv_pon "ref_data/snv_normal_subset_edit.vcf.gz" # rename
+  snv_pon: &snv_pon "ref_data/snv_normal_subset.vcf.gz"
 
 annotate_cnv:
   tag: "germline"
