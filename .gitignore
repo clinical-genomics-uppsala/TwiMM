@@ -20,6 +20,9 @@ twist_myelom
 results/
 vep_cache/
 ref_data/
+!.tests/integration/ref_data/
+!.tests/integration/ref_data/**
+.tests/integration/**/.DS_Store
 alignment/
 annotation/
 prealignment/
@@ -37,6 +40,7 @@ scripts_/
 *.bam
 *.xlsx
 *.simg
+site/
 
 # tmp files in project root
 *.vcf
@@ -45,5 +49,13 @@ scripts_/
 copilot-instructions.md
 
 # pixi environments
-.pixi/*
+.pixi/
 !.pixi/config.toml
+
+# AI
+CLAUDE.md
+.claude/
+graphify-out/
+
+# rest
+sync_*.sh

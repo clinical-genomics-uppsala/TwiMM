@@ -1,14 +1,22 @@
+import argparse
 import functools
 import gzip
+import json
 import logging
 import re
+
 from pathlib import Path
 from typing import Any
 from typing import Callable
+from typing import Optional
 from typing import TextIO
 
 import pandas as pd
+import pysam
 import yaml
+
+
+ALLOWED_SV_TYPES = ["DEL", "INS", "INV", "DUP", "BND"]
 
 
 # --- Decorators ---
@@ -124,9 +132,29 @@ def get_genes_from_bed(bed_path: str) -> set[str]:
     return genes
 
 
-def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str):
+def unwrap_info(value):
+    """Return the first element if value is a tuple, otherwise return value unchanged."""
+    if isinstance(value, tuple):
+        return value[0] if value else None
+    return value
+
+
+def parse_version_from_container(container: str) -> str:
+    """Extract version tag from a container image string (e.g. 'docker://org/tool:1.2.3' → '1.2.3')."""
+    if ":" in container:
+        return container.rsplit(":", 1)[-1]
+    return "unknown"
+
+
+def write_excel_sheet(
+    writer: pd.ExcelWriter,
+    df: pd.DataFrame,
+    sheet_name: str,
+    col_max_widths: Optional[dict] = None,
+):
     """
     Write a dataframe to an Excel sheet and apply autofilter to the header.
+    col_max_widths: optional per-column width caps, e.g. {"ALT": 30}.
     """
     df.to_excel(writer, sheet_name=sheet_name, index=False)
     worksheet = writer.sheets[sheet_name]
@@ -141,6 +169,8 @@ def write_excel_sheet(writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str)
             column_len = 0
         # Compare with the length of the column header itself
         max_len = max(float(column_len), float(len(str(col)))) + 2
+        if col_max_widths and col in col_max_widths:
+            max_len = min(max_len, col_max_widths[col])
         # Set the column width
         worksheet.set_column(i, i, max_len)
 
@@ -194,85 +224,17 @@ def parse_vcf_line(
         "ALT": alt,
         "QUAL": qual,
         "FILTER": fltr,
+        "CALLER": info_dict.get("CALLER", ""),
     }
 
     row.update(csq_dict)
 
     # populate row with values from FORMAT column
+    # Use empty string for fields absent from a particular record (e.g. AF is
+    # missing from DeepSomatic records which use VAF instead).
     for key in format_fields:
-        if key not in format_dict:
-            raise KeyError(f"Required FORMAT field '{key}' is missing in sample data.")
-        row[key] = format_dict[key]
+        row[key] = format_dict.get(key, "")
 
-    return row
-
-
-@safe_parser
-def parse_sv_vcf_line(
-    line: str,
-    allowed_var_types: list[str] = ["DEL", "INS", "INV", "DUP", "BND"],
-    info_values: list[str] = ["END", "SVLEN", "COVERAGE", "SUPPORT", "STRAND", "VAF"],
-    ncol: int = 10,
-) -> dict[str, str]:
-    """
-    Parse a single structural variant VCF line into a dictionary.
-    """
-    parts = line.strip().split("\t")
-    if len(parts) < ncol:
-        raise ValueError(f"Less than {ncol} columns in VCF line: {line}")
-    chrom, pos, id_, ref, alt, qual, filter_, info, format_, sample_ = parts[:ncol]
-
-    # Parse ID field
-    match = re.search(r"\.(.*?)\.", id_)
-    var_type = match.group(1) if match else id_
-    # check that id_ is not empty
-    if not id_:
-        raise ValueError("ID field (type of variant) is empty!")
-    # check if the extracted variant type is valid
-    if var_type not in allowed_var_types:
-        raise ValueError(f"{var_type} not in allowed variants which are: {allowed_var_types}")
-
-    # Parse INFO field
-    info_dict = parse_info(info)
-    # check if it is empty
-    if not info_dict:
-        raise ValueError("Could not parse INFO field. Does it exist?")
-    # check if all keys exist
-    if var_type == "BND":
-        # exclude END & SVLEN
-        for k in [value for value in info_values if value != "END" and value != "SVLEN"]:
-            if k not in info_dict:
-                raise ValueError(f"{k} not found in the INFO field!")
-    else:
-        for k in info_values:
-            if k not in info_dict:
-                raise ValueError(f"{k} not found in the INFO field!")
-
-    # Parse FORMAT and SAMPLE columns
-    format_dict = parse_format(format_, sample_)
-    for k in ["GT", "GQ", "DR", "DV"]:
-        if k not in format_dict:
-            raise ValueError(f"{k} not found in the FORMAT field!")
-
-    # this may require subsetting depending on your needs
-    row = {
-        "CHROM": chrom,
-        "POS": pos,
-        # available for INS & DEL only
-        "END": info_dict.get("END", ""),
-        "TYPE": var_type,
-        "SVLEN": info_dict.get("SVLEN", ""),
-        "ALT": alt,
-        "FILTER": filter_,
-        "COVERAGE": info_dict.get("COVERAGE", ""),
-        "SUPPORT": info_dict.get("SUPPORT", ""),
-        "STRAND": info_dict.get("STRAND", ""),
-        "VAF": info_dict.get("VAF", ""),
-        "GENOTYPE": format_dict.get("GT", ""),
-        "GENOME QUALITY": format_dict.get("GQ", ""),
-        "DEPTH REF": format_dict.get("DR", ""),
-        "DEPTH TRANS": format_dict.get("DV", ""),
-    }
     return row
 
 
@@ -356,6 +318,139 @@ def parse_cnvkit_vcf_line(
 
 
 @log_execution
+def process_sv_vcf(vcf_path: str) -> pd.DataFrame:
+    """
+    Parse an SV VCF file (e.g. from SVDB query) using pysam.
+
+    Advantages over plain-text parsing:
+    - Sample columns are selected by name, not by index, which is robust when
+      SVDB merge produces two sample columns (haplotagged for Severus; regular
+      BAM for PBSV / Sniffles2).
+    - INFO fields are returned with their declared types so GNOMAD_AC / CUSTOM_AC
+      land in Excel as integers and GNOMAD_AF / CUSTOM_AF as floats.
+    """
+    rows: list[dict] = []
+
+    with pysam.VariantFile(vcf_path, "r") as vcf:
+        all_samples = list(vcf.header.samples)
+        # SVDB merge may produce two sample columns:
+        #   haplotagged BAM sample — used by Severus
+        #   regular BAM sample    — used by PBSV and Sniffles2
+        haplotagged = next((s for s in all_samples if "haplotagged" in s.lower()), None)
+        regular = next((s for s in all_samples if "haplotagged" not in s.lower()), None) or (
+            all_samples[0] if all_samples else None
+        )
+        if not haplotagged and not regular:
+            logging.warning(f"No valid sample columns found in {vcf_path}; sample data will be empty.")
+
+        for record in vcf:
+            # ── Caller ──────────────────────────────────────────────────────────
+            caller = unwrap_info(record.info["svdb_origin"]) if "svdb_origin" in record.info else None
+            caller = caller.lower() if caller else "unknown"
+            if (not caller or caller == "unknown") and record.id and "." in record.id:
+                caller = record.id.split(".")[0].lower()
+
+            # ── Variant type ─────────────────────────────────────────────────────
+            # Try dot-delimited ID (e.g. "Sniffles2.DEL.1"); fall back to SVTYPE
+            # for callers like Severus whose IDs don't embed the type.
+            var_type = ""
+            if record.id:
+                m = re.search(r"\.(.*?)\.", record.id)
+                var_type = m.group(1) if m else ""
+                if ":" in var_type:
+                    var_type = var_type.split(":")[0]
+            if not var_type or var_type not in ALLOWED_SV_TYPES:
+                var_type = (record.info["SVTYPE"] if "SVTYPE" in record.info else None) or var_type or (record.id or "")
+            if var_type not in ALLOWED_SV_TYPES:
+                logging.warning(f"Unexpected variant type '{var_type}' at {record.chrom}:{record.pos}.")
+
+            # ── Sample selection ─────────────────────────────────────────────────
+            samp_name = haplotagged if (caller == "severus" and haplotagged) else regular
+            samp = record.samples[samp_name] if samp_name else None
+
+            # ── Genotype / depth ─────────────────────────────────────────────────
+            gt = gq = ""
+            dr = dv = None
+            if samp is not None:
+                raw_gt = samp.get("GT")
+                if raw_gt is not None:
+                    gt = "/".join("." if a is None else str(a) for a in raw_gt)
+                raw_gq = samp.get("GQ")
+                gq = "" if raw_gq is None else str(raw_gq)
+                dr = samp.get("DR")
+                dv = samp.get("DV")
+                # PBSV uses AD (ref, alt) instead of DR / DV
+                if dr is None or dv is None:
+                    ad = samp.get("AD")
+                    if ad is not None and len(ad) >= 2:
+                        dr, dv = ad[0], ad[1]
+
+            # ── COVERAGE (Sniffles2 tuple → comma-separated string) ───────────────
+            raw_cov = record.info["COVERAGE"] if "COVERAGE" in record.info else None
+            if raw_cov is not None:
+                if isinstance(raw_cov, (str, bytes)) or not isinstance(raw_cov, (list, tuple, set)):
+                    raw_cov = [raw_cov]
+                parts = []
+                for v in raw_cov:
+                    try:
+                        parts.append(str(int(v)))
+                    except (TypeError, ValueError):
+                        pass
+                coverage = ",".join(parts)
+            else:
+                coverage = ""
+
+            # ── STRAND / STRANDS ─────────────────────────────────────────────────
+            # Use 'in' instead of .get() — pysam raises ValueError for keys not
+            # in the header, while 'in' safely returns False.
+            strand = (
+                record.info["STRAND"] if "STRAND" in record.info else record.info["STRANDS"] if "STRANDS" in record.info else ""
+            )
+
+            # ── VAF: INFO first (Sniffles2), FORMAT fallback (Severus) ────────────
+            vaf = record.info["VAF"] if "VAF" in record.info else None
+            if vaf is None and samp is not None:
+                vaf = samp.get("VAF")
+            # PBSV carries AD (ref, alt) instead of VAF; derive VAF from depth counts
+            if vaf is None and dr is not None and dv is not None:
+                total = (dr or 0) + (dv or 0)
+                if total > 0:
+                    vaf = round(dv / total, 4)
+
+            _vaf = unwrap_info(vaf) if vaf is not None else None
+
+            row = {
+                "CHROM": record.chrom,
+                "POS": str(record.pos),
+                "END": str(unwrap_info(record.info.get("END") or record.stop)) if record.stop else "",
+                "TYPE": var_type,
+                "SVLEN": str(unwrap_info(record.info["SVLEN"])) if "SVLEN" in record.info else "",
+                "ALT": record.alts[0] if record.alts else "",
+                "FILTER": ";".join(record.filter.keys()) or ".",
+                "CALLER": caller,
+                "COVERAGE": coverage,
+                "SUPPORT": (
+                    str(unwrap_info(record.info["SUPPORT"])) if "SUPPORT" in record.info else (str(dv) if dv is not None else "")
+                ),
+                "STRAND": strand,
+                "VAF": f"{_vaf:.2f}" if _vaf is not None else "",
+                "GENOTYPE": gt,
+                "GENOME QUALITY": gq,
+                "DEPTH REF": str(dr) if dr is not None else "",
+                "DEPTH TRANS": str(dv) if dv is not None else "",
+                # Population frequency annotations added by SVDB query
+                # Kept as native int / float so Excel renders them as numbers
+                "GNOMAD_AC": unwrap_info(record.info["GNOMAD_AC"]) if "GNOMAD_AC" in record.info else None,
+                "GNOMAD_AF": unwrap_info(record.info["GNOMAD_AF"]) if "GNOMAD_AF" in record.info else None,
+                "CUSTOM_AC": unwrap_info(record.info["CUSTOM_AC"]) if "CUSTOM_AC" in record.info else None,
+                "CUSTOM_AF": unwrap_info(record.info["CUSTOM_AF"]) if "CUSTOM_AF" in record.info else None,
+            }
+            rows.append(row)
+
+    return pd.DataFrame(rows)
+
+
+@log_execution
 def process_vcf(vcf_path: str, line_parser: Callable[..., dict], **kwargs) -> pd.DataFrame:
     """
     Generic function to process a VCF file into a DataFrame using a specific line parser.
@@ -383,8 +478,9 @@ def create_report(snakemake_obj: Any):
     Main pipeline execution function using snakemake object.
     """
     # Set up logging
+    log_file = snakemake_obj.log[0] if snakemake_obj.log else None
     logging.basicConfig(
-        filename=snakemake_obj.log[0],
+        filename=log_file,
         format="{asctime} - {levelname} - {message}",
         style="{",
         datefmt="%Y-%m-%d %H:%M",
@@ -417,9 +513,10 @@ def create_report(snakemake_obj: Any):
     # idid stands for Insertion, Deletion, Duplication, Inversion (SV)
     idid_min_len = filters.get("sv_min_len", 1000)
     columns_drop_idid = filters.get("columns_drop_sv", [])
-
+    sv_col_max_widths = filters.get("sv_col_max_widths", {})
     genes_bed = getattr(snakemake_obj.params, "genes_bed", "")
     genes_to_keep = get_genes_from_bed(genes_bed)
+    software_versions = getattr(snakemake_obj.params, "software_versions", {})
     logging.info(f"Loaded {len(genes_to_keep)} genes from {genes_bed}")
 
     if any(
@@ -438,6 +535,13 @@ def create_report(snakemake_obj: Any):
         snv_all_df = pd.DataFrame()
 
     logging.info(f"Total number of rows: {len(snv_all_df)}.")
+
+    # Derive the expected output column list once so it can be reused for
+    # empty-DataFrame fallbacks (preserving headers even when there are no rows).
+    snv_output_cols = [c if c != "SYMBOL" else "GENE" for c in columns_keep_snv]
+    if "POS" in snv_output_cols and "ALT" in snv_output_cols:
+        snv_output_cols.remove("ALT")
+        snv_output_cols.insert(snv_output_cols.index("POS") + 1, "ALT")
 
     if not snv_all_df.empty:
         logging.info("Filtering out unwanted SNVs and SNVs not passing the tool's default filter.")
@@ -469,8 +573,8 @@ def create_report(snakemake_obj: Any):
             logging.info(f"Filtering SNV tab to keep only {len(genes_to_keep)} genes.")
             snv_rest = snv_rest[snv_rest["GENE"].isin(genes_to_keep)]
     else:
-        snv_tp53 = pd.DataFrame()
-        snv_rest = pd.DataFrame()
+        snv_tp53 = pd.DataFrame(columns=snv_output_cols)
+        snv_rest = pd.DataFrame(columns=snv_output_cols)
 
     logging.info(f"Number of SNVs in TP53: {len(snv_tp53)}")
     logging.info(f"Number of SNVs in the other genes: {len(snv_rest)}")
@@ -478,7 +582,7 @@ def create_report(snakemake_obj: Any):
     # --- 2. Process SV VCF ---
     logging.info(f"Parsing file: {vcf_sv}")
     try:
-        sv_df = process_vcf(vcf_sv, parse_sv_vcf_line)
+        sv_df = process_sv_vcf(vcf_sv)
     except Exception as e:
         logging.error(f"{e}")
         sv_df = pd.DataFrame()
@@ -526,17 +630,53 @@ def create_report(snakemake_obj: Any):
 
     logging.info(f"Total CNVs read: {len(cnv_df)}")
 
+    versions_df = pd.DataFrame(
+        [{"Tool": tool, "Version": parse_version_from_container(container)} for tool, container in software_versions.items()]
+    )
+
     # --- Write to Excel ---
     logging.info("Writing XLSX file.")
     with pd.ExcelWriter(output_xlsx, engine="xlsxwriter") as writer:
         write_excel_sheet(writer, snv_rest, "SNV")
         write_excel_sheet(writer, snv_tp53, "TP53")
-        write_excel_sheet(writer, translocations_df, "Translocations")
-        write_excel_sheet(writer, sv_chr14_idid, "SV")
+        write_excel_sheet(writer, translocations_df, "Translocations", col_max_widths=sv_col_max_widths)
+        write_excel_sheet(writer, sv_chr14_idid, "SV", col_max_widths=sv_col_max_widths)
         write_excel_sheet(writer, cnv_df, "CNV")
+        write_excel_sheet(writer, versions_df, "Software Versions")
 
     logging.info("Script finished successfully")
 
 
 if __name__ == "__main__":
-    create_report(snakemake)  # type: ignore
+    if "snakemake" in dir():
+        # Running inside Snakemake
+        create_report(snakemake)  # type: ignore
+    else:
+        # If 'snakemake' is not defined, use argparse
+        parser = argparse.ArgumentParser(description="Compile XLSX report from VCF files.")
+        parser.add_argument("--vcf-snv", required=True, help="Path to SNV VCF file")
+        parser.add_argument("--vcf-sv", required=True, help="Path to SV VCF file")
+        parser.add_argument("--vcf-cnv", required=True, help="Path to CNV VCF file")
+        parser.add_argument("--output-xlsx", "-o", required=True, help="Path to output XLSX file")
+        parser.add_argument("--filter-config", required=True, help="Path to filter config YAML file")
+        parser.add_argument("--genes-bed", help="Path to genes BED file", default="")
+        parser.add_argument("--software-versions", help="JSON dict of tool→container strings", default="{}")
+        parser.add_argument("--sample", help="Sample name", default="unknown")
+        parser.add_argument("--log", help="Path to log file", default=None)
+
+        args = parser.parse_args()
+
+        # Create a mock object that behaves like the snakemake object
+        class SnakemakeMock:
+            def __init__(self, args):
+                self.input = argparse.Namespace(vcf_snv=args.vcf_snv, vcf_sv=args.vcf_sv, vcf_cnv=args.vcf_cnv)
+                self.output = argparse.Namespace(xlsx=args.output_xlsx)
+                self.params = argparse.Namespace(
+                    filter_config=args.filter_config,
+                    genes_bed=args.genes_bed,
+                    software_versions=json.loads(args.software_versions),
+                )
+                self.wildcards = argparse.Namespace(sample=args.sample)
+                self.log = [args.log] if args.log else []
+
+        create_report(SnakemakeMock(args))

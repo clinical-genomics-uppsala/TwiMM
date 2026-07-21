@@ -22,17 +22,17 @@
 
 ## :speech_balloon: Introduction
 
-TwiMM is a bioinformatic pipeline designed to analyse hybrid capture long-read (PacBio) sequencing data from the multiple myeloma gene panel.
+TwiMM is a bioinformatic pipeline designed to analyse hybrid capture long-read (PacBio HiFi) sequencing data from the multiple myeloma gene panel. It detects SNVs/InDels, structural variants (SV), and copy number variants (CNV). SV calling uses three callers in parallel (Severus, PBSV, Sniffles2) whose outputs are merged and annotated with population frequencies via SVDB.
 
 ## :heavy_exclamation_mark: Dependencies
 
-In order to use this module, the following dependencies are required:
+All dependencies are managed by [pixi](https://pixi.sh). Install pixi, then run:
 
-[![hydra-genetics](https://img.shields.io/badge/hydragenetics-v3.2.0-blue)](https://github.com/hydra-genetics/)
-[![pandas](https://img.shields.io/badge/pandas-1.3.1-blue)](https://pandas.pydata.org/)
-[![python](https://img.shields.io/badge/python-3.8-blue)
-[![snakemake](https://img.shields.io/badge/snakemake-7.32.4-blue)](https://snakemake.readthedocs.io/en/stable/)
-[![singularity](https://img.shields.io/badge/singularity-3.0.0-blue)](https://sylabs.io/docs/)
+```bash
+pixi install
+```
+
+This resolves and installs all required packages (Python, Snakemake, hydra-genetics, and other tools) as defined in `pixi.toml`. Container images for individual pipeline tools are pulled automatically at runtime via Singularity/Apptainer and are listed in `config/config.yaml`.
 
 ## :school_satchel: Preparations
 
@@ -58,31 +58,38 @@ The following information need to be added to these files:
 
 ## :white_check_mark: Testing
 
-The workflow repository contains a small test dataset `.tests/integration` which can be run like so:
+The pipeline uses [pixi](https://pixi.sh) for environment management. Run a test dry-run locally:
 
 ```bash
-$ cd .tests/integration
-$ snakemake -s ../../Snakefile --configfiles ../../config/config.yaml config/config.yaml -j1 --use-singularity
+pixi run test-dry
 ```
-`../../config/config.yaml` is the original config-file, while `config/config.yaml` is the test config. By defining two config-files the latter overwrites any overlapping variables in the first config-file.
+
+A small test dataset is also available in `.tests/integration/`.
+
 ## :rocket: Usage
 
-To use this pipeline, refer to [snakemake docs](https://snakemake.readthedocs.io/en/stable/executing/cli.html).
+```bash
+# Dry run
+pixi run all-dry
+
+# Full run (SLURM cluster)
+pixi run all-full
+```
+
+Refer to [snakemake docs](https://snakemake.readthedocs.io/en/stable/executing/cli.html) for advanced usage.
 
 ### Output files
 
-The following output files should be targeted via another rule:
+Key output files (see [full list](docs/result_files.md)):
 
-| File                     | Description |
-|--------------------------|-------------|
-| `twist_myelom/PATH/FILE` | DESCRIPTION |
+| File | Description |
+|------|-------------|
+| `results/snv_indels/{sample}_T.phased.include.panel.vep_annotated.vcf.gz` | Phased SNVs/InDels annotated with VEP |
+| `results/cnv_sv/svdb_query/{sample}_T.vcf` | Merged SVs annotated with population frequencies |
+| `results/cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf` | Annotated CNVs |
+| `results/reports/html/{sample}_T.pathology.cnv_report.html` | Interactive CNV HTML report |
+| `results/xlsx_reports/{sample}_T_combined_report.xlsx` | Excel report (SNV, SV, CNV + Software Versions) |
 
-## :judge: Rule Graphs
+## :judge: Rule Graph
 
-With DeepSomatic:
-
-![rule_graph1](images/rulegraph_deepsomatic.svg)
-
-With ClairS-TO:
-
-![rule_graph2](images/rulegraph_clairs.svg)
+![rule_graph](images/rulegraph.svg)

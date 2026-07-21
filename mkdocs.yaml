@@ -15,7 +15,27 @@ nav:
       - Credits: credits.md
       - License: license.md
 
-theme: readthedocs
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - content.code.copy
+
 extra_css: [extra.css]
 markdown_extensions:
   - abbr

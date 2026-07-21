@@ -1,39 +1,50 @@
 ---
 output: "config/output_files.yaml"
 resources: "config/resources.yaml"
-samples: "config/samples.tsv"
-units: "config/units.tsv"
+samples: "config/samples_T.tsv"
+units: "config/units_T.tsv"
 
-default_container: "docker://hydragenetics/common:3.3.0"
-pipeline_version: "v1.6.0"
+default_container: "docker://hydragenetics/common:4.0.0"
+pipeline_version: "v1.8.0"
+
+REF_DATA: "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/ref_data"
+PON_DATA: "/beegfs-storage/projects/wp2/nobackup/Twist_Myelom/build_pon/results"
 
 module_versions:
-  alignment: "v0.7.0"
+  alignment: "develop"
   annotation: "v1.2.0"
-  cnv_sv: "v2.0.0"
+  cnv_sv: "develop"
   filtering: "v1.1.0"
   prealignment: "v1.4.0"
   reports: "f5ff8bde067a4d10c81eb021c685fa75ef34d541" # last change compatible with this pipeline before v0.11.0
   snv_indels: "v2.0.0"
-  qc: "v0.6.0"
+  qc: "v0.7.0"
 
 reference:
-  fasta: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
-  fai: "ref_data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
-  trf: "ref_data/human_GRCh38_no_alt_analysis_set.trf.bed"
-  design_bed: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
-  design_intervals: "ref_data/twist_probes_v1.interval_list"
+  fasta: "{{REF_DATA}}/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta"
+  fai: "{{REF_DATA}}/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai"
+  trf: &trf "{{REF_DATA}}/human_GRCh38_no_alt_analysis_set.trf.bed"
+  design_bed: &design_bed "{{REF_DATA}}/Myelom_expected_capture_targets_annotated_v2.bed" # for coverage analysis and by-region filtering
+  design_bed_plot: &design_bed_plot "{{REF_DATA}}/Myelom_expected_capture_targets_annotated_v2_no_backbone.bed" # for annotations on CNVkit HTML plot
+  design_intervals: "{{REF_DATA}}/expected_capture_targets_covered_v2.interval_list"
+  panel_full_genes: &panel_full_genes "{{REF_DATA}}/panel_full_genes.bed"
+  cnv_pon: &cnv_pon "{{PON_DATA}}/cnvkit_build_normal_reference/cnvkit.PoN.target_2kb.cnn"
+  sv_databases:
+    - "/beegfs-storage/data/ref_data/wp3/gnomad/gnomad.v4.1.sv.sites.no_cnv.PASS.vcf.gz"
+    - "{{PON_DATA}}/bcftools_merge/sv_normal.vcf.gz"
+  severus_pon: &severus_pon "{{REF_DATA}}/PoN_1000G_hg38.tsv.gz"
+  snv_pon: &snv_pon "{{PON_DATA}}/bcftools_merge/snv_normal.vcf.gz"
 
-aligner: "pbmm2"
-haplotag_path: "snv_indels/whatshap_haplotag"
-haplotag_suffix: "haplotagged"
+aligner: "vacmap"
+snv_aligner: "pbmm2"
+phaser: "whatshap"
 
 annotate_cnv:
   tag: "germline"
-  germline: "ref_data/panel_full_genes.bed"
+  germline: *panel_full_genes
 
 bcftools_filter_include_region:
-  panel: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  panel: *design_bed
 
 bcftools_view:
   extra: ""
@@ -47,11 +58,11 @@ clairs_to_call:
 
 cnv_html_report:
   show_table: true
-  cytobands: false
+  cytobands: true
 
 cnvkit_batch:
   container: "docker://hydragenetics/cnvkit:0.9.11"
-  normal_reference: "ref_data/cnvkit.PoN.cnn"
+  normal_reference: *cnv_pon
   method: "hybrid"
 
 cnvkit_call:
@@ -65,31 +76,33 @@ cnvkit_vcf:
 
 compile_xlsx_report:
   filters: "config/filters/config_vcf_report.yaml"
-  genes: "ref_data/panel_full_genes.bed"
+  genes: *panel_full_genes
 
 deepsomatic_t_only:
   container: "docker://google/deepsomatic:1.9.0"
   model: "PACBIO"
-  pon: "../build_pon/results/bcftools_merge/normal_db.vcf.gz"
+  pon: *snv_pon
   extra: ""
 
 filter_vcf:
   germline: "config/filters/config_hard_filter_germline_vep.yaml"
+  cnv_filter: "config/filters/config_hard_filter_cnv_vcf.yaml"
 
 general_report: "config/report.yaml"
 
 merge_cnv_json:
+  cytobands: "config/cytoBand.hg38.txt"
   germline_vcf: "snv_indels/whatshap_phase/{sample}_T.phased.include.panel.vep_annotated.filter.germline.bcftools_view.germline.vcf.gz"
   unfiltered_cnv_vcfs:
     - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
   filtered_cnv_vcfs:
-    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.vcf.gz"
+    - "cnv_sv/cnvkit_vcf/{sample}_T.pathology.annotate_cnv.germline.filter.cnv_filter.vcf.gz"
   annotations:
-    - "ref_data/Myelom_expected_coverage_annotated_Oct2024_genes_only.bed"
+    - *design_bed_plot
 
 mosdepth:
   container: "docker://hydragenetics/mosdepth:0.3.6"
-  by: "ref_data/Myelom_expected_coverage_annotated_Oct2024.bed"
+  by: *design_bed
   extra: ""
 
 multiqc:
@@ -98,6 +111,7 @@ multiqc:
     DNA:
       included_unit_types: 
         - "T"
+        - "N"
       qc_files:
         - "qc/sequali/{sample}_{type}_{processing_unit}_{barcode}.json"
         - "qc/mosdepth/{sample}_{type}.mosdepth.global.dist.txt"
@@ -123,6 +137,15 @@ pbmm2_align:
 pbmm2_merge:
   container: "docker://hydragenetics/pbmm2:1.16"
 
+pbsv_discover:
+  container: "docker://hydragenetics/pbsv:2.9.0"
+  trf: *trf
+  extra: ""
+
+pbsv_call:
+  container: "docker://hydragenetics/pbsv:2.9.0"
+  extra: ""
+
 picard_collect_alignment_summary_metrics:
   container: "docker://hydragenetics/picard:2.25.4"
   extra: ""
@@ -135,19 +158,43 @@ sequali:
   container: "docker://hydragenetics/sequali:0.12.0"
   extra: ""
 
+severus_t_only:
+  container: "docker://hydragenetics/severus:1.5"
+  vntr: *trf
+  pon: *severus_pon
+  extra: ""
+
 sniffles2_call:
   container: "docker://hydragenetics/sniffles2:2.6.1"
-  extra: ""
+  extra: "--phase"
 
 svdb_merge:
   tc_method:
     - name: pathology
+      sv_caller:
+        - caller: severus
+          vcf: "cnv_sv/severus_t_only/{sample}_T_all_sv.include.panel.vcf.gz"
+        - caller: pbsv
+          vcf: "cnv_sv/pbsv_call/{sample}_T.include.panel.vcf.gz"
+        - caller: sniffles2
+          vcf: "cnv_sv/sniffles2_call/{sample}_T.include.panel.vcf.gz"
       cnv_caller:
         - cnvkit
+      priority: severus,sniffles2,pbsv
+  container: "docker://hydragenetics/svdb:2.8.4"
+
+svdb_query:
+  db_string: "" # this string is created by a helper function
+  container: "docker://hydragenetics/svdb:2.8.4"
+  extra: "--in_occ AC,default --in_frq AF,default --out_occ GNOMAD_AC,CUSTOM_AC --out_frq GNOMAD_AF,CUSTOM_AF"
 
 trimmer_software: "None"
 
-use_deepsomatic: false
+use_deepsomatic: true
+
+vacmap_align:
+  mode: "L"
+  container: "docker://hydragenetics/vacmap:1.0.0"
 
 vep:
   container: "docker://hydragenetics/vep:113.0"
