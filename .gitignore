@@ -20,6 +20,9 @@ twist_myelom
 results/
 vep_cache/
 ref_data/
+!.tests/integration/ref_data/
+!.tests/integration/ref_data/**
+.tests/integration/**/.DS_Store
 alignment/
 annotation/
 prealignment/
@@ -48,6 +51,11 @@ copilot-instructions.md
 # pixi environments
 .pixi/
 !.pixi/config.toml
+
+# AI
+CLAUDE.md
+.claude/
+graphify-out/
 
 # rest
 sync_*.sh
