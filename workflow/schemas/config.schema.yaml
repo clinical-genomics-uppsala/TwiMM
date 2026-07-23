@@ -238,6 +238,9 @@ properties:
         items:
           type: string
         description: "Annotation files (BED) to annotate merge results."
+      table_filter_config:
+        type: string
+        description: "Path to a YAML file defining named CNV classification/filter groups for the CNV HTML report's results table (see docs/setup.md)."
     required: ["germline_vcf", "unfiltered_cnv_vcfs", "filtered_cnv_vcfs", "annotations"]
 
   mosdepth:

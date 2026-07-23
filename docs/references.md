@@ -16,3 +16,5 @@ They are defined in the `config/config.yaml` file and can be found in the `ref_d
 |                                | vntr             | `GRCh38.trf.bed`                          | Tandem repeat BED file passed to Severus via `--vntr`                             |
 | bcftools_filter_include_region | panel            | `expected_coverage_annotated.bed`         | Regions to include in variant calling                                             |
 | general_report                 |                  | `config/report.yaml`                      | General report configuration file                                                 |
+| merge_cnv_json                 | cytobands        | `config/cytoBand.hg38.txt`                | UCSC cytoband definitions (hg38) for the CNV HTML report's chromosome plot        |
+| merge_cnv_json                 | table_filter_config | `config/filters/table_filter.yaml`     | CNV classification/filter rules for the CNV HTML report's results table           |
