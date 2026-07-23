@@ -1,0 +1,24 @@
+# Named groups classifying CNV calls in the cnv_html_report results table,
+# based on live Adjusted CN (and BAF, for LOH). A call's Type is the first
+# group (in definition order) whose criteria it satisfies; "Copy neutral"
+# if none match. Thresholds below are placeholders - tune to your own
+# clinical criteria before relying on this for reporting.
+amplification:
+  all_of:
+    - {field: adjusted_cn, operator: ">=", value: 6.0}
+duplication:
+  all_of:
+    - {field: adjusted_cn, operator: ">", value: 2.5}
+    - {field: adjusted_cn, operator: "<", value: 6.0}
+deletion:
+  all_of:
+    - {field: adjusted_cn, operator: "<=", value: 1.4}
+loh:
+  label: "Copy-neutral LOH"
+  all_of:
+    - {field: adjusted_cn, operator: ">=", value: 1.4}
+    - {field: adjusted_cn, operator: "<=", value: 2.5}
+    - not:
+        all_of:
+          - {field: baf, operator: ">", value: 0.3}
+          - {field: baf, operator: "<", value: 0.7}
