@@ -31,6 +31,14 @@ The `resources.yaml` is located under config/.
 The file declares default resources used by rules as well as resources for specific rules that need more than allocated by default. 
 See further [pipeline configuration](https://hydra-genetics.readthedocs.io/en/latest/make_pipeline/config/).
 
+## CNV HTML report configuration
+The interactive CNV HTML report (`hydra-genetics/reports` module, `cnv_html_report`/`merge_cnv_json` rules) reads two additional config-referenced files under config/:
+
+* `config/cytoBand.hg38.txt` — UCSC cytoband definitions for hg38, referenced by `merge_cnv_json.cytobands` in `config.yaml`. Displays cytobands in the report's chromosome plot; requires `cnv_html_report.cytobands: true` to be enabled as well.
+* `config/table_filter.yaml` — defines named CNV classification/filter groups (e.g. amplification, deletion, LOH) used to populate the results table's **Type** column and its "filtered" toggle, referenced by `merge_cnv_json.table_filter_config`. Each group is a tree of `any_of`/`all_of`/`not` conditions over fields such as `adjusted_cn`, `baf`, `length`, and `caller`; thresholds are clinical choices and should be tuned rather than used as shipped.
+
+See the full syntax reference in the `reports` module's own docs: [CNV report configuration](https://github.com/hydra-genetics/reports/blob/e3b0bbe40fba933961bf2b963c9cd339db2afbb5/docs/cnv_report.md) (pinned to the same commit as `module_versions.reports` in `config.yaml`).
+
 ```yaml
 # ex, default resources
 default_resources:
