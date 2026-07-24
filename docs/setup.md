@@ -37,7 +37,7 @@ The interactive CNV HTML report (`hydra-genetics/reports` module, `cnv_html_repo
 * `config/cytoBand.hg38.txt` — UCSC cytoband definitions for hg38, referenced by `merge_cnv_json.cytobands` in `config.yaml`. Displays cytobands in the report's chromosome plot; requires `cnv_html_report.cytobands: true` to be enabled as well.
 * `config/filters/table_filter.yaml` — defines named CNV classification/filter groups (e.g. amplification, deletion, LOH) used to populate the results table's **Type** column and its "filtered" toggle, referenced by `merge_cnv_json.table_filter_config`. Each group is a tree of `any_of`/`all_of`/`not` conditions over fields such as `adjusted_cn`, `baf`, `length`, and `caller`; thresholds are clinical choices and should be tuned rather than used as shipped.
 
-See the full syntax reference in the `reports` module's own docs: [CNV report configuration](https://github.com/hydra-genetics/reports/blob/e3b0bbe40fba933961bf2b963c9cd339db2afbb5/docs/cnv_report.md) (pinned to the same commit as `module_versions.reports` in `config.yaml`).
+See the full syntax reference in the `reports` module's own docs: [CNV report configuration](https://hydra-genetics-reports.readthedocs.io/en/v2.0.0/cnv_report/) (pinned to the same version as `module_versions.reports` in `config.yaml`).
 
 ```yaml
 # ex, default resources
