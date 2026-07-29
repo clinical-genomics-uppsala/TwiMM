@@ -6,12 +6,7 @@ __license__ = "GPL-3"
 import re
 
 
-def expand_cfg_placeholders(obj, cfg_vars):
-    """Expand {{VAR}} placeholders in obj using top-level string config values.
-
-    This allows config.yaml to define e.g. REF_DATA and reference it as {{REF_DATA}}
-    in other string values without Snakemake treating REF_DATA as a wildcard.
-    """
+def _substitute(obj, cfg_vars):
     if isinstance(obj, str):
 
         def _replace(m):
@@ -22,10 +17,27 @@ def expand_cfg_placeholders(obj, cfg_vars):
 
         return re.sub(r"\{\{(\w+)\}\}", _replace, obj)
     if isinstance(obj, list):
-        return [expand_cfg_placeholders(i, cfg_vars) for i in obj]
+        return [_substitute(i, cfg_vars) for i in obj]
     if isinstance(obj, dict):
-        return {k: expand_cfg_placeholders(v, cfg_vars) for k, v in obj.items()}
+        return {k: _substitute(v, cfg_vars) for k, v in obj.items()}
     return obj
+
+
+def expand_cfg_placeholders(obj, cfg_vars):
+    """Expand {{VAR}} placeholders in obj using top-level string config values.
+
+    This allows config.yaml to define e.g. REF_DATA and reference it as {{REF_DATA}}
+    in other string values without Snakemake treating REF_DATA as a wildcard. cfg_vars
+    values may themselves reference other cfg_vars; chains are resolved to a fixed point
+    before being applied to obj.
+    """
+    resolved_vars = dict(cfg_vars)
+    for _ in range(len(resolved_vars) + 1):
+        new_vars = {k: _substitute(v, resolved_vars) for k, v in resolved_vars.items()}
+        if new_vars == resolved_vars:
+            break
+        resolved_vars = new_vars
+    return _substitute(obj, resolved_vars)
 
 
 def get_local_vcfs_for_svdb_merge(wildcards, config, add_suffix=False):
@@ -68,23 +80,16 @@ def get_svdb_merge_priority(wildcards, config):
     if "tc_method" not in config["svdb_merge"]:
         raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
 
-    priority = None
     for v in config["svdb_merge"]["tc_method"]:
         if "name" not in v:
             raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
-        tc_method_name = v["name"]
-
+        if v["name"] != wildcards.tc_method:
+            continue
         if "sv_caller" not in v:
-            raise KeyError(f"tc_method '{tc_method_name}' is missing the 'sv_caller' key.")
-
+            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'sv_caller' key.")
         if "priority" not in v:
-            raise KeyError(f"tc_method '{tc_method_name}' is missing the 'priority' key.")
-
-        if tc_method_name == wildcards.tc_method:
-            priority = v["priority"]
-
-    if priority is not None:
-        return priority
+            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'priority' key.")
+        return v["priority"]
 
     raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' configuration.")
 
