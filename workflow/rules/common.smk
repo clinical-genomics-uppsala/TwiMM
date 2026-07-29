@@ -7,10 +7,14 @@ import itertools
 import numpy as np
 import pathlib
 import pandas as pd
+import sys
 import yaml
 from datetime import datetime
 from snakemake.utils import validate
 from snakemake.utils import min_version
+
+sys.path.insert(0, str(pathlib.Path(workflow.basedir) / "scripts"))
+import utils as pipeline_utils
 
 from hydra_genetics.utils.resources import load_resources
 from hydra_genetics.utils.samples import *
@@ -90,27 +94,8 @@ validate(config, schema="../schemas/resources.schema.yaml")
 # This allows config.yaml to define e.g. REF_DATA and reference it as {{REF_DATA}}
 # in other string values without Snakemake treating REF_DATA as a wildcard.
 _cfg_vars = {k: v for k, v in config.items() if isinstance(v, str)}
-
-
-def _expand_cfg_placeholders(obj):
-    if isinstance(obj, str):
-
-        def _replace(m):
-            key = m.group(1)
-            if key not in _cfg_vars:
-                raise KeyError(f"Config placeholder '{{{{{key}}}}}' has no matching top-level string variable.")
-            return _cfg_vars[key]
-
-        return re.sub(r"\{\{(\w+)\}\}", _replace, obj)
-    if isinstance(obj, list):
-        return [_expand_cfg_placeholders(i) for i in obj]
-    if isinstance(obj, dict):
-        return {k: _expand_cfg_placeholders(v) for k, v in obj.items()}
-    return obj
-
-
-config.update(_expand_cfg_placeholders(dict(config)))
-del _cfg_vars, _expand_cfg_placeholders
+config.update(pipeline_utils.expand_cfg_placeholders(dict(config), _cfg_vars))
+del _cfg_vars
 
 # Format VEP extra config with FASTA path
 if "vep" in config and "extra" in config["vep"]:
@@ -150,6 +135,13 @@ wildcard_constraints:
     type="T",
 
 
+# compile_output_file_list() and generate_copy_rules() are kept here rather than
+# moved to workflow/scripts/utils.py: they aren't pure functions of their arguments,
+# they read module-level state (output_spec, config, samples, units) and, in
+# generate_copy_rules()'s case, register new rules directly on the live `workflow`
+# object via workflow.rule/workflow.input/etc. and exec(). That ties them to a real
+# Snakemake `workflow` instance at parse time, so they can't be unit tested in
+# isolation the way the wildcard-input helper functions below can.
 def compile_output_file_list(wildcards):
     outdir = pathlib.Path(output_spec.get("directory", "./"))
     output_files = []
@@ -224,93 +216,29 @@ generate_copy_rules(output_spec)
 _snv_config = {**config, "aligner": config.get("snv_aligner", config["aligner"])}
 
 
+# The functions below are thin wrappers around workflow/scripts/utils.py: the
+# actual logic lives there (as plain functions of explicit arguments) so it can be
+# unit tested without a live Snakemake `workflow`/`config`/`units` context. These
+# wrappers just supply the module-level config/units that Snakemake's `input:`/
+# `params:` callables (which only receive `wildcards`) can't be handed directly.
 def get_local_vcfs_for_svdb_merge(wildcards, add_suffix=False):
-    """Return native SV caller VCF paths for SVDB merge for the given tc_method wildcard.
-    When add_suffix=False (default): returns plain file paths suitable for
-    use as Snakemake input entries.
-    When add_suffix=True: appends ':{caller}' to each path, producing the
-    'file.vcf:CALLER' notation expected by SVDB --vcf; do NOT use these
-    strings as Snakemake input files.
-    """
-    if "svdb_merge" not in config:
-        raise KeyError("Config section 'svdb_merge' is missing.")
-    if "tc_method" not in config["svdb_merge"]:
-        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
-
-    for v in config["svdb_merge"]["tc_method"]:
-        if "name" not in v:
-            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
-        if v["name"] != wildcards.tc_method:
-            continue
-
-        if "sv_caller" not in v:
-            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'sv_caller' key.")
-
-        vcf_paths = []
-        for entry in v["sv_caller"]:
-            if "caller" not in entry or "vcf" not in entry:
-                raise KeyError(f"Each sv_caller entry must have 'caller' and 'vcf' keys, got: {entry}")
-            caller_suffix = f":{entry['caller']}" if add_suffix else ""
-            vcf_paths.append(entry["vcf"].format(sample=wildcards.sample, type=wildcards.type) + caller_suffix)
-        return vcf_paths
-
-    available = [v["name"] for v in config["svdb_merge"]["tc_method"] if "name" in v]
-    raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' config. Available: {available}")
+    return pipeline_utils.get_local_vcfs_for_svdb_merge(wildcards, config, add_suffix=add_suffix)
 
 
 def get_svdb_merge_priority(wildcards):
-    if "svdb_merge" not in config:
-        raise KeyError("Config section 'svdb_merge' is missing.")
-    if "tc_method" not in config["svdb_merge"]:
-        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
-
-    priority = None
-    for v in config["svdb_merge"]["tc_method"]:
-        if "name" not in v:
-            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
-        tc_method_name = v["name"]
-
-        if "sv_caller" not in v:
-            raise KeyError(f"tc_method '{tc_method_name}' is missing the 'sv_caller' key.")
-
-        if "priority" not in v:
-            raise KeyError(f"tc_method '{tc_method_name}' is missing the 'priority' key.")
-
-        if tc_method_name == wildcards.tc_method:
-            priority = v["priority"]
-
-    if priority is not None:
-        return priority
-
-    raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' configuration.")
+    return pipeline_utils.get_svdb_merge_priority(wildcards, config)
 
 
 def get_tc_file(wildcards):
-    tc_method = wildcards.tc_method
-    if tc_method == "pathology":
-        return config["samples"]
-    else:
-        return f"cnv_sv/{tc_method}_purity_file/{wildcards.sample}_{wildcards.type}.purity.txt"
+    return pipeline_utils.get_tc_file(wildcards, config)
 
 
 def get_snv_caller_output(wildcards):
-    if config["use_deepsomatic"]:
-        # Both callers are used; fix_af receives the sorted concat VCF
-        return "snv_indels/snv_concat/{sample}_{type}.vcf.gz"
-    else:
-        return "snv_indels/clairs_to/{sample}_{type}.vcf.gz"
+    return pipeline_utils.get_snv_caller_output(wildcards, config)
 
 
-def get_concat_caller_vcfs(wildcards):
-    """Return caller-tagged VCF paths for bcftools concat.
-    Only called when use_deepsomatic is true (the concat rule is only
-    triggered by get_snv_caller_output in that case).
-    """
-    return [
-        f"snv_indels/clairs_to/{wildcards.sample}_{wildcards.type}.caller_tagged.vcf.gz",
-        f"snv_indels/deepsomatic_t_only/{wildcards.sample}_{wildcards.type}.caller_tagged.vcf.gz",
-    ]
+get_concat_caller_vcfs = pipeline_utils.get_concat_caller_vcfs
 
 
 def get_ubam_input(wildcards):
-    return units.loc[(wildcards.sample, wildcards.type), "bam"].tolist()
+    return pipeline_utils.get_ubam_input(wildcards, units)
