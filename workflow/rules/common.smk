@@ -90,9 +90,7 @@ onstart:
 config = load_resources(config, config["resources"])
 validate(config, schema="../schemas/resources.schema.yaml")
 
-# Expand {{VAR}} path placeholders in config using top-level string values.
-# This allows config.yaml to define e.g. REF_DATA and reference it as {{REF_DATA}}
-# in other string values without Snakemake treating REF_DATA as a wildcard.
+# Expand {{VAR}} path placeholders in config (see utils.expand_cfg_placeholders).
 _cfg_vars = {k: v for k, v in config.items() if isinstance(v, str)}
 config.update(pipeline_utils.expand_cfg_placeholders(dict(config), _cfg_vars))
 del _cfg_vars
