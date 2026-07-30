@@ -52,7 +52,7 @@ bcftools_view:
 caller: "cnvkit"
 
 clairs_to_call:
-  container: "docker://hkubal/clairs-to:0.4.4"
+  container: "docker://hkubal/clairs-to:v0.4.4"
   extra: ""
   platform: "hifi_revio"
 
