@@ -14,7 +14,7 @@ from snakemake.utils import validate
 from snakemake.utils import min_version
 
 sys.path.insert(0, str(pathlib.Path(workflow.basedir) / "scripts"))
-import utils as pipeline_utils
+import twimm_utils as pipeline_utils
 
 from hydra_genetics.utils.resources import load_resources
 from hydra_genetics.utils.samples import *
@@ -90,7 +90,7 @@ onstart:
 config = load_resources(config, config["resources"])
 validate(config, schema="../schemas/resources.schema.yaml")
 
-# Expand {{VAR}} path placeholders in config (see utils.expand_cfg_placeholders).
+# Expand {{VAR}} path placeholders in config (see twimm_utils.expand_cfg_placeholders).
 _cfg_vars = {k: v for k, v in config.items() if isinstance(v, str)}
 config.update(pipeline_utils.expand_cfg_placeholders(dict(config), _cfg_vars))
 del _cfg_vars
@@ -134,7 +134,7 @@ wildcard_constraints:
 
 
 # compile_output_file_list() and generate_copy_rules() are kept here rather than
-# moved to workflow/scripts/utils.py: they aren't pure functions of their arguments,
+# moved to workflow/scripts/twimm_utils.py: they aren't pure functions of their arguments,
 # they read module-level state (output_spec, config, samples, units) and, in
 # generate_copy_rules()'s case, register new rules directly on the live `workflow`
 # object via workflow.rule/workflow.input/etc. and exec(). That ties them to a real
@@ -214,7 +214,7 @@ generate_copy_rules(output_spec)
 _snv_config = {**config, "aligner": config.get("snv_aligner", config["aligner"])}
 
 
-# The functions below are thin wrappers around workflow/scripts/utils.py: the
+# The functions below are thin wrappers around workflow/scripts/twimm_utils.py: the
 # actual logic lives there (as plain functions of explicit arguments) so it can be
 # unit tested without a live Snakemake `workflow`/`config`/`units` context. These
 # wrappers just supply the module-level config/units that Snakemake's `input:`/

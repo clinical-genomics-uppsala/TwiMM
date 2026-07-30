@@ -9,7 +9,7 @@ TEST_DIR = Path(__file__).parent.resolve()
 SCRIPT_DIR = TEST_DIR / "../../workflow/scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from utils import (  # type: ignore
+from twimm_utils import (  # type: ignore
     expand_cfg_placeholders,
     get_local_vcfs_for_svdb_merge,
     get_svdb_merge_priority,

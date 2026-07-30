@@ -37,7 +37,30 @@ def expand_cfg_placeholders(obj, cfg_vars):
         if new_vars == resolved_vars:
             break
         resolved_vars = new_vars
+
+    # Any acyclic chain of at most len(cfg_vars) links is fully resolved by now, so a
+    # placeholder still present here means cfg_vars contains a circular reference.
+    unresolved = [k for k, v in resolved_vars.items() if isinstance(v, str) and re.search(r"\{\{\w+\}\}", v)]
+    if unresolved:
+        raise ValueError(f"Circular reference detected among config placeholders: {sorted(unresolved)}")
+
     return _substitute(obj, resolved_vars)
+
+
+def _find_tc_method_entry(config, tc_method):
+    if "svdb_merge" not in config:
+        raise KeyError("Config section 'svdb_merge' is missing.")
+    if "tc_method" not in config["svdb_merge"]:
+        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
+
+    for v in config["svdb_merge"]["tc_method"]:
+        if "name" not in v:
+            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
+        if v["name"] == tc_method:
+            return v
+
+    available = [v["name"] for v in config["svdb_merge"]["tc_method"] if "name" in v]
+    raise KeyError(f"tc_method '{tc_method}' not found in 'svdb_merge' config. Available: {available}")
 
 
 def get_local_vcfs_for_svdb_merge(wildcards, config, add_suffix=False):
@@ -48,50 +71,26 @@ def get_local_vcfs_for_svdb_merge(wildcards, config, add_suffix=False):
     'file.vcf:CALLER' notation expected by SVDB --vcf; do NOT use these
     strings as Snakemake input files.
     """
-    if "svdb_merge" not in config:
-        raise KeyError("Config section 'svdb_merge' is missing.")
-    if "tc_method" not in config["svdb_merge"]:
-        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
+    entry = _find_tc_method_entry(config, wildcards.tc_method)
 
-    for v in config["svdb_merge"]["tc_method"]:
-        if "name" not in v:
-            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
-        if v["name"] != wildcards.tc_method:
-            continue
+    if "sv_caller" not in entry:
+        raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'sv_caller' key.")
 
-        if "sv_caller" not in v:
-            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'sv_caller' key.")
-
-        vcf_paths = []
-        for entry in v["sv_caller"]:
-            if "caller" not in entry or "vcf" not in entry:
-                raise KeyError(f"Each sv_caller entry must have 'caller' and 'vcf' keys, got: {entry}")
-            caller_suffix = f":{entry['caller']}" if add_suffix else ""
-            vcf_paths.append(entry["vcf"].format(sample=wildcards.sample, type=wildcards.type) + caller_suffix)
-        return vcf_paths
-
-    available = [v["name"] for v in config["svdb_merge"]["tc_method"] if "name" in v]
-    raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' config. Available: {available}")
+    vcf_paths = []
+    for caller_entry in entry["sv_caller"]:
+        if "caller" not in caller_entry or "vcf" not in caller_entry:
+            raise KeyError(f"Each sv_caller entry must have 'caller' and 'vcf' keys, got: {caller_entry}")
+        caller_suffix = f":{caller_entry['caller']}" if add_suffix else ""
+        vcf_paths.append(caller_entry["vcf"].format(sample=wildcards.sample, type=wildcards.type) + caller_suffix)
+    return vcf_paths
 
 
 def get_svdb_merge_priority(wildcards, config):
-    if "svdb_merge" not in config:
-        raise KeyError("Config section 'svdb_merge' is missing.")
-    if "tc_method" not in config["svdb_merge"]:
-        raise KeyError("Config section 'svdb_merge: tc_method' is missing.")
+    entry = _find_tc_method_entry(config, wildcards.tc_method)
 
-    for v in config["svdb_merge"]["tc_method"]:
-        if "name" not in v:
-            raise KeyError("A 'tc_method' entry in config['svdb_merge'] is missing the 'name' key.")
-        if v["name"] != wildcards.tc_method:
-            continue
-        if "sv_caller" not in v:
-            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'sv_caller' key.")
-        if "priority" not in v:
-            raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'priority' key.")
-        return v["priority"]
-
-    raise KeyError(f"tc_method '{wildcards.tc_method}' not found in 'svdb_merge' configuration.")
+    if "priority" not in entry:
+        raise KeyError(f"tc_method '{wildcards.tc_method}' is missing the 'priority' key.")
+    return entry["priority"]
 
 
 def get_tc_file(wildcards, config):
