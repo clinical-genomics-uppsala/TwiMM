@@ -139,12 +139,19 @@ def test_get_concat_caller_vcfs():
 
 # --- Tests for get_ubam_input ---
 def test_get_ubam_input():
+    # Mirrors the production Illumina MultiIndex built in common.smk
+    # (sample, type, flowcell, lane, barcode); get_ubam_input looks up only
+    # by (sample, type), so this exercises the partial-index lookup rather
+    # than an exact match on every level.
     units = pd.DataFrame(
         {
-            "sample": ["sample1", "sample1"],
-            "type": ["T", "T"],
-            "bam": ["a.bam", "b.bam"],
+            "sample": ["sample1", "sample1", "sample2"],
+            "type": ["T", "T", "T"],
+            "flowcell": ["fc1", "fc1", "fc1"],
+            "lane": ["L1", "L2", "L1"],
+            "barcode": ["bc1", "bc1", "bc1"],
+            "bam": ["a.bam", "b.bam", "c.bam"],
         }
-    ).set_index(["sample", "type"], drop=False)
+    ).set_index(["sample", "type", "flowcell", "lane", "barcode"], drop=False).sort_index()
     wc = wildcards(sample="sample1", type="T")
     assert get_ubam_input(wc, units) == ["a.bam", "b.bam"]
