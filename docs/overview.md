@@ -45,6 +45,6 @@ Here is a brief overview of the entire pipeline. For details see subsections and
 
 7. **Reporting**:
    
-   7.1 Create HTML reports with `cnvkit`.
+   7.1 Create interactive CNV HTML reports with the `hydra-genetics/reports` module (`cnv_html_report`/`merge_cnv_json` rules).
    
    7.2 Create Excel reports with combined data on SNV, CNV, and SV, including a **Software Versions** tab listing the tool versions used.
